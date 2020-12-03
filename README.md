@@ -1,9 +1,10 @@
 # A Very Fancy Project Name
+My project is about scene adaptation using few shot learning in the context of crowd counting. The basic idea is to train a model that is able to adapt to a novel scene with very few (1 to 5, or even 0!) annotated training examples of that scene. As such, we as the Municipality are no longer required to annotate large amounts of training examples whenever we place a new camera.
 
-Explain in short what this repository is. Mind the target audience.
-No need to go into too much technical details if you expect some people would just use it as end-users 
-and don't care about the internals (so focus on what the code really *does*), not how.
-The *_How it works_* section below would contain more technical details for curious people.
+
+More information will follow once available.
+
+
 
 If applicable, you can also show an example of the final output.
 
