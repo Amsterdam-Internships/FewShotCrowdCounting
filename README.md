@@ -11,14 +11,16 @@ A trained model must be able to produce a 'density map' of the image. In this de
 
 ## Project Folder Structure
 
-Explain a little bit what's where so people can find their way around. For exampole:
-
+This project is a modification of the Crowd Counting Code (C^3) framework: [https://github.com/gjy3035/C-3-Framework](https://github.com/gjy3035/C-3-Framework)
+[`datasets`]: In this folder, several datasets (some preprocessed) can be downloaded from the original authors of the C^3 framework. This folder also contains some scripts to generate the ground truth yourself, albeit with matlab scripts.
+[`misc`]: Some miscellaneous and utility functions.
+[`models`]: The architectures of various crowd counting models.
+[`results reports`]: Settings of previous experiments are listed here. If you wish to reproduce results, please use these settings.
 There are the following folders in the structure:
 
-1) [`resources`](./resources): Random nice resources, e.g. [`useful links`](./resources/links.md)
-1) [`src`](./src): Folder for all source files specific to this project
-1) [`media`](./media): Folder containing media files (icons, video)
-1) ...
+[`resources`](./resources): Random nice resources, e.g. [`useful links`](./resources/links.md)
+[`src`](./src): Folder for all source files specific to this project
+[`media`](./media): Folder containing media files (icons, video)
 
 ---
 
