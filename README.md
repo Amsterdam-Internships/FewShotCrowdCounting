@@ -8,7 +8,7 @@ More information will follow once available.
 
 If applicable, you can also show an example of the final output.
 
-![](media/examples/counting.jpg)
+![](media/examples/CrowdCountingExample.jpg)
 
 ---
 
