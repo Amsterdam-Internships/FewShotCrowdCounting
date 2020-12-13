@@ -1,5 +1,5 @@
 # Few-shot learning for fast scene adaptation of crowd counting models.
-My project is about scene adaptation using few-shot learning in the context of crowd counting. The basic idea is to train a model that is able to adapt to a novel scene with very few (1 to 5, or even 0!) annotated training examples of that scene. As such, we as the Municipality are no longer required to annotate large amounts of training examples whenever we place a new camera.
+Suppose we wish to count the number of people in an image taken with a surveillance camera. The usual approach would be to place the camera, annotate a large number of images, and then train a model on these images. One issue here is that annotating images (in this case, placing dots on the heads of people) is a time-consuming endeavour. This project is about alleviating this issue a bit by using few-shot learning techniques. Few-shot learning in the context of crowd counting is to adapt a crowd counting model to a novel camera scene using minimal (1 to 5, or sometimes even 0) annotated training examples. As such, we as the municipality would no longer be required to annotate a large number of images whenever we place a new camera.
 
 
 More information will follow once available.
