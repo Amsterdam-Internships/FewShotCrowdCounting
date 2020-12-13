@@ -14,10 +14,10 @@ A trained model must be able to produce a 'density map' of the image. In this de
 This project is a modification of the Crowd Counting Code (C^3) framework: [https://github.com/gjy3035/C-3-Framework](https://github.com/gjy3035/C-3-Framework)
 There are the following folders in the structure:
 
-[`datasets`]: In this folder, several datasets (some preprocessed) can be downloaded from the original authors of the C^3 framework. This folder also contains some scripts to generate the ground truth yourself, albeit with matlab scripts.<br/>
-[`misc`]: Some miscellaneous and utility functions.<br/>
-[`models`]: The architectures of various crowd counting models.<br/>
-[`results reports`]: Settings of previous experiments are listed here. If you wish to reproduce results, please use these settings.<br/>
+[`datasets`](./datasets): In this folder, several datasets (some preprocessed) can be downloaded from the original authors of the C^3 framework. This folder also contains some scripts to generate the ground truth yourself, albeit with matlab scripts.<br/>
+[`misc`](./misc): Some miscellaneous and utility functions.<br/>
+[`models`](./models): The architectures of various crowd counting models.<br/>
+[`results_reports`](./results_reports): Settings of previous experiments are listed here. If you wish to reproduce results, please use these settings.<br/>
 
 [`resources`](./resources): Random nice resources, e.g. [`useful links`](./resources/links.md)<br/>
 [`src`](./src): Folder for all source files specific to this project<br/>
