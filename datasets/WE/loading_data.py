@@ -2,7 +2,7 @@ import torchvision.transforms as standard_transforms
 from torch.utils.data import DataLoader
 import misc.transforms as own_transforms
 from .WE import WE
-from .setting import cfg_data 
+from .setting import cfg_data
 import torch
 import random
 
@@ -27,17 +27,17 @@ def loading_data():
         standard_transforms.ToPILImage()
     ])
 
-    train_set = WE(cfg_data.DATA_PATH+'/train', 'train',main_transform=train_main_transform, img_transform=img_transform, gt_transform=gt_transform)
+    train_set = WE(cfg_data.DATA_PATH + '/train', 'train', main_transform=train_main_transform, img_transform=img_transform, gt_transform=gt_transform)
     train_loader = DataLoader(train_set, batch_size=cfg_data.TRAIN_BATCH_SIZE, num_workers=8, shuffle=True, drop_last=True)
 
+    test_name = cfg_data.VAL_FOLDER
 
-    test_name = cfg_data.VAL_FOLDER 
-    
     val_loader = []
 
     for subname in test_name:
-        sub_set = WE(cfg_data.DATA_PATH+'/test/' + subname, 'test', main_transform=val_main_transform, img_transform=img_transform, gt_transform=gt_transform)
-        val_loader.append(DataLoader(sub_set, batch_size=cfg_data.VAL_BATCH_SIZE, num_workers=8, shuffle=True, drop_last=True)) 
-
+        sub_set = WE(cfg_data.DATA_PATH + '/test/' + subname, 'test', main_transform=val_main_transform,
+                     img_transform=img_transform, gt_transform=gt_transform)
+        val_loader.append(
+            DataLoader(sub_set, batch_size=cfg_data.VAL_BATCH_SIZE, num_workers=8, shuffle=True, drop_last=True))
 
     return train_loader, val_loader, restore_transform
