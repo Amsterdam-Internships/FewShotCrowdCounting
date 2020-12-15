@@ -7,9 +7,7 @@ import torch
 from torch import nn
 from torch.utils.data import DataLoader
 
-from dataloader.get_task import TaskGenerator
-from dataloader.test_dataloader import TestDataset
-from dataloader.train_dataloader import GetDataLoader
+from datasets.WE_MAML.task_generator import TaskGenerator
 from networks.backbone import CSRMetaNetwork
 from networks.base_network import BaseNetwork
 from networks.network_utils import *
@@ -37,7 +35,7 @@ class Trainer():
         self.meta_updates = cfg.MAX_EPOCH
         self.base_updates = cfg.BASE_UPDATES
 
-        self.get_loader = GetDataLoader()
+        self.my_dataloader = dataloader
         self.dataset = cfg.DATASET_FULL_NAME
         self.experiment = experiment
         self.save_models = './exp/{}/'.format(self.experiment)
@@ -66,13 +64,9 @@ class Trainer():
         self.optimizer = torch.optim.Adam(self.network.parameters(), lr=self.meta_lr)
         logging.info("Loaded model: {}".format(self.model_path))
 
-    def get_task(self, path, mode='train', num_instances=5, num_tasks=10):
-        return TaskGenerator(dataset=self.dataset, data_path=path, mode=mode, num_of_tasks=num_tasks,
-                             num_of_instances=num_instances)
-
     def meta_network_update(self, task, ls):
         logging.info("===> Updating meta network")
-        dataloader = self.get_loader.get_data(task, self.base_batch, mode='validation')
+        dataloader = self.my_dataloader(task, mode='validation')
         _input, _target = dataloader.__iter__().next()
 
         # perform a dummy forward forward to compute the gradients and replace the calculated gradients with the
@@ -118,12 +112,12 @@ class Trainer():
                 param.requires_grad = False
 
             test_optimizer = torch.optim.SGD(test_network.parameters(), lr=self.base_lr)
-            task = TaskGenerator(dataset=self.dataset, data_path=self.data_path, mode='test',
+            task = TaskGenerator(data_path=self.data_path, split='test',
                                  num_of_tasks=self.num_tasks, num_of_instances=self.num_instances)
 
             # train the test meta-network on the train images using the same number of training updates
-            train_loader = self.get_loader.get_data(task, self.base_batch, mode='train')
-            validation_loader = self.get_loader.get_data(task, self.base_batch, mode='test')
+            train_loader = self.my_dataloader(task, mode='train')
+            validation_loader = self.my_dataloader(task, mode='test')
 
             for idx, data in enumerate(train_loader):
                 _input, _target = data[0], data[1]
@@ -157,7 +151,7 @@ class Trainer():
         del test_network
         return mtr_loss, mtr_acc, mtr_mse, mval_acc, mval_mse
 
-    def forward(self):  # I like 'train' more, but oh well... C^3 probably has a reason to call it forward.
+    def forward(self):  # I like 'train' more, but oh well... C^3 probably has a reason to call it 'forward'.
 
         # train_loss, train_accuracy, validation_accuracy = [], [], []
         mtrain_loss, mtrain_accuracy, mtrain_mse, mvalidation_accuracy, mvalidation_mse = [], [], [], [], []
@@ -186,7 +180,7 @@ class Trainer():
                 logging.info("==> Training scene: {}".format(idx + 1))
                 print("==> Training scene: {}".format(idx + 1))
 
-                task = TaskGenerator(dataset=self.dataset, data_path=self.data_path,
+                task = TaskGenerator(data_path=self.data_path,
                                      num_of_tasks=self.num_tasks, num_of_instances=self.num_instances)
                 self.fast_network.copy_weights(self.network)
                 self.fast_network.to(device)
@@ -229,7 +223,9 @@ class Trainer():
                         target = target.float().unsqueeze(0).to(device)
                         output = test_network(_img)
 
-                        difference = output.sum() - target.sum()
+                        prd_cnt = output.sum() / cfg_data.LOG_PARA
+                        gt_cnt = target.sum() / cfg_data.LOG_PARA
+                        difference = prd_cnt - gt_cnt
                         _mae = torch.abs(difference)
                         _mse = difference ** 2
 
