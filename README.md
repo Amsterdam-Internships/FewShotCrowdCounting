@@ -27,22 +27,20 @@ There are the following folders in the structure:
 
 
 ## Installation
-
-Explain how to set up everything. 
-Let people know if there are weird dependencies - if so feel free to add links to guides and tutorials.
-
-A person should be able to clone this repo, follow your instructions blindly, and still end up with something *fully working*!
+This project was tested to work on Windows 10. The original C3Framework worked on Linux, though this adaptation is not tested yet.
 
 1) Clone this repository:
     ```bash
     git clone https://github.com/Amsterdam-Internships/InternshipAmsterdamGeneral
     ```
 
-2) Install all dependencies:
+2) Install all dependencies in requirements.txt
+
+2(alternative) Install the environment with conda. This is a complete export of the environment used to perform the experiments.
     ```bash
-    pip install -r requirements.txt
+    conda env create -f environment.yml
     ```
----
+
 
 
 ## Usage
