@@ -15,8 +15,8 @@ class CSRMetaNetwork(nn.Module):
         self.loss_function = loss_function
         self.frontend_feat = [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'M', 512, 512, 512]
         self.backend_feat = [512, 512, 512, 256, 128, 64]
-        self.frontend = prepare_network(self.frontend_feat)
-        self.backend = prepare_network(self.backend_feat, in_channels=512, dilation=True)
+        self.frontend = make_layers(self.frontend_feat)
+        self.backend = make_layers(self.backend_feat, in_channels=512, dilation=True)
         self.output_layer = nn.Conv2d(64, 1, kernel_size=1)
         self._initialize_weights()
         if pre_trained:
@@ -89,7 +89,7 @@ class CSRMetaNetwork(nn.Module):
                 if m_to.bias is not None:
                     m_to.bias.data = m_from.bias.data.clone()
 
-    def _init_weights(self):
+    def _init_weights(self):  # TODO: Is his even used? Maybe by torch or something?
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 nn.init.normal_(m.weight, std=0.01)
@@ -98,3 +98,22 @@ class CSRMetaNetwork(nn.Module):
             elif isinstance(m, nn.BatchNorm2d):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
+
+
+def make_layers(cfg, in_channels=3, batch_norm=False, dilation=False):
+    if dilation:
+        d_rate = 2
+    else:
+        d_rate = 1
+    layers = []
+    for layer_value in cfg:
+        if layer_value == 'M':
+            layers += [nn.MaxPool2d(kernel_size=2, stride=2)]
+        else:
+            conv2d = nn.Conv2d(in_channels, layer_value, kernel_size=3, padding=d_rate, dilation=d_rate)
+            if batch_norm:
+                layers += [conv2d, nn.BatchNorm2d(layer_value), nn.ReLU(inplace=True)]
+            else:
+                layers += [conv2d, nn.ReLU(inplace=True)]
+            in_channels = layer_value
+    return nn.Sequential(*layers)
