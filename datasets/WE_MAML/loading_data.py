@@ -6,7 +6,7 @@ from .setting import cfg_data
 from torchvision import transforms
 
 
-def loading_data(task, mode):
+def loading_data(task, mode='train'):
     mean_std = cfg_data.MEAN_STD
     log_para = cfg_data.LOG_PARA
 

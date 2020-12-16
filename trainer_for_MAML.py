@@ -165,13 +165,13 @@ class Trainer():
             logging.info("===> Training epoch: {}/{}".format(idx + 1, self.meta_updates))
 
             # evaluate the model on test data (tasks)
-            mtr_loss, mtr_acc, mtr_mse, vtr_acc, vtr_mse = self.test()
-
-            mtrain_loss.append(mtr_loss)
-            mtrain_accuracy.append(mtr_acc)
-            mtrain_mse.append(mtr_mse)
-            mvalidation_accuracy.append(vtr_acc)
-            mvalidation_mse.append(vtr_mse)
+            # mtr_loss, mtr_acc, mtr_mse, vtr_acc, vtr_mse = self.test()
+            #
+            # mtrain_loss.append(mtr_loss)
+            # mtrain_accuracy.append(mtr_acc)
+            # mtrain_mse.append(mtr_mse)
+            # mvalidation_accuracy.append(vtr_acc)
+            # mvalidation_mse.append(vtr_mse)
 
             meta_gradients = []
             tr_loss, tr_acc, tr_mse, val_acc, val_mse = 0.0, 0.0, 0.0, 0.0, 0.0

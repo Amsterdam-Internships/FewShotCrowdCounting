@@ -1,7 +1,9 @@
 import logging
 from collections import OrderedDict
 
-from dataloader.train_dataloader import GetDataLoader
+from datasets.WE_MAML.loading_data import loading_data
+from datasets.WE_MAML.setting import cfg_data
+
 from .backbone import CSRMetaNetwork
 from .network_utils import *
 import torch
@@ -19,7 +21,7 @@ class BaseNetwork(CSRMetaNetwork):
         self.base_batch = base_batch
         self.meta_batch = meta_batch
         self.num_of_channels = num_of_channels
-        self.get_loader = GetDataLoader()
+        self.my_dataloader = loading_data
 
         for param in self.frontend.parameters():
             param.requires_grad = False
@@ -38,8 +40,8 @@ class BaseNetwork(CSRMetaNetwork):
     def forward(self, task):
         gradients = None
 
-        train_loader = self.get_loader.get_data(task)
-        validation_loader = self.get_loader.get_data(task, mode='validation')
+        train_loader = self.my_dataloader(task)
+        validation_loader = self.my_dataloader(task, mode='validation')
 
         # testing the base network before training
         train_pre_loss, train_pre_accuracy, train_pre_mse = evaluate(self, train_loader, mode='training')
