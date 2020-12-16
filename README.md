@@ -33,6 +33,13 @@ This project was tested to work on Windows 10. The original C3Framework worked o
     ```bash
     git clone https://github.com/Amsterdam-Internships/InternshipAmsterdamGeneral
     ```
+    
+    
+    ```bash
+    git clone https://github.com/Amsterdam-Internships/InternshipAmsterdamGeneral
+    ```
+    
+    
 
 2) Install all dependencies in requirements.txt
 
