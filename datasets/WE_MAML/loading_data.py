@@ -6,10 +6,9 @@ from .setting import cfg_data
 from torchvision import transforms
 import os
 
-def loading_data(task, mode='train'):
+def loading_data(task, batch_size, mode='train'):
     mean_std = cfg_data.MEAN_STD
     log_para = cfg_data.LOG_PARA
-    batch_size = cfg_data.TRAIN_BATCH_SIZE
 
     img_transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize(*mean_std)])
 
@@ -40,7 +39,6 @@ def retrieve_test_images():
 def loading_test_data():
     mean_std = cfg_data.MEAN_STD
     log_para = cfg_data.LOG_PARA
-    batch_size = cfg_data.TEST_BATCH_SIZE
 
     img_transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize(*mean_std)])
     gt_transform = standard_transforms.Compose([own_transforms.LabelNormalize(log_para)])
@@ -48,6 +46,6 @@ def loading_test_data():
     images = retrieve_test_images()
 
     dataset = WEMAML(images, 'test', img_transform=img_transform, gt_transform=gt_transform)
-    dataloader = DataLoader(dataset, batch_size=batch_size, num_workers=8)
+    dataloader = DataLoader(dataset, batch_size=1, num_workers=8)  # Test batch size is 1
 
     return dataloader

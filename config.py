@@ -8,7 +8,7 @@ __C = edict()
 cfg = __C
 
 # ------------------------------TRAIN------------------------
-__C.SEED = 3035  # random seed,  for reporduction
+__C.SEED = 42  # random seed,  for reporduction
 __C.DATASET = 'WE_MAML'  # dataset selection: GCC, SHHA, SHHB, UCF50, UCFQNRF, WE, WE_MAML
 
 if __C.DATASET == 'UCF50':  # only for UCF50
@@ -29,11 +29,19 @@ __C.PRE_GCC_MODEL = ''  # path to model
 __C.GPU_ID = [0]  # sigle gpu: [0], [1] ...; multi gpus: [0,1]
 
 # learning rate settings
-__C.LR = 1e-5  # learning rate
+__C.META_LR = 0.001  # META_LR
+__C.BASE_LR = 0.001  # BASE_LR
 __C.LR_DECAY = 1  # decay rate
 __C.LR_DECAY_START = -1  # when training epoch is more than it, the learning rate will be begin to decay
 __C.NUM_EPOCH_LR_DECAY = 1  # decay frequency
-__C.MAX_EPOCH = 3000
+# __C.MAX_EPOCH = 3000
+__C.LR = str(__C.META_LR) + str(__C.BASE_LR)
+
+# Batch settings
+__C.TEST_BATCH_SIZE = 1  # imgs
+__C.META_BATCH = 5  # META_BATCHSIZE
+__C.BASE_BATCH = 1  # BASE_BATCHSIZE
+
 
 # print
 __C.PRINT_FREQ = 10
@@ -63,11 +71,7 @@ __C.VISIBLE_NUM_IMGS = 1  # must be 1 for training images with the different siz
 __C.RESUME = True
 __C.RESUME_PATH = "./exp/12-10_15-16_WE_CSRNet_1e-05/latest_state.pth"
 
-__C.META_BATCH = 5  # META_BATCHSIZE
-__C.META_LR = 0.001  # META_LR
-__C.BASE_BATCH = 1  # BASE_BATCHSIZE
-__C.BASE_LR = 0.001  # BASE_LR
-# __C.META_UPDATES = This is equal to the number of epochs
+__C.EPOCHS = 15  # Number of epochs
 __C.BASE_UPDATES = 10  # BASE_UPDATES
 __C.DATASET_FULL_NAME = "WE_C3_PP_FSL"
 

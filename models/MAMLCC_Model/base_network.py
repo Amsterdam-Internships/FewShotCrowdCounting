@@ -39,8 +39,8 @@ class BaseNetwork(CSRMetaNetwork):
     def forward(self, task):
         # gradients = None  # Why is this here?
 
-        train_loader = self.my_dataloader(task)
-        validation_loader = self.my_dataloader(task, mode='validation')
+        train_loader = self.my_dataloader(task, batch_size=1)
+        validation_loader = self.my_dataloader(task, batch_size=1, mode='validation')
 
         # testing the base network before training
         train_pre_loss, train_pre_accuracy, train_pre_mse = evaluate(self, train_loader, mode='training')

@@ -31,7 +31,7 @@ class Trainer():
         self.meta_lr = cfg.META_LR
         self.base_batch = cfg.BASE_BATCH
         self.base_lr = cfg.BASE_LR
-        self.meta_updates = cfg.MAX_EPOCH
+        self.meta_updates = cfg.EPOCHS
         self.base_updates = cfg.BASE_UPDATES
 
         self.my_dataloader = dataloader
@@ -65,7 +65,7 @@ class Trainer():
 
     def meta_network_update(self, task, ls):
         logging.info("===> Updating meta network")
-        dataloader = self.my_dataloader(task, mode='validation')
+        dataloader = self.my_dataloader(task, self.base_batch, mode='validation')
         _input, _target = dataloader.__iter__().next()
 
         # perform a dummy forward forward to compute the gradients and replace the calculated gradients with the
@@ -115,8 +115,8 @@ class Trainer():
                                  num_of_tasks=self.num_tasks, num_of_instances=self.num_instances)
 
             # train the test meta-network on the train images using the same number of training updates
-            train_loader = self.my_dataloader(task, mode='train')
-            validation_loader = self.my_dataloader(task, mode='test')
+            train_loader = self.my_dataloader(task, self.base_batch, mode='train')
+            validation_loader = self.my_dataloader(task, self.base_batch, mode='test')
 
             for idx, data in enumerate(train_loader):
                 _input, _target = data[0], data[1]
@@ -164,13 +164,13 @@ class Trainer():
             logging.info("===> Training epoch: {}/{}".format(idx + 1, self.meta_updates))
 
             # evaluate the model on test data (tasks)
-            # mtr_loss, mtr_acc, mtr_mse, vtr_acc, vtr_mse = self.test()
-            #
-            # mtrain_loss.append(mtr_loss)
-            # mtrain_accuracy.append(mtr_acc)
-            # mtrain_mse.append(mtr_mse)
-            # mvalidation_accuracy.append(vtr_acc)
-            # mvalidation_mse.append(vtr_mse)
+            mtr_loss, mtr_acc, mtr_mse, vtr_acc, vtr_mse = self.test()
+
+            mtrain_loss.append(mtr_loss)
+            mtrain_accuracy.append(mtr_acc)
+            mtrain_mse.append(mtr_mse)
+            mvalidation_accuracy.append(vtr_acc)
+            mvalidation_mse.append(vtr_mse)
 
             meta_gradients = []
             tr_loss, tr_acc, tr_mse, val_acc, val_mse = 0.0, 0.0, 0.0, 0.0, 0.0
