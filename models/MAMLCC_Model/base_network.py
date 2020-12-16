@@ -2,7 +2,6 @@ import logging
 from collections import OrderedDict
 
 from datasets.WE_MAML.loading_data import loading_data
-from datasets.WE_MAML.setting import cfg_data
 
 from .backbone import CSRMetaNetwork
 from .network_utils import *
@@ -38,7 +37,7 @@ class BaseNetwork(CSRMetaNetwork):
         return loss, output
 
     def forward(self, task):
-        gradients = None
+        # gradients = None  # Why is this here?
 
         train_loader = self.my_dataloader(task)
         validation_loader = self.my_dataloader(task, mode='validation')

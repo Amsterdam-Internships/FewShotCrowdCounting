@@ -1,17 +1,15 @@
 import logging
-import os
 import numpy as np
 
 from tensorboardX import SummaryWriter
 import torch
 from torch import nn
-from torch.utils.data import DataLoader
 
 from datasets.WE_MAML.task_generator import TaskGenerator
 from datasets.WE_MAML.loading_data import loading_test_data
-from networks.backbone import CSRMetaNetwork
-from networks.base_network import BaseNetwork
-from networks.network_utils import *
+from models.MAMLCC_Model.backbone import CSRMetaNetwork
+from models.MAMLCC_Model.base_network import BaseNetwork
+from models.MAMLCC_Model.network_utils import *
 
 from config import *
 
@@ -166,13 +164,13 @@ class Trainer():
             logging.info("===> Training epoch: {}/{}".format(idx + 1, self.meta_updates))
 
             # evaluate the model on test data (tasks)
-            mtr_loss, mtr_acc, mtr_mse, vtr_acc, vtr_mse = self.test()
-
-            mtrain_loss.append(mtr_loss)
-            mtrain_accuracy.append(mtr_acc)
-            mtrain_mse.append(mtr_mse)
-            mvalidation_accuracy.append(vtr_acc)
-            mvalidation_mse.append(vtr_mse)
+            # mtr_loss, mtr_acc, mtr_mse, vtr_acc, vtr_mse = self.test()
+            #
+            # mtrain_loss.append(mtr_loss)
+            # mtrain_accuracy.append(mtr_acc)
+            # mtrain_mse.append(mtr_mse)
+            # mvalidation_accuracy.append(vtr_acc)
+            # mvalidation_mse.append(vtr_mse)
 
             meta_gradients = []
             tr_loss, tr_acc, tr_mse, val_acc, val_mse = 0.0, 0.0, 0.0, 0.0, 0.0
