@@ -34,7 +34,7 @@ This project was tested to work on Windows 10. The original C3Framework worked o
     git clone https://github.com/Amsterdam-Internships/InternshipAmsterdamGeneral
     ```
     
-    
+2 (alternative) Install the environment with conda. This is a complete export of the environment used to perform the experiments:
     ```bash
     git clone https://github.com/Amsterdam-Internships/InternshipAmsterdamGeneral
     ```
