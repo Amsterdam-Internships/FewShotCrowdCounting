@@ -8,6 +8,7 @@ from torch import nn
 from torch.utils.data import DataLoader
 
 from datasets.WE_MAML.task_generator import TaskGenerator
+from datasets.WE_MAML.loading_data import loading_test_data
 from networks.backbone import CSRMetaNetwork
 from networks.base_network import BaseNetwork
 from networks.network_utils import *
@@ -165,13 +166,13 @@ class Trainer():
             logging.info("===> Training epoch: {}/{}".format(idx + 1, self.meta_updates))
 
             # evaluate the model on test data (tasks)
-            # mtr_loss, mtr_acc, mtr_mse, vtr_acc, vtr_mse = self.test()
-            #
-            # mtrain_loss.append(mtr_loss)
-            # mtrain_accuracy.append(mtr_acc)
-            # mtrain_mse.append(mtr_mse)
-            # mvalidation_accuracy.append(vtr_acc)
-            # mvalidation_mse.append(vtr_mse)
+            mtr_loss, mtr_acc, mtr_mse, vtr_acc, vtr_mse = self.test()
+
+            mtrain_loss.append(mtr_loss)
+            mtrain_accuracy.append(mtr_acc)
+            mtrain_mse.append(mtr_mse)
+            mvalidation_accuracy.append(vtr_acc)
+            mvalidation_mse.append(vtr_mse)
 
             meta_gradients = []
             tr_loss, tr_acc, tr_mse, val_acc, val_mse = 0.0, 0.0, 0.0, 0.0, 0.0
@@ -209,7 +210,7 @@ class Trainer():
 
                 print("==> Evaluating the model at: {}".format(epoch + 1))
                 logging.info("==> Evaluating the model at: {}".format(epoch + 1))
-                test_dataloader = DataLoader(TestDataset(self.dataset), shuffle=False)
+                test_dataloader = loading_test_data()
                 test_network = CSRMetaNetwork(self.loss_function, pre_trained=False)
                 test_network.copy_weights(self.network)
 

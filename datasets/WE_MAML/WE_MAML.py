@@ -2,8 +2,19 @@ import numpy as np
 from torch.utils import data
 from PIL import Image, ImageOps
 import random
-import pandas as pd
 import cv2
+import os
+from .setting import cfg_data
+from torchvision import transforms
+
+
+def read_image_and_gt(img_path):
+    gt_path = img_path.replace('.jpg', '.csv').replace('frames', 'csvs')
+
+    img = Image.open(img_path).convert('RGB')
+    target = np.loadtxt(gt_path, delimiter=',')
+
+    return img, target
 
 
 class WEMAML(data.Dataset):
@@ -16,7 +27,7 @@ class WEMAML(data.Dataset):
 
     def __getitem__(self, index):
         img_path = self.data_files[index]
-        img, target = self.read_image_and_gt(img_path)
+        img, target = read_image_and_gt(img_path)
 
         if self.mode == 'train':
             if random.random() > 0.8:
@@ -33,14 +44,6 @@ class WEMAML(data.Dataset):
 
         if self.gt_transform is not None:
             target = self.gt_transform(target)
-
-        return img, target
-
-    def read_image_and_gt(self, img_path):
-        gt_path = img_path.replace('.jpg', '.csv').replace('frames', 'csvs')
-
-        img = Image.open(img_path).convert('RGB')
-        target = np.loadtxt(gt_path, delimiter=',')
 
         return img, target
 
