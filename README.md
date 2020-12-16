@@ -47,7 +47,8 @@ This project was tested to work on Windows 10. The original C3Framework worked o
     ```bash
     git clone https://github.com/Amsterdam-Internships/InternshipAmsterdamGeneral
     ```
-
+    
+    
 
 
 
