@@ -37,6 +37,7 @@ This project was tested to work on Windows 10. The original C3Framework worked o
 2) Install all dependencies in requirements.txt
 
 2 (alternative) Install the environment with conda. This is a complete export of the environment used to perform the experiments:
+
     ```
     git clone https://github.com/Amsterdam-Internships/InternshipAmsterdamGeneral
     ```
