@@ -7,10 +7,8 @@ class TaskGenerator(object):
     Class to generate tasks
     """
 
-    def __init__(self, dataset, data_path, num_of_tasks=10, num_of_instances=5, mode='train'):
-        self.dataset = dataset
-        self.mode = mode
-        self.data_path = os.path.join(data_path, self.dataset, self.mode, 'frames')
+    def __init__(self, data_path, num_of_tasks=10, num_of_instances=5, split='train'):
+        self.data_path = os.path.join(data_path, split, 'frames')
         self.num_of_instances = num_of_instances
         self.num_of_tasks = num_of_tasks
         self.tasks = [os.path.join(self.data_path, task) for task in os.listdir(self.data_path)]

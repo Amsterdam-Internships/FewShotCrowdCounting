@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+from datasets.WE_MAML.setting import cfg_data
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
@@ -21,7 +22,9 @@ def evaluate(network, dataloader, mode='validation', weights=None):
     mae, mse, loss = 0.0, 0.0, 0.0
     for idx, (_in, _tar) in enumerate(dataloader):
         result = forward_pass(network, _in, _tar, mode, weights)
-        difference = result[0].data.sum() - _tar.sum().type(torch.FloatTensor).cuda()
+        pred_cnt = result[0].data.sum() / cfg_data.LOG_PARA
+        gt_cnt = _tar.sum().type(torch.FloatTensor).cuda() / cfg_data.LOG_PARA
+        difference = pred_cnt - gt_cnt
         _mae = torch.abs(difference)
         _mse = difference ** 2
 

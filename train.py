@@ -44,20 +44,24 @@ if __name__ == '__main__':  # TODO: Added because windows: https://stackoverflow
     elif data_mode is 'UCSD':
         from datasets.UCSD.loading_data import loading_data
         from datasets.UCSD.setting import cfg_data
+    elif data_mode == 'WE_MAML':
+        from datasets.WE_MAML.loading_data import loading_data
+        from datasets.WE_MAML.setting import cfg_data
 
     # ------------Prepare Trainer------------
     net = cfg.NET
     training_mode = cfg.TRAINING_MODE
-    if training_mode == 'MAML':
+    if data_mode == 'WE_MAML':
         from trainer_for_MAML import Trainer
-    elif net in ['MCNN', 'AlexNet', 'VGG', 'VGG_DECODER', 'Res50', 'Res101', 'CSRNet', 'Res101_SFCN']:
-        from trainer import Trainer
-    elif net in ['SANet']:
-        from trainer_for_M2TCC import Trainer  # double losses but signle output
-    elif net in ['CMTL']:
-        from trainer_for_CMTL import Trainer  # double losses and double outputs
-    elif net in ['PCCNet']:
-        from trainer_for_M3T3OCC import Trainer
+    else:
+        if net in ['MCNN', 'AlexNet', 'VGG', 'VGG_DECODER', 'Res50', 'Res101', 'CSRNet', 'Res101_SFCN']:
+            from trainer import Trainer
+        elif net in ['SANet']:
+            from trainer_for_M2TCC import Trainer  # double losses but signle output
+        elif net in ['CMTL']:
+            from trainer_for_CMTL import Trainer  # double losses and double outputs
+        elif net in ['PCCNet']:
+            from trainer_for_M3T3OCC import Trainer
 
     # ------------Start Training------------
     pwd = os.path.split(os.path.realpath(__file__))[0]
