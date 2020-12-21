@@ -53,8 +53,7 @@ class Trainer():
                                         self.meta_batch)
         if cfg.RESUME:
             self.model_path = cfg.RESUME_PATH
-            self.checkpoint = torch.load(self.model_path)
-            my_net = self.checkpoint['net']
+            my_net = torch.load(self.model_path)
             for key in list(my_net.keys()):  # Added to be compatible with C3Framework
                 new_key = key.replace('CCN.', '')
                 my_net[new_key] = my_net.pop(key)
@@ -261,6 +260,8 @@ class Trainer():
             self.writer.add_scalar('(meta-test) train MSE', mtr_mse, epoch + 1)
             self.writer.add_scalar('(meta-test) test MAE', vtr_acc, epoch + 1)
             self.writer.add_scalar('(meta-test) test MSE', vtr_mse, epoch + 1)
+
+            torch.save(self.network.state_dict(), '{}/latest_state.pt'.format(self.save_models))
 
         for name, param in self.network.named_parameters():
             if 'bn' not in name:

@@ -47,12 +47,17 @@ if __name__ == '__main__':  # TODO: Added because windows: https://stackoverflow
     elif data_mode == 'WE_MAML':
         from datasets.WE_MAML.loading_data import loading_data
         from datasets.WE_MAML.setting import cfg_data
+    elif data_mode == 'WE_AC':
+        from datasets.WE_AC.loading_data import loading_data
+        from datasets.WE_AC.setting import cfg_data
 
     # ------------Prepare Trainer------------
     net = cfg.NET
     training_mode = cfg.TRAINING_MODE
     if data_mode == 'WE_MAML':
         from trainer_for_MAML import Trainer
+    elif net in ['ACCSRNet']:
+        from trainer_for_AdaCrowd import Trainer
     else:
         if net in ['MCNN', 'AlexNet', 'VGG', 'VGG_DECODER', 'Res50', 'Res101', 'CSRNet', 'Res101_SFCN']:
             from trainer import Trainer
