@@ -28,7 +28,7 @@ def loading_data():
         standard_transforms.ToPILImage()
     ])
 
-    train_set = WEAC(cfg_data.DATA_PATH + '/test/', n_unlabeled=cfg_data.N_UNLABELED, n_labeled=cfg_data.N_LABELED,
+    train_set = WEAC(cfg_data.DATA_PATH + '/train/', n_unlabeled=cfg_data.N_UNLABELED, n_labeled=cfg_data.N_LABELED,
                      main_transform=train_main_transform, img_transform=img_transform, gt_transform=gt_transform)
 
     # Drop last should not be needed since this is already taken care of by WEAC
