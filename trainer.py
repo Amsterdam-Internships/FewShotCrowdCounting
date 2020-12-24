@@ -81,6 +81,7 @@ class Trainer():
                 print('val time: {:.2f}s'.format(self.timer['val time'].diff))
 
     def train(self):  # training for all datasets
+        
         self.net.train()
         for i, data in enumerate(self.train_loader, 0):
             self.timer['iter time'].tic()
