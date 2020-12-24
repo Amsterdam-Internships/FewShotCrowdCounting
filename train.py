@@ -4,22 +4,9 @@ import torch
 
 from config import cfg
 
-if __name__ == '__main__':  # TODO: Added because windows: https://stackoverflow.com/questions/18204782/runtimeerror-on-windows-trying-python-multiprocessing
-    # ------------prepare enviroment------------
-    seed = cfg.SEED
-    if seed is not None:
-        np.random.seed(seed)
-        torch.manual_seed(seed)
-        torch.cuda.manual_seed(seed)
 
-    gpus = cfg.GPU_ID
-    if len(gpus) == 1:
-        torch.cuda.set_device(gpus[0])
-
-    torch.backends.cudnn.benchmark = True
-
-    # ------------prepare data loader------------
-    data_mode = cfg.DATASET
+def _get_dataloader(data_mode):
+    loading_data, cfg_data = None, None  # Suppress warning
     if data_mode == 'SHHA':
         from datasets.SHHA.loading_data import loading_data
         from datasets.SHHA.setting import cfg_data
@@ -50,25 +37,71 @@ if __name__ == '__main__':  # TODO: Added because windows: https://stackoverflow
     elif data_mode == 'WE_AC':
         from datasets.WE_AC.loading_data import loading_data
         from datasets.WE_AC.setting import cfg_data
-
-    # ------------Prepare Trainer------------
-    net = cfg.NET
-    training_mode = cfg.TRAINING_MODE
-    if data_mode == 'WE_MAML':
-        from trainer_for_MAML import Trainer
-    elif net in ['ACCSRNet']:
-        from trainer_for_AdaCrowd import Trainer
     else:
-        if net in ['MCNN', 'AlexNet', 'VGG', 'VGG_DECODER', 'Res50', 'Res101', 'CSRNet', 'Res101_SFCN']:
-            from trainer import Trainer
-        elif net in ['SANet']:
-            from trainer_for_M2TCC import Trainer  # double losses but signle output
-        elif net in ['CMTL']:
-            from trainer_for_CMTL import Trainer  # double losses and double outputs
-        elif net in ['PCCNet']:
-            from trainer_for_M3T3OCC import Trainer
+        print(f"data mode {data_mode} not recognised!")
+        exit(1)
+
+    return loading_data, cfg_data
+
+
+def _get_trainer(training_mode):
+    Trainer = None  # Suppress warning
+    if training_mode == 'Trainer':
+        from trainers.trainer import Trainer
+    elif training_mode == 'WE_MAML_trainer':
+        from trainers.trainer_for_MAML import Trainer
+    elif training_mode == 'AC_trainer':
+        from trainers.trainer_for_AdaCrowd import Trainer
+    elif training_mode == 'SaNet_Trainer':
+        from trainers.trainer_for_M2TCC import Trainer  # double losses but signle output
+    elif training_mode == 'CMTL_Trainer':
+        from trainers.trainer_for_CMTL import Trainer  # double losses and double outputs
+    else:
+        print(f'Trainer {training_mode} not recognised!')
+        exit(1)
+
+    return Trainer
+
+
+def _get_network(network):
+    net = None
+    if network == 'CSRNet':
+        from models.SCC_Model.CSRNet import CSRNet as net
+    elif network == 'ACCSRNet':
+        from models.SCC_Model.ACCSRNet import ACCSRNet as net
+    elif network == 'MAML_CSRNet':
+        from models import MAMLCC_Model as net  # Yeah, cheeky strategy, but it works
+    elif network == 'DSNet':
+        pass
+    else:
+        print(f'Network {network} not recognised!')
+        exit(1)
+    return net
+
+
+def main():
+    # ------------prepare enviroment------------
+    seed = cfg.SEED
+    if seed is not None:
+        np.random.seed(seed)
+        torch.manual_seed(seed)
+        torch.cuda.manual_seed(seed)
+
+    gpus = cfg.GPU_ID
+    if len(gpus) == 1:
+        torch.cuda.set_device(gpus[0])
+
+    torch.backends.cudnn.benchmark = True
+
+    data = _get_dataloader(cfg.DATASET)
+    Trainer = _get_trainer(cfg.TRAINER)
+    network = _get_network(cfg.NETWORK)
 
     # ------------Start Training------------
     pwd = os.path.split(os.path.realpath(__file__))[0]
-    cc_trainer = Trainer(loading_data, cfg_data, pwd)
+    cc_trainer = Trainer(data, network, cfg, pwd)
     cc_trainer.forward()
+
+
+if __name__ == '__main__':  # TODO: Added because windows: https://stackoverflow.com/questions/18204782/runtimeerror-on-windows-trying-python-multiprocessing
+    main()
