@@ -14,13 +14,19 @@ cfg = __C
 __C.SEED = 42  # random seed,  for reproduction
 
 # DATASET INFO
-__C.DATASET = 'WE_AC'
+__C.DATASET = 'WE'
 
 # Model info
-__C.NET = 'ACCSRNet'
+__C.MODEL_NAME = 'CSRNet'
 
 # Trainer info
 __C.TRAINER = 'Trainer'
+
+# Which crowd counter to use (models.XYZ)
+__C.CROWD_COUNTER = 'CC'
+
+# Loss functions can be more than one depending on which crowdcounter you use
+__C.LOSS_FUNCS = ['MSELoss']
 
 # learning rate settings
 __C.LR = 1e-5
@@ -39,7 +45,7 @@ now = time.strftime("%m-%d_%H-%M", time.localtime())
 __C.EXP_PATH = './exp'
 __C.EXP_NAME = now \
                + '_' + __C.DATASET \
-               + '_' + __C.NET \
+               + '_' + __C.MODEL_NAME \
                + '_' + str(__C.LR)
 
 
@@ -54,3 +60,9 @@ __C.VISIBLE_NUM_IMGS = 1  # must be 1 for training images with the different siz
 
 __C.RESUME = False
 # __C.RESUME_PATH = "./exp/12-10_15-16_WE_CSRNet_1e-05/all_ep_16_mae_14.2_mse_0.0.pth"
+
+
+# ========================================================================================== #
+# ===================================      Other      ====================================== #
+# ========================================================================================== #
+__C.GPU_ID = [0]

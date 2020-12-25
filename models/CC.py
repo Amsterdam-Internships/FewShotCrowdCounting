@@ -19,7 +19,7 @@ class CrowdCounter(nn.Module):
             print(f"One or more of these loss functions are not supported: {loss_funcs}")
 
         if 'MSELoss' in loss_funcs:
-            self.mse_loss_fnc = nn.MSELoss().cuda()
+            self.loss_mse_fn = nn.MSELoss().cuda()
 
     @property
     def loss(self):
@@ -32,7 +32,7 @@ class CrowdCounter(nn.Module):
 
     def build_loss(self, density_map, gt_data):
         loss_mse = None
-        if self.mse_loss_fnc:
+        if self.loss_mse_fn:
             loss_mse = self.loss_mse_fn(density_map, gt_data)
 
         if not loss_mse:

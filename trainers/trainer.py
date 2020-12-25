@@ -12,8 +12,7 @@ import time
 
 
 class Trainer():
-    def __init__(self, dataloader, network, cfg, cfg_data, pwd):
-
+    def __init__(self, dataloader, network, CrowdCounter, cfg, cfg_data, pwd):
         self.cfg_data = cfg_data
 
         self.data_mode = cfg.DATASET
@@ -21,9 +20,12 @@ class Trainer():
         self.exp_path = cfg.EXP_PATH
         self.pwd = pwd
 
-        self.net_name = cfg.NETWORK
-        self.net = network().cuda()
-        self.optimizer = optim.Adam(self.net.CCN.parameters(), lr=cfg.LR, weight_decay=1e-4)
+        self.net_name = cfg.MODEL_NAME
+        network = network()
+        print(network)
+        self.cc_net = CrowdCounter(network, cfg.GPU_ID, cfg.LOSS_FUNCS, cfg=cfg)
+
+        self.optimizer = optim.Adam(self.cc_net.CCN.parameters(), lr=cfg.LR, weight_decay=1e-4)
         # self.optimizer = optim.SGD(self.net.parameters(), cfg.LR, momentum=0.95,weight_decay=5e-4)
         self.scheduler = StepLR(self.optimizer, step_size=cfg.NUM_EPOCH_LR_DECAY, gamma=cfg.LR_DECAY)
 
@@ -37,7 +39,7 @@ class Trainer():
 
         if cfg.RESUME:
             latest_state = torch.load(cfg.RESUME_PATH)
-            self.net.load_state_dict(latest_state['net'])
+            self.cc_net.load_state_dict(latest_state['net'])
             self.optimizer.load_state_dict(latest_state['optimizer'])
             self.scheduler.load_state_dict(latest_state['scheduler'])
             self.epoch = latest_state['epoch'] + 1
@@ -80,18 +82,17 @@ class Trainer():
 
     def train(self):  # training for all datasets
 
-        self.net.train()
+        self.cc_net.train()
         for i, data in enumerate(self.train_loader, 0):
             self.timer['iter time'].tic()
-            if i % 100 == 0:
-                print(f"{data[0].size()}, {data[1].size()}")
+
             img, gt_map = data
             img = Variable(img).cuda()
             gt_map = Variable(gt_map).cuda()
 
             self.optimizer.zero_grad()
-            pred_map = self.net(img, gt_map)
-            loss = self.net.loss
+            pred_map = self.cc_net(img, gt_map)
+            loss = self.cc_net.loss
             loss.backward()
             self.optimizer.step()
 
@@ -107,7 +108,7 @@ class Trainer():
 
     def validate_V1(self):  # validate_V1 for SHHA, SHHB, UCF-QNRF, UCF50
 
-        self.net.eval()
+        self.cc_net.eval()
 
         losses = AverageMeter()
         maes = AverageMeter()
@@ -120,7 +121,7 @@ class Trainer():
                 img = Variable(img).cuda()
                 gt_map = Variable(gt_map).cuda()
 
-                pred_map = self.net.forward(img, gt_map)
+                pred_map = self.cc_net.forward(img, gt_map)
 
                 pred_map = pred_map.data.cpu().numpy()
                 gt_map = gt_map.data.cpu().numpy()
@@ -129,7 +130,7 @@ class Trainer():
                     pred_cnt = np.sum(pred_map[i_img]) / self.cfg_data.LOG_PARA
                     gt_count = np.sum(gt_map[i_img]) / self.cfg_data.LOG_PARA
 
-                    losses.update(self.net.loss.item())
+                    losses.update(self.cc_net.loss.item())
                     maes.update(abs(gt_count - pred_cnt))
                     mses.update((gt_count - pred_cnt) * (gt_count - pred_cnt))
                 if vi == 0:
@@ -143,14 +144,14 @@ class Trainer():
         self.writer.add_scalar('mae', mae, self.epoch + 1)
         self.writer.add_scalar('mse', mse, self.epoch + 1)
 
-        self.train_record = update_model(self.net, self.optimizer, self.scheduler, self.epoch, self.i_tb, self.exp_path,
+        self.train_record = update_model(self.cc_net, self.optimizer, self.scheduler, self.epoch, self.i_tb, self.exp_path,
                                          self.exp_name, \
                                          [mae, mse, loss], self.train_record, self.log_txt)
         print_summary(self.exp_name, [mae, mse, loss], self.train_record)
 
     def validate_V2(self):  # validate_V2 for WE
 
-        self.net.eval()
+        self.cc_net.eval()
 
         losses = AverageCategoryMeter(5)
         maes = AverageCategoryMeter(5)
@@ -171,7 +172,7 @@ class Trainer():
                     img = Variable(img).cuda()
                     gt_map = Variable(gt_map).cuda()
 
-                    pred_map = self.net.forward(img, gt_map)
+                    pred_map = self.cc_net.forward(img, gt_map)
 
                     pred_map = pred_map.data.cpu().numpy()
                     gt_map = gt_map.data.cpu().numpy()
@@ -180,7 +181,7 @@ class Trainer():
                         pred_cnt = np.sum(pred_map[i_img]) / self.cfg_data.LOG_PARA
                         gt_count = np.sum(gt_map[i_img]) / self.cfg_data.LOG_PARA
 
-                        losses.update(self.net.loss.item(), i_sub)
+                        losses.update(self.cc_net.loss.item(), i_sub)
                         maes.update(abs(gt_count - pred_cnt), i_sub)
                     if vi == 0:
                         vis_results(self.exp_name, self.epoch, self.writer, self.restore_transform, img, pred_map,
@@ -197,14 +198,14 @@ class Trainer():
         self.writer.add_scalar('mae_s4', maes.avg[3], self.epoch + 1)
         self.writer.add_scalar('mae_s5', maes.avg[4], self.epoch + 1)
 
-        self.train_record = update_model(self.net, self.optimizer, self.scheduler, self.epoch, self.i_tb, self.exp_path,
+        self.train_record = update_model(self.cc_net, self.optimizer, self.scheduler, self.epoch, self.i_tb, self.exp_path,
                                          self.exp_name, \
                                          [mae, 0, loss], self.train_record, self.log_txt)
         print_WE_summary(self.log_txt, self.epoch, [mae, 0, loss], self.train_record, maes)
 
     def validate_V3(self):  # validate_V3 for GCC
 
-        self.net.eval()
+        self.cc_net.eval()
 
         losses = AverageMeter()
         maes = AverageMeter()
@@ -220,7 +221,7 @@ class Trainer():
                 img = Variable(img).cuda()
                 gt_map = Variable(gt_map).cuda()
 
-                pred_map = self.net.forward(img, gt_map)
+                pred_map = self.cc_net.forward(img, gt_map)
 
                 pred_map = pred_map.data.cpu().numpy()
                 gt_map = gt_map.data.cpu().numpy()
@@ -232,7 +233,7 @@ class Trainer():
                     s_mae = abs(gt_count - pred_cnt)
                     s_mse = (gt_count - pred_cnt) * (gt_count - pred_cnt)
 
-                    losses.update(self.net.loss.item())
+                    losses.update(self.cc_net.loss.item())
                     maes.update(s_mae)
                     mses.update(s_mse)
                     attributes_pt = attributes_pt.squeeze()
@@ -254,7 +255,7 @@ class Trainer():
         self.writer.add_scalar('mae', mae, self.epoch + 1)
         self.writer.add_scalar('mse', mse, self.epoch + 1)
 
-        self.train_record = update_model(self.net, self.optimizer, self.scheduler, self.epoch, self.i_tb, self.exp_path,
+        self.train_record = update_model(self.cc_net, self.optimizer, self.scheduler, self.epoch, self.i_tb, self.exp_path,
                                          self.exp_name, \
                                          [mae, mse, loss], self.train_record, self.log_txt)
 

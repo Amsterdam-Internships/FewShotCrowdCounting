@@ -90,23 +90,23 @@ def _get_network(model_name):
     return net
 
 
-def _init_crowdcounter(cc_name, net, loss_func):
-    crowdCounter = None
+def _get_crowdcounter(cc_name):
+    CrowdCounter = None
     if cc_name == 'CC':
         from models.CC import CrowdCounter
-        crowdCounter = CrowdCounter()
 
-
-    elif network == 'ACCSRNet':
-        from models.SCC_Model.ACCSRNet import ACCSRNet as net
-    elif network == 'MAML_CSRNet':
-        from models import MAMLCC_Model as net  # Yeah, cheeky strategy, but it works
-    elif network == 'DSNet':
-        pass
-    else:
-        print(f'Network {network} not recognised!')
-        exit(1)
     return CrowdCounter
+
+    # elif network == 'ACCSRNet':
+    #     from models.SCC_Model.ACCSRNet import ACCSRNet as net
+    # elif network == 'MAML_CSRNet':
+    #     from models import MAMLCC_Model as net  # Yeah, cheeky strategy, but it works
+    # elif network == 'DSNet':
+    #     pass
+    # else:
+    #     print(f'Network {network} not recognised!')
+    #     exit(1)
+
 
 
 def main():
@@ -127,11 +127,11 @@ def main():
     dataloader, cfg_data = _get_dataloader(cfg.DATASET)
     net = _get_network(cfg.MODEL_NAME)
     Trainer = _get_trainer(cfg.TRAINER)
-    crowdCounter = _init_crowdcounter(cfg.CROWD_COUNTER, net, gpus)
+    crowdCounter = _get_crowdcounter(cfg.CROWD_COUNTER)
 
     # ------------Start Training------------
     pwd = os.path.split(os.path.realpath(__file__))[0]
-    cc_trainer = Trainer(dataloader, crowdCounter, cfg, cfg_data, pwd)
+    cc_trainer = Trainer(dataloader, net, crowdCounter, cfg, cfg_data, pwd)
     cc_trainer.forward()
 
 
