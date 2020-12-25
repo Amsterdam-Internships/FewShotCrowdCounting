@@ -63,10 +63,40 @@ def _get_trainer(training_mode):
     return Trainer
 
 
-def _get_network(network):
+def _get_network(model_name):
     net = None
-    if network == 'CSRNet':
+    if model_name == 'AlexNet':
+        from models.SCC_Model.AlexNet import AlexNet as net
+    elif model_name == 'VGG':
+        from models.SCC_Model.VGG import VGG as net
+    elif model_name == 'VGG_DECODER':
+        from models.SCC_Model.VGG_decoder import VGG_decoder as net
+    elif model_name == 'MCNN':
+        from models.SCC_Model.MCNN import MCNN as net
+    elif model_name == 'CSRNet':
         from models.SCC_Model.CSRNet import CSRNet as net
+    elif model_name == 'Res50':
+        from models.SCC_Model.Res50 import Res50 as net
+    elif model_name == 'Res101':
+        from models.SCC_Model.Res101 import Res101 as net
+    elif model_name == 'Res101_SFCN':
+        from models.SCC_Model.Res101_SFCN import Res101_SFCN as net
+    elif model_name == 'ACCSRNet':
+        from models.SCC_Model.ACCSRNet import ACCSRNet as net
+    else:
+        print(f'model name {model_name} not recognised.')
+        exit(1)
+
+    return net
+
+
+def _init_crowdcounter(cc_name, net, loss_func):
+    crowdCounter = None
+    if cc_name == 'CC':
+        from models.CC import CrowdCounter
+        crowdCounter = CrowdCounter()
+
+
     elif network == 'ACCSRNet':
         from models.SCC_Model.ACCSRNet import ACCSRNet as net
     elif network == 'MAML_CSRNet':
@@ -76,7 +106,7 @@ def _get_network(network):
     else:
         print(f'Network {network} not recognised!')
         exit(1)
-    return net
+    return CrowdCounter
 
 
 def main():
@@ -93,15 +123,19 @@ def main():
 
     torch.backends.cudnn.benchmark = True
 
-    data = _get_dataloader(cfg.DATASET)
+    # ------------get training components-----------
+    dataloader, cfg_data = _get_dataloader(cfg.DATASET)
+    net = _get_network(cfg.MODEL_NAME)
     Trainer = _get_trainer(cfg.TRAINER)
-    network = _get_network(cfg.NETWORK)
+    crowdCounter = _init_crowdcounter(cfg.CROWD_COUNTER, net, gpus)
 
     # ------------Start Training------------
     pwd = os.path.split(os.path.realpath(__file__))[0]
-    cc_trainer = Trainer(data, network, cfg, pwd)
+    cc_trainer = Trainer(dataloader, crowdCounter, cfg, cfg_data, pwd)
     cc_trainer.forward()
 
 
-if __name__ == '__main__':  # TODO: Added because windows: https://stackoverflow.com/questions/18204782/runtimeerror-on-windows-trying-python-multiprocessing
+# Added because windows:
+# https://stackoverflow.com/questions/18204782/runtimeerror-on-windows-trying-python-multiprocessing
+if __name__ == '__main__':
     main()

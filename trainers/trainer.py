@@ -6,14 +6,13 @@ from torch.autograd import Variable
 from torch.optim.lr_scheduler import StepLR
 
 from models.CC import CrowdCounter
-from config import cfg
 from misc.utils import *
 import pdb
 import time
 
 
 class Trainer():
-    def __init__(self, dataloader, cfg_data, pwd):
+    def __init__(self, dataloader, network, cfg, cfg_data, pwd):
 
         self.cfg_data = cfg_data
 
@@ -22,8 +21,8 @@ class Trainer():
         self.exp_path = cfg.EXP_PATH
         self.pwd = pwd
 
-        self.net_name = cfg.NET
-        self.net = CrowdCounter(cfg.GPU_ID, self.net_name).cuda()
+        self.net_name = cfg.NETWORK
+        self.net = network().cuda()
         self.optimizer = optim.Adam(self.net.CCN.parameters(), lr=cfg.LR, weight_decay=1e-4)
         # self.optimizer = optim.SGD(self.net.parameters(), cfg.LR, momentum=0.95,weight_decay=5e-4)
         self.scheduler = StepLR(self.optimizer, step_size=cfg.NUM_EPOCH_LR_DECAY, gamma=cfg.LR_DECAY)
@@ -33,9 +32,6 @@ class Trainer():
 
         self.epoch = 0
         self.i_tb = 0
-
-        if cfg.PRE_GCC:
-            self.net.load_state_dict(torch.load(cfg.PRE_GCC_MODEL))
 
         self.train_loader, self.val_loader, self.restore_transform = dataloader()
 
@@ -57,8 +53,6 @@ class Trainer():
         # self.validate_V3()
         for epoch in range(self.epoch, cfg.MAX_EPOCH):
             self.epoch = epoch
-            if epoch > cfg.LR_DECAY_START:
-                self.scheduler.step()
 
             # training    
             self.timer['train time'].tic()
@@ -79,6 +73,10 @@ class Trainer():
                     self.validate_V3()
                 self.timer['val time'].toc(average=False)
                 print('val time: {:.2f}s'.format(self.timer['val time'].diff))
+
+            if epoch > cfg.LR_DECAY_START:
+                self.scheduler.step()
+
 
     def train(self):  # training for all datasets
 
