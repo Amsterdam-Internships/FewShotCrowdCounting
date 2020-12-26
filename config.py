@@ -17,7 +17,7 @@ __C.SEED = 42  # random seed,  for reproduction
 __C.DATASET = 'WE'
 
 # Model info
-__C.MODEL_NAME = 'CSRNet'
+__C.MODEL_NAME = 'DSNet'
 
 # Trainer info
 __C.TRAINER = 'Trainer'

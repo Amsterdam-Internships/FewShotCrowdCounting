@@ -21,6 +21,7 @@ class CrowdCounter(nn.Module):
         if 'MSELoss' in loss_funcs:
             self.loss_mse_fn = nn.MSELoss().cuda()
 
+
     @property
     def loss(self):
         return self.loss_mse
