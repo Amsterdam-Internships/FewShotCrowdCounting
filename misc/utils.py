@@ -135,14 +135,14 @@ def vis_results(exp_name, epoch, writer, restore, img, pred_map, gt_map):
 
         pil_output = torch.from_numpy(tensor[1]/(tensor[2].max()+1e-10)).repeat(3,1,1)
         pil_label = torch.from_numpy(tensor[2]/(tensor[2].max()+1e-10)).repeat(3,1,1)
-        if cfg.NET == 'CSRNet':  # TODO: Since images past through network are not same size, we need to adjust gt and original as well
+        if cfg.MODEL_NAME == 'CSRNet' or cfg.MODEL_NAME == 'DSNet':  # TODO: Since images past through network are not same size, we need to adjust gt and original as well
             pil_input = pil_input.convert('RGB')
             w, h = pil_input.size
             new_w = (w // 8) * 8
             new_h = (h // 8) * 8
             pil_input = pil_input.resize((new_w, new_h))
             x.extend([pil_to_tensor(pil_input), pil_label, pil_output])
-        elif cfg.NET == 'MCNN':
+        elif cfg.MODEL_NAME == 'MCNN':
             pil_input = pil_input.convert('RGB')
             w, h = pil_input.size
             new_w = (w // 4) * 4
