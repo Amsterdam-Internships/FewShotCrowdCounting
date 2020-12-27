@@ -30,7 +30,7 @@ __C.LOSS_FUNCS = ['MSELoss', 'LCLoss']
 __C.LC_FAC = 100
 
 # learning rate settings
-__C.LR = 1e-5
+__C.LR = 5e-6
 
 __C.LR_DECAY = 1  # decay rate
 __C.LR_DECAY_START = -1  # when training epoch is more than it, the learning rate will be begin to decay
