@@ -39,7 +39,7 @@ __C.MAX_EPOCH = 3000
 
 
 # print
-__C.PRINT_FREQ = 10
+__C.PRINT_FREQ = 100
 
 now = time.strftime("%m-%d_%H-%M", time.localtime())
 
