@@ -13,6 +13,9 @@ def _get_dataloader(data_mode):
     elif data_mode == 'SHHB':
         from datasets.SHHB.loading_data import loading_data
         from datasets.SHHB.setting import cfg_data
+    elif data_mode == 'SHHB2':
+        from datasets.SHHB2.loading_data import loading_data
+        from datasets.SHHB2.setting import cfg_data
     elif data_mode == 'QNRF':
         from datasets.QNRF.loading_data import loading_data
         from datasets.QNRF.setting import cfg_data

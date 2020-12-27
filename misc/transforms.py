@@ -4,6 +4,7 @@ import numpy as np
 from PIL import Image, ImageOps, ImageFilter
 from config import cfg
 import torch
+from skimage import exposure, img_as_float
 
 
 # ===============================img tranforms============================
@@ -36,6 +37,16 @@ class RandomHorizontallyFlip(object):
         if bbx is None:
             return img, mask
         return img, mask, bbx
+
+
+class RandomGammaTransform(object):
+    def __call__(self, img):
+        if random.random() < 0.3:
+            gamma = random.uniform(0.5, 1.5)
+            img = img_as_float(img)
+            img = exposure.adjust_gamma(img, gamma)
+            img = Image.Image(img)
+        return img
 
 
 class RandomCrop(object):
