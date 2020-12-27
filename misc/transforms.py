@@ -4,7 +4,8 @@ import numpy as np
 from PIL import Image, ImageOps, ImageFilter
 from config import cfg
 import torch
-from skimage import exposure, img_as_float
+from skimage import exposure, img_as_float, img_as_ubyte
+import torchvision.transforms as standard_transforms
 
 
 # ===============================img tranforms============================
@@ -41,12 +42,17 @@ class RandomHorizontallyFlip(object):
 
 class RandomGammaTransform(object):
     def __call__(self, img):
-        if random.random() < 0.3:
+        if random.random() < 0.3:  # TODO: Maybe not hardcode?
             gamma = random.uniform(0.5, 1.5)
             img = img_as_float(img)
             img = exposure.adjust_gamma(img, gamma)
-            img = Image.Image(img)
+            img = Image.fromarray(img_as_ubyte(img))
         return img
+
+
+class PILToTensor(object):
+    def __call__(self, img):
+        return standard_transforms.ToTensor()(np.array(img))
 
 
 class RandomCrop(object):

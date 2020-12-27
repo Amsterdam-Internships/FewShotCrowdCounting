@@ -26,7 +26,8 @@ __C.TRAINER = 'Trainer'
 __C.CROWD_COUNTER = 'CC'
 
 # Loss functions can be more than one depending on which crowdcounter you use
-__C.LOSS_FUNCS = ['MSELoss']
+__C.LOSS_FUNCS = ['MSELoss', 'LCLoss']
+__C.LC_FAC = 100
 
 # learning rate settings
 __C.LR = 1e-5
