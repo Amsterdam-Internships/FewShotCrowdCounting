@@ -31,11 +31,11 @@ class CrowdCounter(nn.Module):
 
     @property
     def loss(self):
-        return self.loss_mse
+        return self.summed_loss
 
     def forward(self, img, gt_map):
         density_map = self.CCN(img)
-        self.loss_mse = self.build_loss(density_map.squeeze(), gt_map.squeeze())
+        self.summed_loss = self.build_loss(density_map.squeeze(), gt_map.squeeze())
         return density_map
 
     def build_loss(self, density_map, gt_data):
@@ -48,7 +48,7 @@ class CrowdCounter(nn.Module):
             self.loss_lc = self.cfg.LC_FAC * cal_lc_loss(density_map, gt_data)
             loss += self.loss_lc
 
-        return self.loss_mse + self.loss_lc
+        return loss
 
     def test_forward(self, img):
         density_map = self.CCN(img)
