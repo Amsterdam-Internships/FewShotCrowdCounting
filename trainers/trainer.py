@@ -25,7 +25,7 @@ class Trainer():
         print(network)
         self.cc_net = CrowdCounter(network, cfg.GPU_ID, cfg.LOSS_FUNCS, cfg=cfg)
 
-        self.optimizer = optim.Adam(self.cc_net.CCN.parameters(), lr=cfg.LR, weight_decay=5e-4)
+        self.optimizer = optim.Adam(self.cc_net.CCN.parameters(), lr=cfg.LR, weight_decay=1e-4)
         # self.optimizer = optim.SGD(self.net.parameters(), cfg.LR, momentum=0.95,weight_decay=5e-4)
         self.scheduler = StepLR(self.optimizer, step_size=cfg.NUM_EPOCH_LR_DECAY, gamma=cfg.LR_DECAY)
 
@@ -79,6 +79,10 @@ class Trainer():
 
             if epoch > cfg.LR_DECAY_START:
                 self.scheduler.step()
+
+            if (epoch + 1) % 100 == 0:
+                torch.save(self.cc_net.CNN.state_dict(), PATH)
+
 
 
     def train(self):  # training for all datasets

@@ -14,7 +14,7 @@ cfg = __C
 __C.SEED = 42  # random seed,  for reproduction
 
 # DATASET INFO
-__C.DATASET = 'SHHB2'
+__C.DATASET = 'WE'
 
 # Model info
 __C.MODEL_NAME = 'DSNet'

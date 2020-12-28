@@ -13,7 +13,8 @@ class DDCB(nn.Module):
                                    nn.Conv2d(256, 64, 3, padding=2, dilation=2), nn.ReLU(True))
         self.conv3 = nn.Sequential(nn.Conv2d(in_planes + 128, 256, 1), nn.ReLU(True),
                                    nn.Conv2d(256, 64, 3, padding=3, dilation=3), nn.ReLU(True))
-        self.conv4 = nn.Sequential(nn.Conv2d(in_planes + 128, 512, 3, padding=1), nn.ReLU(True))
+        # self.conv4 = nn.Sequential(nn.Conv2d(in_planes + 128, 512, 3, padding=1), nn.ReLU(True))
+        self.conv4 = nn.Sequential(nn.Conv2d(in_planes + 128, 512, 3, padding=1))
 
     def forward(self, x):
         x1_raw = self.conv1(x)
