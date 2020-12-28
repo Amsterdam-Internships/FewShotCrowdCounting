@@ -252,8 +252,8 @@ def copy_cur_env(work_dir, dst_dir, exception):
         file = os.path.join(work_dir, filename)
         dst_file = os.path.join(dst_dir, filename)
 
-        if os.path.isdir(file) and exception not in filename and not os.path.exists(
-            file):  # TODO: and not... added cause windows
+        # TODO: and not... added cause windows
+        if os.path.isdir(file) and exception not in filename and not os.path.exists(file):
             shutil.copytree(file, dst_file)
         elif os.path.isfile(file):
             shutil.copyfile(file, dst_file)
