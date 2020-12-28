@@ -237,8 +237,8 @@ def update_model(net, optimizer, scheduler, epoch, i_tb, exp_path, exp_name, sco
 
     torch.save(latest_state, os.path.join(exp_path, exp_name, 'latest_state.pth'))
 
-    if (epoch + 1) % 50 == 0:  # TODO: This is just for temp
-        torch.save(latest_state, os.path.join(exp_path, exp_name, f'epoch_{epoch + 1}.pth'))
+    if (epoch) % 50 == 0:  # TODO: This is just for temp
+        torch.save(latest_state, os.path.join(exp_path, exp_name, f'epoch_{epoch}.pth'))
 
     return train_record
 
