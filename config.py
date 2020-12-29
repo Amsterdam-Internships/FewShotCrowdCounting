@@ -17,7 +17,7 @@ __C.SEED = 42  # random seed,  for reproduction
 __C.DATASET = 'UCF50'
 
 # Model info
-__C.MODEL_NAME = 'DSNet'
+__C.MODEL_NAME = 'CSRNet'
 
 # Trainer info
 __C.TRAINER = 'UCF50_Trainer'
@@ -53,7 +53,7 @@ __C.EXP_NAME = now \
 # ========================================================================================== #
 # ===================================      EVAL      ======================================= #
 # ========================================================================================== #
-__C.VAL_DENSE_START = 50
+__C.VAL_DENSE_START = 15
 __C.VAL_FREQ = 5  # Before __C.VAL_DENSE_START epoches, the freq is set as __C.VAL_FREQ
 
 # ------------------------------VIS------------------------

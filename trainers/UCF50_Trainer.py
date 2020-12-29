@@ -25,12 +25,6 @@ class Trainer():
         self.network = network
         self.CrowdCounter = CrowdCounter
 
-        # self.train_record = {'best_mae': 1e20, 'best_mse': 1e20, 'best_model_name': ''}
-        # self.timer = {'iter time': Timer(), 'train time': Timer(), 'val time': Timer()}
-        #
-        # self.epoch = 0
-        # self.i_tb = 0
-
         if cfg.RESUME:
             print("Resume not supported yet")
             exit(1)
@@ -59,7 +53,6 @@ class Trainer():
             self.cc_net = self.CrowdCounter(self.network(), cfg.GPU_ID, cfg.LOSS_FUNCS, cfg=cfg)
 
             self.optimizer = optim.Adam(self.cc_net.CCN.parameters(), lr=cfg.LR, weight_decay=5e-4)
-            # self.optimizer = optim.SGD(self.net.parameters(), cfg.LR, momentum=0.95,weight_decay=5e-4)
             self.scheduler = StepLR(self.optimizer, step_size=cfg.NUM_EPOCH_LR_DECAY, gamma=cfg.LR_DECAY)
 
             self.cfg_data.VAL_INDEX = validation_fold
@@ -70,8 +63,6 @@ class Trainer():
             last_mae, last_mse = self.validate_ECF50()  # might result in redundant saves.
             save_name = f'fold_{validation_fold}_last_mae{last_mae:.1f}_mse_{last_mse:.1f}_.pth'
             torch.save(self.cc_net.state_dict(), os.path.join(self.exp_path, self.exp_name, save_name))
-
-
 
     def run_epochs(self):
         for epoch in range(self.epoch, cfg.MAX_EPOCH):
@@ -119,7 +110,7 @@ class Trainer():
                       (self.epoch + 1, i + 1, loss.item(), self.optimizer.param_groups[0]['lr'] * 10000,
                        self.timer['iter time'].diff))
                 print('        [cnt: gt: %.1f pred: %.2f]' % (
-                gt_map[0].sum().data / self.cfg_data.LOG_PARA, pred_map[0].sum().data / self.cfg_data.LOG_PARA))
+                    gt_map[0].sum().data / self.cfg_data.LOG_PARA, pred_map[0].sum().data / self.cfg_data.LOG_PARA))
 
     def validate_ECF50(self):  # validate_V1 for SHHA, SHHB, UCF-QNRF, UCF50
 
@@ -160,7 +151,7 @@ class Trainer():
         self.writer.add_scalar('mse', mse, self.epoch + 1)
 
         self.train_record = update_model(self.cc_net, self.optimizer, self.scheduler, self.epoch, self.i_tb,
-                                         self.exp_path, self.exp_name,  [mae, mse, loss],
+                                         self.exp_path, self.exp_name, [mae, mse, loss],
                                          self.train_record, self.log_txt, fold=self.current_fold)
         print_summary(self.exp_name, [mae, mse, loss], self.train_record)
 
