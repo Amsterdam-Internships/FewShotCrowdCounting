@@ -14,7 +14,7 @@ class DDCB(nn.Module):
         self.conv3 = nn.Sequential(nn.Conv2d(in_planes + 128, 256, 1), nn.ReLU(True),
                                    nn.Conv2d(256, 64, 3, padding=3, dilation=3), nn.ReLU(True))
         # self.conv4 = nn.Sequential(nn.Conv2d(in_planes + 128, 512, 3, padding=1), nn.ReLU(True))
-        self.conv4 = nn.Sequential(nn.Conv2d(in_planes + 128, 512, 3, padding=1))
+        self.conv4 = nn.Sequential(nn.Conv2d(in_planes + 192, 512, 3, padding=1))
 
     def forward(self, x):
         x1_raw = self.conv1(x)
@@ -22,7 +22,7 @@ class DDCB(nn.Module):
         x2_raw = self.conv2(x1)
         x2 = torch.cat([x, x1_raw, x2_raw], 1)
         x3_raw = self.conv3(x2)
-        x3 = torch.cat([x, x2_raw, x3_raw], 1)
+        x3 = torch.cat([x, x1_raw, x2_raw, x3_raw], 1)
         output = self.conv4(x3)
 
         return output
