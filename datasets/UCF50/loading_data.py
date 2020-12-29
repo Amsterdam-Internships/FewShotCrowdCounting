@@ -88,7 +88,6 @@ def loading_data():
     mean_std = cfg_data.MEAN_STD
     log_para = cfg_data.LOG_PARA
     train_main_transform = own_transforms.Compose([
-        own_transforms.random_quarter_free_crop(),
         own_transforms.RandomHorizontallyFlip()
     ])
     img_transform = standard_transforms.Compose([

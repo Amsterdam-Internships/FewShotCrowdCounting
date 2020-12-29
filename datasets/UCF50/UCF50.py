@@ -7,6 +7,7 @@ import torch
 from torch.utils import data
 from PIL import Image, ImageOps
 import h5py
+import misc.transforms as own_transformations
 
 
 class UCF50(data.Dataset):
@@ -22,9 +23,11 @@ class UCF50(data.Dataset):
             folder_gt = self.gt_path + '/' + str(i_folder)
             for filename in os.listdir(folder_img):
                 if os.path.isfile(os.path.join(folder_img, filename)):
-                    self.img_files.append(folder_img + '/' + filename)
-                    # self.gt_files.append(folder_gt + '/' + filename.split('.')[0] + '.csv')
-                    self.gt_files.append(folder_gt + '/' + filename.split('.')[0] + '.h5')
+                    crops = range(1, 10) if mode == 'train' else range(1)
+                    for i_crop in crops:
+                        self.img_files.append([folder_img + '/' + filename, i_crop])
+                        # self.gt_files.append(folder_gt + '/' + filename.split('.')[0] + '.csv')
+                        self.gt_files.append(folder_gt + '/' + filename.split('.')[0] + '.h5')
 
         self.num_samples = len(self.img_files)
 
@@ -52,7 +55,8 @@ class UCF50(data.Dataset):
         return self.num_samples
 
     def read_image_and_gt(self, index):
-        img = Image.open(os.path.join(self.img_path, self.img_files[index]))
+        img_file, crop_index = self.img_files[index]
+        img = Image.open(os.path.join(self.img_path, img_file))
         if img.mode == 'L':
             img = img.convert('RGB')
 
@@ -63,6 +67,8 @@ class UCF50(data.Dataset):
         den = np.asarray(den['density'])
         den = Image.fromarray(den)
 
+        if self.mode == 'train':
+            img, den = own_transformations.quarter_free_crop(img, den, crop_index)
         return img, den
 
     def get_num_samples(self):
