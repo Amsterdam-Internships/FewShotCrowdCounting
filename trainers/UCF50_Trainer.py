@@ -22,13 +22,8 @@ class Trainer():
         self.pwd = pwd
 
         self.net_name = cfg.MODEL_NAME
-        network = network()
-        print(network)
-        self.cc_net = CrowdCounter(network, cfg.GPU_ID, cfg.LOSS_FUNCS, cfg=cfg)
-
-        self.optimizer = optim.Adam(self.cc_net.CCN.parameters(), lr=cfg.LR, weight_decay=1e-4)
-        # self.optimizer = optim.SGD(self.net.parameters(), cfg.LR, momentum=0.95,weight_decay=5e-4)
-        self.scheduler = StepLR(self.optimizer, step_size=cfg.NUM_EPOCH_LR_DECAY, gamma=cfg.LR_DECAY)
+        self.network = network
+        self.CrowdCounter = CrowdCounter
 
         # self.train_record = {'best_mae': 1e20, 'best_mse': 1e20, 'best_model_name': ''}
         # self.timer = {'iter time': Timer(), 'train time': Timer(), 'val time': Timer()}
@@ -60,6 +55,12 @@ class Trainer():
             self.i_tb = 0
             self.train_record = {'best_mae': 1e20, 'best_mse': 1e20, 'best_model_name': ''}
             self.timer = {'iter time': Timer(), 'train time': Timer(), 'val time': Timer()}
+
+            self.cc_net = self.CrowdCounter(self.network(), cfg.GPU_ID, cfg.LOSS_FUNCS, cfg=cfg)
+
+            self.optimizer = optim.Adam(self.cc_net.CCN.parameters(), lr=cfg.LR, weight_decay=5e-4)
+            # self.optimizer = optim.SGD(self.net.parameters(), cfg.LR, momentum=0.95,weight_decay=5e-4)
+            self.scheduler = StepLR(self.optimizer, step_size=cfg.NUM_EPOCH_LR_DECAY, gamma=cfg.LR_DECAY)
 
             self.cfg_data.VAL_INDEX = validation_fold
             self.train_loader, self.val_loader, self.restore_transform = self.dataloader()
