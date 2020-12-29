@@ -84,6 +84,34 @@ class RandomCrop(object):
         return img.crop((x1, y1, x1 + tw, y1 + th)), mask.crop((x1, y1, x1 + tw, y1 + th))
 
 
+class random_quarter_free_crop(object):
+    def __call__(self, img, mask, bbx=None):
+        assert img.size == mask.size
+
+        w, h = img.size
+        tw = w // 2
+        th = h // 2
+
+        part = random.randint(1, 9)
+        if part == 1:
+            x1 = 0
+            y1 = 0
+        elif part == 2:
+            x1 = tw
+            y1 = 0
+        elif part == 3:
+            x1 = 0
+            y1 = th
+        elif part == 4:
+            x1 = tw
+            y1 = th
+        else:
+            x1 = random.randint(0, w - tw)
+            y1 = random.randint(0, h - th)
+
+        return img.crop((x1, y1, x1 + tw, y1 + th)), mask.crop((x1, y1, x1 + tw, y1 + th))
+
+
 class CenterCrop(object):
     def __init__(self, size):
         if isinstance(size, numbers.Number):
