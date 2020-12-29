@@ -14,13 +14,13 @@ cfg = __C
 __C.SEED = 42  # random seed,  for reproduction
 
 # DATASET INFO
-__C.DATASET = 'WE'
+__C.DATASET = 'UCF50'
 
 # Model info
 __C.MODEL_NAME = 'DSNet'
 
 # Trainer info
-__C.TRAINER = 'Trainer'
+__C.TRAINER = 'UCF50_Trainer'
 
 # Which crowd counter to use (models.XYZ)
 __C.CROWD_COUNTER = 'CC'
@@ -35,7 +35,7 @@ __C.LR = 5e-6
 __C.LR_DECAY = 1  # decay rate
 __C.LR_DECAY_START = -1  # when training epoch is more than it, the learning rate will be begin to decay
 __C.NUM_EPOCH_LR_DECAY = 10**10  # decay frequency
-__C.MAX_EPOCH = 3000
+__C.MAX_EPOCH = 100
 
 
 # print

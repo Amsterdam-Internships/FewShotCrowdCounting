@@ -214,10 +214,14 @@ def print_GCC_summary(log_txt, epoch, scores, train_record, c_maes, c_mses):
     print('=' * 50)
 
 
-def update_model(net, optimizer, scheduler, epoch, i_tb, exp_path, exp_name, scores, train_record, log_file=None):
+def update_model(net, optimizer, scheduler, epoch, i_tb, exp_path, exp_name, scores, train_record,
+                 log_file=None, fold=None):
     mae, mse, loss = scores
 
-    snapshot_name = 'all_ep_%d_mae_%.1f_mse_%.1f' % (epoch + 1, mae, mse)
+    if fold:
+        snapshot_name = f'fold_{fold}_ep_{epoch + 1}_mae_{mae:.1f}_mse_{mse:.1f}'
+    else:
+        snapshot_name = 'all_ep_%d_mae_%.1f_mse_%.1f' % (epoch + 1, mae, mse)
 
     if mae < train_record['best_mae'] or mse < train_record['best_mse']:
         train_record['best_model_name'] = snapshot_name

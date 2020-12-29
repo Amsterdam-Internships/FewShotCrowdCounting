@@ -59,6 +59,8 @@ def _get_trainer(training_mode):
         from trainers.trainer_for_M2TCC import Trainer  # double losses but signle output
     elif training_mode == 'CMTL_Trainer':
         from trainers.trainer_for_CMTL import Trainer  # double losses and double outputs
+    elif training_mode == 'UCF50_Trainer':
+        from trainers.UCF50_Trainer import Trainer
     else:
         print(f'Trainer {training_mode} not recognised!')
         exit(1)
