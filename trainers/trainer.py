@@ -25,8 +25,8 @@ class Trainer():
         print(network)
         self.cc_net = CrowdCounter(network, cfg.GPU_ID, cfg.LOSS_FUNCS, cfg=cfg)
 
-        self.optimizer = optim.Adam(self.cc_net.CCN.parameters(), lr=cfg.LR, weight_decay=1e-4)
-        # self.optimizer = optim.SGD(self.net.parameters(), cfg.LR, momentum=0.95,weight_decay=5e-4)
+        # self.optimizer = optim.Adam(self.cc_net.CCN.parameters(), lr=cfg.LR, weight_decay=1e-4)
+        self.optimizer = optim.SGD(self.net.parameters(), cfg.LR, momentum=0.95, weight_decay=5e-4)
         self.scheduler = StepLR(self.optimizer, step_size=cfg.NUM_EPOCH_LR_DECAY, gamma=cfg.LR_DECAY)
 
         self.train_record = {'best_mae': 1e20, 'best_mse': 1e20, 'best_model_name': ''}
@@ -83,8 +83,6 @@ class Trainer():
             if (epoch + 1) % 100 == 0:
                 torch.save(self.cc_net.CNN.state_dict(), PATH)
 
-
-
     def train(self):  # training for all datasets
 
         self.cc_net.train()
@@ -109,7 +107,7 @@ class Trainer():
                       (self.epoch + 1, i + 1, loss.item(), self.optimizer.param_groups[0]['lr'] * 10000,
                        self.timer['iter time'].diff))
                 print('        [cnt: gt: %.1f pred: %.2f]' % (
-                gt_map[0].sum().data / self.cfg_data.LOG_PARA, pred_map[0].sum().data / self.cfg_data.LOG_PARA))
+                    gt_map[0].sum().data / self.cfg_data.LOG_PARA, pred_map[0].sum().data / self.cfg_data.LOG_PARA))
 
     def validate_V1(self):  # validate_V1 for SHHA, SHHB, UCF-QNRF, UCF50
 
@@ -149,7 +147,8 @@ class Trainer():
         self.writer.add_scalar('mae', mae, self.epoch + 1)
         self.writer.add_scalar('mse', mse, self.epoch + 1)
 
-        self.train_record = update_model(self.cc_net, self.optimizer, self.scheduler, self.epoch, self.i_tb, self.exp_path,
+        self.train_record = update_model(self.cc_net, self.optimizer, self.scheduler, self.epoch, self.i_tb,
+                                         self.exp_path,
                                          self.exp_name, \
                                          [mae, mse, loss], self.train_record, self.log_txt)
         print_summary(self.exp_name, [mae, mse, loss], self.train_record)
@@ -203,7 +202,8 @@ class Trainer():
         self.writer.add_scalar('mae_s4', maes.avg[3], self.epoch + 1)
         self.writer.add_scalar('mae_s5', maes.avg[4], self.epoch + 1)
 
-        self.train_record = update_model(self.cc_net, self.optimizer, self.scheduler, self.epoch, self.i_tb, self.exp_path,
+        self.train_record = update_model(self.cc_net, self.optimizer, self.scheduler, self.epoch, self.i_tb,
+                                         self.exp_path,
                                          self.exp_name, \
                                          [mae, 0, loss], self.train_record, self.log_txt)
         print_WE_summary(self.log_txt, self.epoch, [mae, 0, loss], self.train_record, maes)
@@ -260,7 +260,8 @@ class Trainer():
         self.writer.add_scalar('mae', mae, self.epoch + 1)
         self.writer.add_scalar('mse', mse, self.epoch + 1)
 
-        self.train_record = update_model(self.cc_net, self.optimizer, self.scheduler, self.epoch, self.i_tb, self.exp_path,
+        self.train_record = update_model(self.cc_net, self.optimizer, self.scheduler, self.epoch, self.i_tb,
+                                         self.exp_path,
                                          self.exp_name, \
                                          [mae, mse, loss], self.train_record, self.log_txt)
 

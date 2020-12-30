@@ -14,23 +14,22 @@ cfg = __C
 __C.SEED = 42  # random seed,  for reproduction
 
 # DATASET INFO
-__C.DATASET = 'UCF50'
+__C.DATASET = 'WE'
 
 # Model info
 __C.MODEL_NAME = 'CSRNet'
 
 # Trainer info
-__C.TRAINER = 'UCF50_Trainer'
+__C.TRAINER = 'Trainer'
 
 # Which crowd counter to use (models.XYZ)
 __C.CROWD_COUNTER = 'CC'
 
 # Loss functions can be more than one depending on which crowdcounter you use
-__C.LOSS_FUNCS = ['MSELoss', 'LCLoss']
-__C.LC_FAC = 100
+__C.LOSS_FUNCS = ['MSELoss']
 
 # learning rate settings
-__C.LR = 5e-6
+__C.LR = 1e-6
 
 __C.LR_DECAY = 1  # decay rate
 __C.LR_DECAY_START = -1  # when training epoch is more than it, the learning rate will be begin to decay

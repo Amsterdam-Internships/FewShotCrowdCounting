@@ -113,7 +113,7 @@ class random_quarter_free_crop(object):
         assert img.size == mask.size
 
         part = random.randint(1, 9)
-        return quarter_free_crop(part)
+        return quarter_free_crop(img, mask, part)
 
 
 class CenterCrop(object):
