@@ -90,6 +90,8 @@ def _get_network(model_name):
         from models.SCC_Model.ACCSRNet import ACCSRNet as net
     elif model_name == 'DSNet':
         from models.SCC_Model.DSNet import DenseScaleNet as net
+    elif model_name == 'MyNet':
+        from models.SCC_Model.custom_ideas import MyNet as net
     else:
         print(f'model name {model_name} not recognised.')
         exit(1)

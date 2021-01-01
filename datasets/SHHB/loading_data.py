@@ -11,6 +11,7 @@ def loading_data():
     log_para = cfg_data.LOG_PARA
     train_main_transform = own_transforms.Compose([
     	#own_transforms.RandomCrop(cfg_data.TRAIN_SIZE),
+        own_transforms.random_quarter_free_crop(),
     	own_transforms.RandomHorizontallyFlip()
     ])
     val_main_transform = own_transforms.Compose([

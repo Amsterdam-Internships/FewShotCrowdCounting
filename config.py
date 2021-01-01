@@ -14,10 +14,10 @@ cfg = __C
 __C.SEED = 42  # random seed,  for reproduction
 
 # DATASET INFO
-__C.DATASET = 'WE'
+__C.DATASET = 'SHHB'
 
 # Model info
-__C.MODEL_NAME = 'CSRNet'
+__C.MODEL_NAME = 'MyNet'
 
 # Trainer info
 __C.TRAINER = 'Trainer'
@@ -29,7 +29,7 @@ __C.CROWD_COUNTER = 'CC'
 __C.LOSS_FUNCS = ['MSELoss']
 
 # learning rate settings
-__C.LR = 1e-6
+__C.LR = 5e-6
 
 __C.LR_DECAY = 1  # decay rate
 __C.LR_DECAY_START = -1  # when training epoch is more than it, the learning rate will be begin to decay
