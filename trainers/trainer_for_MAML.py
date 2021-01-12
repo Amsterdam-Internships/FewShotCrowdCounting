@@ -17,9 +17,11 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 class Trainer():
     # def __init__(self, experiment, cfg_data):
-    def __init__(self, dataloader, cfg_data, pwd):
+    def __init__(self, dataloader, cfg, cfg_data, pwd):
+        self.cfg = cfg
         self.cfg_data = cfg_data
         experiment = 1
+        
         # model hyperparameters
         self.loss_function = nn.MSELoss()
 
