@@ -3,16 +3,21 @@ from torch.utils.data import DataLoader
 import misc.transforms as own_transforms
 from .WE_MAML import WEMAML
 from .setting import cfg_data
-from torchvision import transforms
 import os
+
 
 def loading_data(task, batch_size, mode='train'):
     mean_std = cfg_data.MEAN_STD
     log_para = cfg_data.LOG_PARA
 
-    img_transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize(*mean_std)])
+    img_transform = standard_transforms.Compose([
+        standard_transforms.ToTensor(),
+        standard_transforms.Normalize(*mean_std)
+    ])
 
-    gt_transform = standard_transforms.Compose([own_transforms.LabelNormalize(log_para)])
+    gt_transform = standard_transforms.Compose([
+        own_transforms.LabelNormalize(log_para)
+    ])
 
     if mode == 'train':
         imgs = task.train_images
@@ -40,8 +45,14 @@ def loading_test_data():
     mean_std = cfg_data.MEAN_STD
     log_para = cfg_data.LOG_PARA
 
-    img_transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize(*mean_std)])
-    gt_transform = standard_transforms.Compose([own_transforms.LabelNormalize(log_para)])
+    img_transform = standard_transforms.Compose([
+        standard_transforms.ToTensor(),
+        standard_transforms.Normalize(*mean_std)
+    ])
+
+    gt_transform = standard_transforms.Compose([
+        own_transforms.LabelNormalize(log_para)
+    ])
 
     images = retrieve_test_images()
 
