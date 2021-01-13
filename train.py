@@ -94,7 +94,6 @@ def _get_network(model_name):
         from models.SCC_Model.custom_ideas import MyNet as net
     else:
         print(f'model name {model_name} not recognised.')
-        exit(1)
 
     return net
 

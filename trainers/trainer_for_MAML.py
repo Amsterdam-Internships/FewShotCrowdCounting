@@ -17,11 +17,12 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 class Trainer():
     # def __init__(self, experiment, cfg_data):
-    def __init__(self, dataloader, cfg, cfg_data, pwd):
+    def __init__(self, dataloader, net, crowdCounter, cfg, cfg_data, pwd):
+        'net and crowdcounter are not used, but created here manually. It is added to the __init__ call conform format.'
         self.cfg = cfg
         self.cfg_data = cfg_data
         experiment = 1
-        
+
         # model hyperparameters
         self.loss_function = nn.MSELoss()
 
@@ -29,15 +30,15 @@ class Trainer():
         self.num_instances = self.cfg_data.NUM_OF_INSTANCES
         self.num_tasks = self.cfg_data.NUM_OF_TASKS
 
-        self.meta_batch = cfg.META_BATCH
+        self.meta_batch = cfg_data.META_BATCHSIZE
+        self.base_batch = cfg_data.BASE_BATCHSIZE
         self.meta_lr = cfg.META_LR
-        self.base_batch = cfg.BASE_BATCH
         self.base_lr = cfg.BASE_LR
-        self.meta_updates = cfg.EPOCHS
+        self.meta_updates = cfg.MAX_EPOCH
         self.base_updates = cfg.BASE_UPDATES
 
         self.my_dataloader = dataloader
-        self.dataset = cfg.DATASET_FULL_NAME
+        self.dataset = cfg.DATASET
         self.experiment = experiment
         self.save_models = './exp/{}/'.format(self.experiment)
         self.writer = SummaryWriter()
