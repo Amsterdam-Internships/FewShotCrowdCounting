@@ -241,10 +241,15 @@ class Trainer():
                 if mae < self.best_mae:
                     self.best_mae = mae
                     self.best_epoch = epoch + 1
-                    print("Saving checkpoint at: {}".format(self.best_epoch))
-                    logging.info("Saving checkpoint at: {}/{}.pt".format(self.save_models, self.best_epoch))
+                    print("Saving new best checkpoint at: {}".format(self.best_epoch))
+                    logging.info("Saving new bestcheckpoint at: {}/{}.pt".format(self.save_models, self.best_epoch))
                     torch.save(self.network.state_dict(),
-                               '{}/epoch_{}.pt'.format(self.save_models, self.best_epoch))
+                               '{}/epoch_{}_MAE_{}.pt'.format(self.save_models, self.best_epoch, mae))
+                elif (epoch + 1) % 25 == 0:
+                    print("Saving regular checkpoint at: {}".format(epoch + 1))
+                    logging.info("Saving regular checkpoint at: {}/{}.pt".format(self.save_models, epoch + 1))
+                    torch.save(self.network.state_dict(),
+                               '{}/epoch_{}_MAE_{}.pt'.format(self.save_models, epoch + 1, mae))
 
             tr_loss = tr_loss / self.meta_batch
             tr_acc = tr_acc / self.meta_batch
