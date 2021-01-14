@@ -7,8 +7,8 @@ from datasets.WE.setting import cfg_data
 
 # MODEL_PATH = 'CSRNet_SGD_STANDARD_100_epochs.pth'
 # MODEL_PATH = 'CSRNet_MAML_100_epochs_MAE_10_945.pt'
-# MODEL_PATH = 'CSRNet_SGD_ep_200_MAE_11.068.pt'
-MODEL_PATH = 'CSRNet_SGD_ep_225_MAE_13.837.pt'
+MODEL_PATH = 'CSRNet_SGD_ep_200_MAE_11.068.pt'
+# MODEL_PATH = 'CSRNet_SGD_ep_225_MAE_13.837.pt'
 LR = 1e-5
 
 
@@ -35,7 +35,7 @@ def main():
 
     train_dataloader, test_dataloader, restore_transform = loading_data()
 
-    adapt_and_test(network, test_dataloader[3], [10, 50, 100])
+    adapt_and_test(network, test_dataloader[3], [60])
 
 
 def adapt_and_test(network, dataloader, adapt_images):

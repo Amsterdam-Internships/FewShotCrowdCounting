@@ -63,9 +63,11 @@ __C.VAL_FREQ = 5  # Before __C.VAL_DENSE_START epoches, the freq is set as __C.V
 __C.VISIBLE_NUM_IMGS = 1  # must be 1 for training images with the different sizes
 
 __C.RESUME = True
+__C.INIT_NET = False
 # __C.RESUME_PATH = "./exp/12-10_15-16_WE_CSRNet_1e-05/all_ep_16_mae_14.2_mse_0.0.pth"
-__C.RESUME_PATH = 'CSRNet_SGD_STANDARD_100_epochs.pth'
-
+# __C.RESUME_PATH = 'CSRNet_SGD_STANDARD_100_epochs.pth'
+__C.RESUME_PATH = 'exp/1/save_state_ep_1_test.pth'
+# __C.INIT_PATH = ''
 
 # ========================================================================================== #
 # ===================================      Other      ====================================== #

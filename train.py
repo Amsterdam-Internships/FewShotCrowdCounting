@@ -80,6 +80,8 @@ def _get_network(model_name):
         from models.SCC_Model.MCNN import MCNN as net
     elif model_name == 'CSRNet':
         from models.SCC_Model.CSRNet import CSRNet as net
+    elif model_name == 'CSRNet_MAML':
+        pass  # Should be loaded by the trainer
     elif model_name == 'Res50':
         from models.SCC_Model.Res50 import Res50 as net
     elif model_name == 'Res101':

@@ -44,6 +44,7 @@ class Trainer():
         self.writer = SummaryWriter()
         self.best_mae = 1e+10
         self.best_epoch = -1
+        self.epoch = 0
 
         if not os.path.exists(self.save_models):
             os.makedirs(self.save_models)
@@ -52,18 +53,27 @@ class Trainer():
         self.num_input_channels = 3
         self.network = CSRMetaNetwork(self.loss_function)
         self.network.to(device)
+
         self.fast_network = BaseNetwork(self.loss_function, self.base_updates, self.base_lr, self.base_batch,
                                         self.meta_batch)
+        self.fast_network.to(device)
+        self.optimizer = torch.optim.Adam(self.network.parameters(), lr=self.meta_lr)
+
         if cfg.RESUME:
-            self.model_path = cfg.RESUME_PATH
+            print(f'Will resume from {cfg.RESUME_PATH}')
+            self.load_state(cfg.RESUME_PATH)
+
+        elif cfg.INIT_NET:
+            self.model_path = cfg.INIT_PATH
             my_net = torch.load(self.model_path)
             for key in list(my_net.keys()):  # Added to be compatible with C3Framework
                 new_key = key.replace('CCN.', '')
                 my_net[new_key] = my_net.pop(key)
             self.network.load_state_dict(my_net)  # Note: changed to my_net
-        self.fast_network.to(device)
-        self.optimizer = torch.optim.Adam(self.network.parameters(), lr=self.meta_lr)
-        logging.info("Loaded model: {}".format(self.model_path))
+            logging.info("Loaded model: {}".format(self.model_path))
+
+        self.save_state(self.epoch, 'test')
+        exit(0)
 
     def meta_network_update(self, task, ls):
         logging.info("===> Updating meta network")
@@ -161,7 +171,8 @@ class Trainer():
             param.requires_grad = False
 
         # training epochs (meta_updates)
-        for idx, epoch in enumerate(range(self.meta_updates)):
+        for idx, epoch in enumerate(range(self.epoch, self.meta_updates)):
+            self.epoch = epoch
             print("===> Training epoch: {}/{}".format(idx + 1, self.meta_updates))
             logging.info("===> Training epoch: {}/{}".format(idx + 1, self.meta_updates))
 
@@ -243,13 +254,11 @@ class Trainer():
                     self.best_epoch = epoch + 1
                     print("Saving new best checkpoint at: {}".format(self.best_epoch))
                     logging.info("Saving new bestcheckpoint at: {}/{}.pt".format(self.save_models, self.best_epoch))
-                    torch.save(self.network.state_dict(),
-                               '{}/epoch_{}_MAE_{}.pt'.format(self.save_models, self.best_epoch, mae))
+                    self.save_state(self.epoch + 1, name_extra=f'best_MAE_{mae}')
                 elif (epoch + 1) % 25 == 0:
                     print("Saving regular checkpoint at: {}".format(epoch + 1))
                     logging.info("Saving regular checkpoint at: {}/{}.pt".format(self.save_models, epoch + 1))
-                    torch.save(self.network.state_dict(),
-                               '{}/epoch_{}_MAE_{}.pt'.format(self.save_models, epoch + 1, mae))
+                    self.save_state(self.epoch + 1, name_extra=f'regular_MAE_{mae}')
 
             tr_loss = tr_loss / self.meta_batch
             tr_acc = tr_acc / self.meta_batch
@@ -274,3 +283,36 @@ class Trainer():
         for name, param in self.network.named_parameters():
             if 'bn' not in name:
                 self.writer.add_histogram(name, param, epoch + 1)
+
+    def save_state(self, epoch, name_extra=''):
+
+        if name_extra:
+            save_name = f'{self.save_models}/save_state_ep_{epoch}_{name_extra}.pth'
+        else:
+            save_name = f'{self.save_models}/save_state_ep_{epoch}.pth'
+
+        save_sate = {
+            'epoch': epoch,
+            'best_epoch': self.best_epoch,
+            'best_mae': self.best_mae,
+            'net': self.network.state_dict(),
+            'optim': self.optimizer.state_dict(),
+            'exp_path': self.save_models,
+            'experiment': self.experiment,
+        }
+
+        torch.save(save_sate, save_name)
+
+    def load_state(self, state_path):
+        resume_state = torch.load(state_path)
+        self.epoch = resume_state['epoch']
+        self.best_epoch = resume_state['best_epoch']
+        self.best_mae = resume_state['best_mae']
+        self.save_models = resume_state['exp_path']
+        self.experiment = resume_state['experiment']
+
+        self.network.load_state_dict(resume_state['net'])
+        self.optimizer.load_state_dict(resume_state['optim'])
+
+        print(f'Resumes from epoch {self.epoch}')
+
