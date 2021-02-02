@@ -1,80 +1,52 @@
-import os
 from easydict import EasyDict as edict
 import time
-import torch
+import os
 
-# init
-__C = edict()
-cfg = __C
-
-# ========================================================================================== #
-# ===================================      TRAIN     ======================================= #
-# ========================================================================================== #
-
-__C.SEED = 42  # random seed,  for reproduction
-
-# DATASET INFO
-__C.DATASET = 'WE_MAML'
-
-# Model info
-__C.MODEL_NAME = 'CSRNet_MAML'
-
-# Trainer info
-__C.TRAINER = 'WE_MAML_trainer'
-
-# Which crowd counter to use (models.XYZ)
-__C.CROWD_COUNTER = 'CC'
-
-# Loss functions can be more than one depending on which crowdcounter you use
-__C.LOSS_FUNCS = ['MSELoss']
-
-# learning rate settings
-# __C.LR = 5e-6
-
-__C.META_LR = 0.001
-__C.BASE_LR = 0.001
-__C.LR = '0.001'  # For the logger / prints
-
-__C.LR_DECAY = 1  # decay rate
-__C.LR_DECAY_START = -1  # when training epoch is more than it, the learning rate will be begin to decay
-__C.NUM_EPOCH_LR_DECAY = 10**10  # decay frequency
-__C.MAX_EPOCH = 1500
+cfg = edict()
 
 
-# print
-__C.PRINT_FREQ = 100
 
-now = time.strftime("%m-%d_%H-%M", time.localtime())
+# __all__ = [
+#     'deit_base_patch16_224',              'deit_small_patch16_224',               'deit_tiny_patch16_224',
+#     'deit_base_distilled_patch16_224',    'deit_small_distilled_patch16_224',     'deit_tiny_distilled_patch16_224'
+#     'deit_base_patch16_384',
+#     'deit_base_distilled_patch16_384',
+# ]
 
-__C.EXP_PATH = './exp'
-__C.EXP_NAME = now \
-               + '_' + __C.DATASET \
-               + '_' + __C.MODEL_NAME \
-               + '_' + str(__C.LR)
+cfg.SEED = 42
+
+cfg.MODEL = 'deit_base_distilled_patch16_224'
+
+cfg.LR = 1e-5
+cfg.LR_GAMMA = 0.3  # Scale LR by this at each step epoch
+cfg.LR_STEP_EPOCHS = [100, 500, 1500]
+cfg.WEIGHT_DECAY = 1e-4
+
+cfg.EVAL_EVERY = 25
+cfg.SAVE_EVERY_N_EVALS = 4  # Every Nth evaluation, save model regardless of performance
+cfg.SAVE_EVERY = cfg.SAVE_EVERY_N_EVALS * cfg.EVAL_EVERY  # Don't touch this one
+
+cfg.SAVE_NUM_EVAL_EXAMPLES = 10  # How many examples from the test/evaluation set to save
+
+# ===================================================================================== #
+#                                 SAVE DIRECTORIES                                      #
+# ===================================================================================== #
+runs_dir = 'runs'
+if not os.path.exists(runs_dir):
+    os.mkdir(runs_dir)
+    with open(os.path.join(runs_dir, '__init__.py'), 'w') as f:  # For dynamic loading of config file
+        pass
+
+cfg.SAVE_DIR = os.path.join(runs_dir, time.strftime("%m-%d_%H-%M", time.localtime()))
+cfg.PICS_DIR = os.path.join(cfg.SAVE_DIR, 'pics')
+cfg.STATE_DICTS_DIR = os.path.join(cfg.SAVE_DIR, 'state_dicts')
+cfg.CODE_DIR = os.path.join(cfg.SAVE_DIR, 'code')
 
 
-# ========================================================================================== #
-# ===================================      EVAL      ======================================= #
-# ========================================================================================== #
-__C.VAL_DENSE_START = 50
-__C.VAL_FREQ = 5  # Before __C.VAL_DENSE_START epoches, the freq is set as __C.VAL_FREQ
-
-# ------------------------------VIS------------------------
-__C.VISIBLE_NUM_IMGS = 1  # must be 1 for training images with the different sizes
-
-__C.RESUME = True
-__C.INIT_NET = False
-# __C.RESUME_PATH = "./exp/12-10_15-16_WE_CSRNet_1e-05/all_ep_16_mae_14.2_mse_0.0.pth"
-# __C.RESUME_PATH = 'CSRNet_SGD_STANDARD_100_epochs.pth'
-__C.RESUME_PATH = 'exp/1/save_state_ep_1_test.pth'
-# __C.INIT_PATH = ''
-
-# ========================================================================================== #
-# ===================================      Other      ====================================== #
-# ========================================================================================== #
-__C.GPU_ID = [0]
+cfg.RESUME = False
+cfg.RESUME_DIR = os.path.join('runs', '01-30_13-39')
+cfg.RESUME_STATE = 'save_state_ep_200_new_best_MAE_2.002.pth'
+cfg.RESUME_PATH = os.path.join('runs', cfg.RESUME_DIR, 'state_dicts', cfg.RESUME_STATE)
 
 
-__C.NUM_TASKS = 8
-__C.BASE_UPDATES = 10
 
