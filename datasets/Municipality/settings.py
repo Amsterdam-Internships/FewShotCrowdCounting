@@ -10,5 +10,4 @@ cfg_data.N_WORKERS = 4
 
 cfg_data.MEAN_STD = ([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 cfg_data.LABEL_FACTOR = 10000
-cfg_data.PATCH_SIZE = 224  # 224 or 384
 

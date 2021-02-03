@@ -8,7 +8,6 @@ def generate_density_municipality(img, gt_points, sigma):
     w, h = img.size
     k = np.zeros((h, w))
 
-    density = None
     for (x, y, _) in gt_points.astype(int):
         if x < w and y < h:
             k[y, x] = 1  # Note the order of x and y here. Height is stored in first dimension\n",

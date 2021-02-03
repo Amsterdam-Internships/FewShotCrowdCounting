@@ -9,7 +9,7 @@ from .SHTA import SHTA
 def loading_data(crop_size):
     # Train transforms
     train_main_transform = own_transforms.Compose([
-        own_transforms.RandomCrop([crop_size, ccrop_size]),
+        own_transforms.RandomCrop([crop_size, crop_size]),
         own_transforms.RandomHorizontallyFlip()
     ])
 

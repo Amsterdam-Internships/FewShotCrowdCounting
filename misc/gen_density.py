@@ -7,32 +7,16 @@ from PIL import Image
 import csv
 
 import scipy.ndimage
+from datasets.dataset_utils import generate_density_municipality
 
-
-
-data_path = ''
+data_path = ''  # Folder containing the images
 img_file_extension = '.png'
 data_files = [os.path.join(data_path, filename) for filename in os.listdir(data_path)
               if filename.endswith(img_file_extension)]
 
-
-def generate_density_municipality(img, gt_points, sigma):
-    w, h = img.size
-    k = np.zeros((h, w))
-
-    for (x, y, _) in gt_points.astype(int):
-        if x < w and y < h:
-            k[y, x] = 1  # Note the order of x and y here. Height is stored in first dimension\n",
-        else:
-            print("This should never happen!")  # This would mean a head is annotated outside the image.\n"
-    density = scipy.ndimage.filters.gaussian_filter(k, sigma, mode='constant')
-    return density
-
-
 for img_path in data_files:
-
-    gt_path = img_path.replace('.png', '-tags.csv')
-    den_path = img_path.replace('.png', '-den.csv')
+    gt_path = img_path.replace(img_file_extension, '-tags.csv')
+    den_path = img_path.replace(img_file_extension, '-den.csv')
     img = Image.open(img_path)
     if img.mode == 'L':
         img = img.convert('RGB')

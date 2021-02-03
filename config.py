@@ -15,8 +15,8 @@ cfg = edict()
 
 cfg.SEED = 42
 
-cfg.MODEL = 'deit_tiny_patch16_224'
-cfg.DATASET = 'SHTB'
+cfg.MODEL = 'deit_base_distilled_patch16_384'
+cfg.DATASET = 'SHTA'
 
 cfg.LR = 1e-5
 cfg.LR_GAMMA = 0.3  # Scale LR by this at each step epoch
