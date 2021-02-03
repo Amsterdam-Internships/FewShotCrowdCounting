@@ -152,7 +152,7 @@ class Trainer:
             gt_patches = gt_patches.squeeze()
             img_resolution = img_resolution.squeeze()
 
-            # why create an extra function when you can do this? TODO: make more general function
+            # why create an extra function when you can do this?
             _, gt = unsplit_den(gt_patches, gt_patches, img_resolution)
 
             if idx % self.eval_save_example_every == 0:
