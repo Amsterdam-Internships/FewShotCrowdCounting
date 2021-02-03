@@ -4,15 +4,13 @@ import numpy as np
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
-from datasets.SHTA.settings import cfg_data
-from datasets.SHTA.loading_data import loading_data
-from datasets.dataset_utils import split_image_and_den, unsplit_den, unsplit_img
+from datasets.dataset_utils import unsplit_den, unsplit_img
 import matplotlib.pyplot as plt
 from matplotlib import cm as CM
 
 
 class Trainer:
-    def __init__(self, model, cfg):  # Todo: with parameters etc. Like C3
+    def __init__(self, model, loading_data, cfg, cfg_data):  # Todo: with parameters etc. Like C3
         self.model = model
         self.cfg = cfg
         self.cfg_data = cfg_data

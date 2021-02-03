@@ -6,9 +6,9 @@ from .settings import cfg_data
 from .SHTB import SHTB
 
 
-def loading_data(patch_size):
+def loading_data(crop_size):
     train_main_transform = own_transforms.Compose([
-        own_transforms.RandomCrop([patch_size, patch_size]),
+        own_transforms.RandomCrop([crop_size, crop_size]),
         own_transforms.RandomHorizontallyFlip()
     ])
 
@@ -28,19 +28,19 @@ def loading_data(patch_size):
 
     # TODO: train, val, test support
     # TODO: .json support
-    train_set = SHTB_train(cfg_data.DATA_PATH + '/train',
-                           main_transform=train_main_transform,
-                           img_transform=img_transform,
-                           gt_transform=gt_transform)
+    train_set = SHTB(cfg_data.DATA_PATH + '/train', 'train', crop_size,
+                     main_transform=train_main_transform,
+                     img_transform=img_transform,
+                     gt_transform=gt_transform)
     train_loader = DataLoader(train_set,
                               batch_size=cfg_data.TRAIN_BS,
                               num_workers=cfg_data.N_WORKERS,
                               shuffle=True, drop_last=True)
 
-    test_set = SHTB_test(cfg_data.DATA_PATH + '/test',
-                         main_transform=None,
-                         img_transform=img_transform,
-                         gt_transform=gt_transform)
+    test_set = SHTB(cfg_data.DATA_PATH + '/test', 'test', crop_size,
+                    main_transform=None,
+                    img_transform=img_transform,
+                    gt_transform=gt_transform)
     test_loader = DataLoader(test_set,
                              batch_size=cfg_data.TEST_BS,
                              num_workers=cfg_data.N_WORKERS,

@@ -12,9 +12,9 @@ from datasets.dataset_utils import split_image_and_den
 
 
 class SHTA(data.Dataset):
-    def __init__(self, data_path, mode, main_transform=None, img_transform=None, gt_transform=None):
+    def __init__(self, data_path, mode, crop_size, main_transform=None, img_transform=None, gt_transform=None):
         self.data_path = data_path
-        self.patch_size = cfg_data.PATCH_SIZE
+        self.crop_size = crop_size
         self.mode = mode  # train or test
 
         self.main_transform = main_transform
@@ -61,7 +61,7 @@ class SHTA(data.Dataset):
         return img, den
 
     def process_getitem_test(self, img, den):
-        imgs, dens = split_image_and_den(img, den, self.patch_size)
+        imgs, dens = split_image_and_den(img, den, self.crop_size)
         for i in range(len(imgs)):
             if self.img_transform:  # These should always be provided
                 imgs[i] = self.img_transform(imgs[i])

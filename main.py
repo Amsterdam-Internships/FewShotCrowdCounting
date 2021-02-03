@@ -44,15 +44,23 @@ def make_save_dirs(loaded_cfg):
     else:
         print('save directory already exists!')
 
-    copyfile('config.py', os.path.join(cfg.SAVE_DIR, 'config.py'))
-
 
 def main(cfg):
     if cfg.RESUME:
-        module = importlib.import_module(cfg.RESUME_DIR.replace(os.sep, '.') + '.config')
+        module = importlib.import_module(cfg.RESUME_DIR.replace(os.sep, '.') + 'code.config')
         cfg = module.cfg
     else:
         make_save_dirs(cfg)
+        copyfile('config.py', os.path.join(cfg.CODE_DIR, 'config.py'))
+        copyfile('trainer.py', os.path.join(cfg.CODE_DIR, 'trainer.py'))
+        copyfile('models.py', os.path.join(cfg.CODE_DIR, 'models.py'))
+        copyfile(os.path.join('datasets', cfg.DATASET, 'settings.py'),
+                 os.path.join(cfg.CODE_DIR, 'settings.py'))
+        copyfile(os.path.join('datasets', cfg.DATASET, 'loading_data.py'),
+                 os.path.join(cfg.CODE_DIR, 'loading_data.py'))
+        copyfile(os.path.join('datasets', cfg.DATASET, cfg.DATASET + '.py'),
+                 os.path.join(cfg.CODE_DIR, cfg.DATASET + '.py'))
+
 
     # fix the seed for reproducibility
     torch.manual_seed(cfg.SEED)
@@ -77,7 +85,11 @@ def main(cfg):
     n_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print('number of params:', n_parameters)
 
-    trainer = Trainer(model, cfg)
+
+    dataloader = importlib.import_module(f'datasets.{cfg.DATASET}.loading_data').loading_data
+    cfg_data = importlib.import_module(f'datasets.{cfg.DATASET}.settings').cfg_data
+
+    trainer = Trainer(model, dataloader, cfg, cfg_data)
     trainer.train()
 
 

@@ -6,10 +6,10 @@ from .settings import cfg_data
 from .SHTA import SHTA
 
 
-def loading_data():
+def loading_data(crop_size):
     # Train transforms
     train_main_transform = own_transforms.Compose([
-        own_transforms.RandomCrop([cfg_data.PATCH_SIZE, cfg_data.PATCH_SIZE]),
+        own_transforms.RandomCrop([crop_size, ccrop_size]),
         own_transforms.RandomHorizontallyFlip()
     ])
 
@@ -44,7 +44,7 @@ def loading_data():
 
     # TODO: train, val, test support
     # TODO: .json support
-    train_set = SHTA(cfg_data.DATA_PATH + '/train', 'train',
+    train_set = SHTA(cfg_data.DATA_PATH + '/train', 'train', crop_size,
                      main_transform=train_main_transform,
                      img_transform=train_img_transform,
                      gt_transform=train_gt_transform)
@@ -53,7 +53,7 @@ def loading_data():
                               num_workers=cfg_data.N_WORKERS,
                               shuffle=True, drop_last=True)
 
-    test_set = SHTA(cfg_data.DATA_PATH + '/test', 'test',
+    test_set = SHTA(cfg_data.DATA_PATH + '/test', 'test', crop_size,
                     main_transform=test_main_transform,
                     img_transform=test_image_transform,
                     gt_transform=test_gt_transform)

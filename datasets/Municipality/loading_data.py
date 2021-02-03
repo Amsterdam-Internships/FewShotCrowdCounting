@@ -1,3 +1,4 @@
+import os
 import torchvision.transforms as standard_transforms
 from torch.utils.data import DataLoader
 import datasets.transforms as own_transforms
@@ -6,9 +7,9 @@ from .settings import cfg_data
 from .Municipality import Muni
 
 
-def loading_data():
+def loading_data(crop_size):
     train_main_transform = own_transforms.Compose([
-        own_transforms.RandomCrop([cfg_data.PATCH_SIZE, cfg_data.PATCH_SIZE]),
+        own_transforms.RandomCrop([crop_size, crop_size]),
         own_transforms.RandomHorizontallyFlip()
     ])
 
@@ -28,16 +29,16 @@ def loading_data():
 
     # TODO: train, val, test support
     # TODO: .json support
-    # train_set = Muni(cfg_data.DATA_PATH + '\\train', 'train',
-    #                  main_transform=train_main_transform,
-    #                  img_transform=img_transform,
-    #                  gt_transform=gt_transform)
-    # train_loader = DataLoader(train_set,
-    #                           batch_size=cfg_data.TRAIN_BS,
-    #                           num_workers=cfg_data.N_WORKERS,
-    #                           shuffle=True, drop_last=True)
+    train_set = Muni(os.path.join(cfg_data.DATA_PATH, 'train'), 'train', crop_size,
+                     main_transform=train_main_transform,
+                     img_transform=img_transform,
+                     gt_transform=gt_transform)
+    train_loader = DataLoader(train_set,
+                              batch_size=cfg_data.TRAIN_BS,
+                              num_workers=cfg_data.N_WORKERS,
+                              shuffle=True, drop_last=True)
 
-    test_set = Muni(cfg_data.DATA_PATH + '\\val', 'test',
+    test_set = Muni(os.path.join(cfg_data.DATA_PATH, 'val'), 'test', crop_size,
                     main_transform=None,
                     img_transform=img_transform,
                     gt_transform=gt_transform)
@@ -46,5 +47,4 @@ def loading_data():
                              num_workers=cfg_data.N_WORKERS,
                              shuffle=False, drop_last=False)
 
-    # return train_loader, test_loader, restore_transform
-    return None, test_loader, restore_transform
+    return train_loader, test_loader, restore_transform
