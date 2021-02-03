@@ -89,7 +89,7 @@ class Trainer:
             self.optim.step()
 
             losses.append(loss.cpu().item())
-            errors.append(torch.abs(torch.sum(out_den - gts, axis=(1, 2))).sum())
+            errors.append(torch.abs(torch.sum(out_den - gts, dim=(1, 2))).sum())
 
         # Also return the last predicted densities and corresponding gts. This allows for informative prints
         return losses, errors, out_den, gts
@@ -124,7 +124,7 @@ class Trainer:
                     plt.title(f'Predicted count: {pred_cnt:.3f} (GT: {gt_cnt})')
                     plt.savefig(save_path)
 
-                abs_patch_errors += torch.sum(torch.abs(gt_patches - pred_den), axis=0)
+                abs_patch_errors += torch.sum(torch.abs(gt_patches - pred_den), dim=0)
             for i in range(14):
                 for j in range(14):
                     lf = self.cfg_data.LABEL_FACTOR  # So next line fits on 1 line
@@ -139,7 +139,6 @@ class Trainer:
         plt.imshow(summed_patch_errors)
         save_path = os.path.join(self.cfg.PICS_DIR, f'summed_patch_ep_{self.epoch}.jpg')
         plt.savefig(save_path)
-
 
         return MAE
 
@@ -183,7 +182,7 @@ class Trainer:
             'net': self.model.state_dict(),
             'optim': self.optim.state_dict(),
             'scheduler': self.scheduler.state_dict(),
-            'exp_path': self.cfg.SAVE_DIR,
+            'save_dir_path': self.cfg.SAVE_DIR,
         }
 
         torch.save(save_sate, save_name)

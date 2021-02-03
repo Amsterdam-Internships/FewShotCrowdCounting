@@ -8,7 +8,7 @@ from torch.utils import data
 
 from PIL import Image
 from .settings import cfg_data
-from datasets.dataset_utils import split_image_and_den, unsplit_den
+from datasets.dataset_utils import split_image_and_den
 
 
 class SHTA(data.Dataset):

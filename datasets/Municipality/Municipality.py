@@ -35,6 +35,8 @@ class Muni(data.Dataset):
         self.data_files = [os.path.join(data_path, file) for file in os.listdir(data_path)
                            if file.endswith(self.img_extension)]
 
+        if not self.data_files:       # If we only have a train or test set, we can still initialize the dataloader
+            self.data_files = [None]  # Handy for, e.g., testing on a separate test set that doesn't have a train set.
         self.num_samples = len(self.data_files)
 
         print(f'{len(self.data_files)} {self.mode} images found.')

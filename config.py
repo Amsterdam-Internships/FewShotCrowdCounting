@@ -15,11 +15,11 @@ cfg = edict()
 
 cfg.SEED = 42
 
-cfg.MODEL = 'deit_tiny_distilled_patch16_224'
+cfg.MODEL = 'deit_tiny_patch16_224'
 
 cfg.LR = 1e-5
 cfg.LR_GAMMA = 0.3  # Scale LR by this at each step epoch
-cfg.LR_STEP_EPOCHS = [100, 500, 1500]
+cfg.LR_STEP_EPOCHS = [300, 1000]
 cfg.WEIGHT_DECAY = 1e-4
 
 cfg.MAX_EPOCH = 2500

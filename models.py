@@ -18,6 +18,10 @@ __all__ = [
 ]
 
 
+# ======================================================================================================= #
+#                                        MODULES TO DO REGRESSION                                         #
+# ======================================================================================================= #
+
 class DeiTRegressionHead(nn.Module):
     def __init__(self, crop_size, embed_dim, init_weights=None):
         super().__init__()
@@ -59,8 +63,6 @@ class RegressionTransformer(VisionTransformer):
         super().__init__(*args, **kwargs)
 
         self.regression_head = DeiTRegressionHead(kwargs['img_size'], kwargs['embed_dim'], self._init_weights)
-
-        self.head_dist.apply(self._init_weights)
 
     def forward(self, x):
         # taken from https://github.com/rwightman/pytorch-image-models/blob/master/timm/models/vision_transformer.py
@@ -127,6 +129,23 @@ class DistilledRegressionTransformer(VisionTransformer):
         return den, count
 
 
+# ======================================================================================================= #
+#                                               TINY MODEL                                                #
+# ======================================================================================================= #
+
+@register_model
+def deit_tiny_patch16_224(init_path=None, pretrained=False, **kwargs):
+    model = RegressionTransformer(
+        img_size=224, patch_size=16, embed_dim=192, depth=12, num_heads=3, mlp_ratio=4, qkv_bias=True,
+        norm_layer=partial(nn.LayerNorm, eps=1e-6), **kwargs)
+    model.default_cfg = _cfg()
+
+    if init_path:
+        model = init_model_state(model, init_path)
+
+    return model
+
+
 @register_model
 def deit_tiny_distilled_patch16_224(init_path=None, pretrained=False, **kwargs):
     model = DistilledRegressionTransformer(
@@ -142,10 +161,48 @@ def deit_tiny_distilled_patch16_224(init_path=None, pretrained=False, **kwargs):
     return model
 
 
+# ======================================================================================================= #
+#                                               SMALL MODEL                                               #
+# ======================================================================================================= #
+
+@register_model
+def deit_small_patch16_224(init_path=None, pretrained=False, **kwargs):
+    model = RegressionTransformer(
+        img_size=224, patch_size=16, embed_dim=384, depth=12, num_heads=6, mlp_ratio=4, qkv_bias=True,
+        norm_layer=partial(nn.LayerNorm, eps=1e-6), **kwargs)
+    model.default_cfg = _cfg()
+    model.patch_size = 224
+    model.n_patches = 14
+
+    if init_path:
+        model = init_model_state(model, init_path)
+
+    return model
+
+
 @register_model
 def deit_small_distilled_patch16_224(init_path=None, pretrained=False, **kwargs):
     model = DistilledRegressionTransformer(
         img_size=224, patch_size=16, embed_dim=384, depth=12, num_heads=6, mlp_ratio=4, qkv_bias=True,
+        norm_layer=partial(nn.LayerNorm, eps=1e-6), **kwargs)
+    model.default_cfg = _cfg()
+    model.patch_size = 224
+    model.n_patches = 14
+
+    if init_path:
+        model = init_model_state(model, init_path)
+
+    return model
+
+
+# ======================================================================================================= #
+#                                               BASE MODEL                                                #
+# ======================================================================================================= #
+
+@register_model
+def deit_base_patch16_224(init_path, pretrained=False, **kwargs):
+    model = RegressionTransformer(
+        img_size=224, patch_size=16, embed_dim=768, depth=12, num_heads=12, mlp_ratio=4, qkv_bias=True,
         norm_layer=partial(nn.LayerNorm, eps=1e-6), **kwargs)
     model.default_cfg = _cfg()
     model.patch_size = 224
@@ -186,6 +243,10 @@ def deit_base_distilled_patch16_384(init_path=None, pretrained=False, **kwargs):
 
     return model
 
+
+# ======================================================================================================= #
+#                                             UTIL FUNCTIONS                                              #
+# ======================================================================================================= #
 
 def init_model_state(model, init_path):
     if init_path.startswith('https'):

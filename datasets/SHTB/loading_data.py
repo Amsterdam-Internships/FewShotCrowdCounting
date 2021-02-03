@@ -3,7 +3,7 @@ from torch.utils.data import DataLoader
 import datasets.transforms as own_transforms
 
 from .settings import cfg_data
-from .SHTB import SHTB_train, SHTB_test
+from .SHTB import SHTB
 
 
 def loading_data(patch_size):
