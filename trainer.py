@@ -4,13 +4,11 @@ import numpy as np
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
-
 from datasets.SHTA.settings import cfg_data
 from datasets.SHTA.loading_data import loading_data
 from datasets.dataset_utils import split_image_and_den, unsplit_den, unsplit_img
 import matplotlib.pyplot as plt
 from matplotlib import cm as CM
-
 
 
 class Trainer:
@@ -41,39 +39,23 @@ class Trainer:
         #     self.save_eval_pics()
 
     def train(self):
-        # Fancy regression code LETS GO!
-        MAE = self.evaluate_model()
-        print(f'Initial MAE: {MAE:.3f}')
+        # MAE = self.evaluate_model()
+        # print(f'Initial MAE: {MAE:.3f}')
         self.model.train()
 
-        out = None  # SILENCE WENCH!
-        gts = None  # silences the 'might not be defined' warning below the for loop.
-
-        while True:
+        while self.epoch < self.cfg.MAX_EPOCH:
             self.epoch += 1
-            losses = []
-            errors = []
-            cur_time = time.time()
-            for idx, (images, gts) in enumerate(self.train_loader):
-                images = images.cuda()
-                gts = gts.cuda()
 
-                self.optim.zero_grad()
-                out = self.model(images)
-                out = out.squeeze()
-                loss = self.criterion(out, gts)
-                loss.backward()
-                self.optim.step()
-
-                losses.append(loss.cpu().item())
-                errors.append(torch.abs(torch.sum(out - gts, axis=(1, 2))).sum())
+            epoch_start_time = time.time()
+            losses, errors, last_out_den, last_gts = self.run_epoch()
+            epoch_run_time = time.time() - epoch_start_time
 
             MAE = torch.mean(torch.stack(errors)) / (self.cfg_data.TRAIN_BS * self.cfg_data.LABEL_FACTOR)
             avg_loss = np.mean(losses)
-            pred_cnt = out[0].detach().cpu().sum() / self.cfg_data.LABEL_FACTOR
-            gt_cnt = gts[0].cpu().sum() / self.cfg_data.LABEL_FACTOR
+            pred_cnt = last_out_den[0].detach().cpu().sum() / self.cfg_data.LABEL_FACTOR
+            gt_cnt = last_gts[0].cpu().sum() / self.cfg_data.LABEL_FACTOR
             print(f'ep {self.epoch}: Average loss={avg_loss:.3f}, Patch MAE={MAE:.3f}.'
-                  f'  Example: pred={pred_cnt:.3f}, gt={gt_cnt:.3f}. Train time: {time.time() - cur_time:.3f}')
+                  f'  Example: pred={pred_cnt:.3f}, gt={gt_cnt:.3f}. Train time: {epoch_run_time:.3f}')
 
             if self.epoch % self.cfg.EVAL_EVERY == 0:
                 eval_MAE = self.evaluate_model()
@@ -88,8 +70,33 @@ class Trainer:
                 self.scheduler.step()
                 print(f'Learning rate adjusted to {self.scheduler.get_last_lr()} at epoch {self.epoch}')
 
+    def run_epoch(self):
+        losses = []
+        errors = []
+
+        out_den = None  # SILENCE WENCH!
+        gts = None  # silences the 'might not be defined' warning below the for loop.
+
+        for idx, (images, gts) in enumerate(self.train_loader):
+            images = images.cuda()
+            gts = gts.cuda()
+
+            self.optim.zero_grad()
+            out_den, out_count = self.model(images)
+            out_den = out_den.squeeze()
+            loss = self.criterion(out_den, gts)
+            loss.backward()
+            self.optim.step()
+
+            losses.append(loss.cpu().item())
+            errors.append(torch.abs(torch.sum(out_den - gts, axis=(1, 2))).sum())
+
+        # Also return the last predicted densities and corresponding gts. This allows for informative prints
+        return losses, errors, out_den, gts
+
     def evaluate_model(self):
 
+        plt.cla()  # Clear plot for new ones
         self.model.eval()
         with torch.no_grad():
             errors = []
@@ -102,10 +109,10 @@ class Trainer:
                 gt_patches = gt_patches.squeeze()
                 img_resolution = img_resolution.squeeze()
 
-                out = self.model(img_patches)
-                out = out.squeeze().cpu()
+                pred_den, pred_count = self.model(img_patches)
+                pred_den = pred_den.squeeze().cpu()
 
-                den, gt = unsplit_den(out, gt_patches, img_resolution)
+                den, gt = unsplit_den(pred_den, gt_patches, img_resolution)
 
                 pred_cnt = den.sum() / self.cfg_data.LABEL_FACTOR
                 gt_cnt = gt.sum() / self.cfg_data.LABEL_FACTOR
@@ -117,7 +124,7 @@ class Trainer:
                     plt.title(f'Predicted count: {pred_cnt:.3f} (GT: {gt_cnt})')
                     plt.savefig(save_path)
 
-                abs_patch_errors += torch.sum(torch.abs(gt_patches - out), axis=0)
+                abs_patch_errors += torch.sum(torch.abs(gt_patches - pred_den), axis=0)
             for i in range(14):
                 for j in range(14):
                     lf = self.cfg_data.LABEL_FACTOR  # So next line fits on 1 line
@@ -126,7 +133,6 @@ class Trainer:
             MAE = torch.mean(torch.stack(errors))
 
         plt.cla()
-
         plt.imshow(abs_patch_errors)
         save_path = os.path.join(self.cfg.PICS_DIR, f'errors_ep_{self.epoch}.jpg')
         plt.savefig(save_path)
@@ -134,7 +140,7 @@ class Trainer:
         save_path = os.path.join(self.cfg.PICS_DIR, f'summed_patch_ep_{self.epoch}.jpg')
         plt.savefig(save_path)
 
-        plt.cla()
+
         return MAE
 
     def save_eval_pics(self):

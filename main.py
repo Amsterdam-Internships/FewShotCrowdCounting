@@ -8,12 +8,12 @@ import torch
 import torch.backends.cudnn as cudnn
 import os
 
-import custom_models  # Need to register the models!
+import models  # Need to register the models!
 from timm.models import create_model
 
 import importlib
 
-from custom_training import Trainer
+from trainer import Trainer
 from config import cfg
 from shutil import copyfile
 

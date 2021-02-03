@@ -1,5 +1,7 @@
 # Copyright (c) 2015-present, Facebook, Inc.
 # All rights reserved.
+
+# Architectures from Facebook are adjusted such that Crowd Counting can be performed.
 import torch
 import torch.nn as nn
 from functools import partial
@@ -16,27 +18,49 @@ __all__ = [
 ]
 
 
+class DeiTRegressionHead(nn.Module):
+    def __init__(self, crop_size, embed_dim, init_weights=None):
+        super().__init__()
+
+        self.regression_head = nn.ModuleDict({
+            'global_counter': nn.Sequential(
+                nn.Linear(embed_dim, 512),
+                nn.ReLU(),
+                nn.Linear(512, 512),
+                nn.ReLU(),
+                nn.Linear(512, 1)
+            ),
+            'lin_scaler': nn.Sequential(
+                nn.Linear(embed_dim, 512),
+                nn.ReLU(),
+                nn.Linear(512, 512),
+                nn.ReLU(),
+                nn.Linear(512, 256)
+            ),
+            'folder': nn.Fold((crop_size, crop_size), kernel_size=16, stride=16)
+        })
+
+        if init_weights:
+            self.regression_head['global_counter'].apply(init_weights)
+            self.regression_head['lin_scaler'].apply(init_weights)
+
+    def forward(self, pre_count, pre_den):
+        count = self.regression_head['global_counter'](pre_count)
+
+        pre_den = self.regression_head['lin_scaler'](pre_den)
+        pre_den = pre_den.transpose(1, 2)
+        den = self.regression_head['folder'](pre_den)
+
+        return den, count
+
+
 class RegressionTransformer(VisionTransformer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.regression_head = nn.ModuleDict({
-            'global_counter': nn.Sequential(
-                nn.Linear(kwargs['embed_dim'], 512),
-                nn.ReLu(),
-                nn.Linear(512, 1)
-            ),
-            'lin_scaler': nn.Sequential(
-                nn.Linear(kwargs['embed_dim'], 512),
-                nn.ReLu(),
-                nn.Linear(512, 256)
-            ),
-            'folder': nn.Fold((kwargs['img_size'], kwargs['img_size']), kernel_size=16, stride=16)
-        })
+        self.regression_head = DeiTRegressionHead(kwargs['img_size'], kwargs['embed_dim'], self._init_weights)
 
         self.head_dist.apply(self._init_weights)
-        self.regression_head['global_counter'].apply(self._init_weights)
-        self.regression_head['lin_scaler'].apply(self._init_weights)
 
     def forward(self, x):
         # taken from https://github.com/rwightman/pytorch-image-models/blob/master/timm/models/vision_transformer.py
@@ -57,11 +81,7 @@ class RegressionTransformer(VisionTransformer):
         pre_count = x[:, 0]
         pre_den = x[:, 1:]
 
-        count = self.regression_head['global_counter'](pre_count)
-
-        pre_den = self.regression_head['lin_scaler'](pre_den)
-        pre_den = pre_den.transpose(1, 2)
-        den = self.regression_head['folder'](pre_den)
+        den, count = self.regression_head(pre_count, pre_den)
 
         return den, count
 
@@ -76,26 +96,10 @@ class DistilledRegressionTransformer(VisionTransformer):
 
         trunc_normal_(self.dist_token, std=.02)
         trunc_normal_(self.pos_embed, std=.02)
-        self.head_dist.apply(self._init_weights)
 
-        self.regression_head = nn.ModuleDict({
-            'global_counter': nn.Sequential(
-                nn.Linear(kwargs['embed_dim'], 512),
-                nn.ReLu(),
-                nn.Linear(512, 1)
-            ),
-            'lin_scaler': nn.Sequential(
-                nn.Linear(kwargs['embed_dim'], 512),
-                nn.ReLu(),
-                nn.Linear(512, 256)
-            ),
-            'folder': nn.Fold((kwargs['img_size'], kwargs['img_size']), kernel_size=16, stride=16)
-        })
+        self.regression_head = DeiTRegressionHead(kwargs['img_size'], kwargs['embed_dim'], self._init_weights)
 
         self.head_dist.apply(self._init_weights)
-        self.regression_head['global_counter'].apply(self._init_weights)
-        self.regression_head['lin_scaler'].apply(self._init_weights)
-
 
     def forward(self, x):
         # taken from https://github.com/rwightman/pytorch-image-models/blob/master/timm/models/vision_transformer.py
@@ -118,29 +122,9 @@ class DistilledRegressionTransformer(VisionTransformer):
         pre_count = x[:, 0]
         pre_den = x[:, 2:]
 
-        count = self.regression_head['global_counter'](pre_count)
-
-        pre_den = self.regression_head['lin_scaler'](pre_den)
-        pre_den = pre_den.transpose(1, 2)
-        den = self.regression_head['folder'](pre_den)
+        den, count = self.regression_head(pre_count, pre_den)
 
         return den, count
-
-
-def init_model_state(model, init_path):
-    if init_path.startswith('https'):
-        checkpoint = torch.hub.load_state_dict_from_url(
-            init_path, map_location='cpu', check_hash=True)
-    else:
-        checkpoint = torch.load(init_path, map_location='cpu')
-    pretrained_state = checkpoint['model']
-    modified_model_state = model.state_dict()
-    # With this, we are able to load the pretrained modules while ignoring the new regression modules.
-    for key in pretrained_state.keys():
-        modified_model_state[key] = pretrained_state[key]
-    model.load_state_dict(modified_model_state)
-
-    return model
 
 
 @register_model
@@ -199,5 +183,21 @@ def deit_base_distilled_patch16_384(init_path=None, pretrained=False, **kwargs):
 
     if init_path:
         model = init_model_state(model, init_path)
+
+    return model
+
+
+def init_model_state(model, init_path):
+    if init_path.startswith('https'):
+        checkpoint = torch.hub.load_state_dict_from_url(
+            init_path, map_location='cpu', check_hash=True)
+    else:
+        checkpoint = torch.load(init_path, map_location='cpu')
+    pretrained_state = checkpoint['model']
+    modified_model_state = model.state_dict()
+    # With this, we are able to load the pretrained modules while ignoring the new regression modules.
+    for key in pretrained_state.keys():
+        modified_model_state[key] = pretrained_state[key]
+    model.load_state_dict(modified_model_state)
 
     return model

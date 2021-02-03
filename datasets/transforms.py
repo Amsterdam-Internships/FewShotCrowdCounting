@@ -1,6 +1,6 @@
 import random
 import numpy as np
-from PIL import Image, ImageOps, ImageFilter
+from PIL import Image
 import torch
 import torchvision.transforms as standard_transforms
 from skimage import exposure, img_as_float, img_as_ubyte
