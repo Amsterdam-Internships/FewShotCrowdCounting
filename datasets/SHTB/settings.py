@@ -4,7 +4,7 @@ cfg_data = edict()
 
 cfg_data.DATA_PATH = 'D:\\OneDrive\\OneDrive - UvA\\ThesisData\Datasets\\PreGenSHTB'
 
-cfg_data.TRAIN_BS = 25
+cfg_data.TRAIN_BS = 60
 cfg_data.TEST_BS = 1
 cfg_data.N_WORKERS = 1
 

@@ -15,7 +15,7 @@ class Trainer:
         self.cfg = cfg
         self.cfg_data = cfg_data
 
-        self.train_loader, self.test_loader, self.restore_transform = loading_data()
+        self.train_loader, self.test_loader, self.restore_transform = loading_data(self.model.crop_size)
         self.train_samples = len(self.train_loader.dataset)
         self.test_samples = len(self.test_loader.dataset)
         self.eval_save_example_every = self.test_samples // self.cfg.SAVE_NUM_EVAL_EXAMPLES
@@ -33,12 +33,12 @@ class Trainer:
         if cfg.RESUME:
             self.load_state(cfg.RESUME_PATH)
             print(f'Resuming from epoch {self.epoch}')
-        # else:
-        #     self.save_eval_pics()
+        else:
+            self.save_eval_pics()
 
     def train(self):
-        # MAE = self.evaluate_model()
-        # print(f'Initial MAE: {MAE:.3f}')
+        MAE = self.evaluate_model()
+        print(f'Initial MAE: {MAE:.3f}')
         self.model.train()
 
         while self.epoch < self.cfg.MAX_EPOCH:
@@ -46,27 +46,32 @@ class Trainer:
 
             epoch_start_time = time.time()
             losses, errors, last_out_den, last_gts = self.run_epoch()
-            epoch_run_time = time.time() - epoch_start_time
+            epoch_time = time.time() - epoch_start_time
 
             MAE = torch.mean(torch.stack(errors)) / (self.cfg_data.TRAIN_BS * self.cfg_data.LABEL_FACTOR)
             avg_loss = np.mean(losses)
             pred_cnt = last_out_den[0].detach().cpu().sum() / self.cfg_data.LABEL_FACTOR
             gt_cnt = last_gts[0].cpu().sum() / self.cfg_data.LABEL_FACTOR
             print(f'ep {self.epoch}: Average loss={avg_loss:.3f}, Patch MAE={MAE:.3f}.'
-                  f'  Example: pred={pred_cnt:.3f}, gt={gt_cnt:.3f}. Train time: {epoch_run_time:.3f}')
+                  f'  Example: pred={pred_cnt:.3f}, gt={gt_cnt:.3f}. Train time: {epoch_time:.3f}')
 
             if self.epoch % self.cfg.EVAL_EVERY == 0:
+                eval_start_time = time.time()
                 eval_MAE = self.evaluate_model()
+                eval_time = time.time() - eval_start_time
+
                 if eval_MAE < self.best_mae:
                     self.best_mae = eval_MAE
                     print_fancy_new_best_MAE()
+                    self.save_state(f'new_best_MAE_{eval_MAE:.3f}')
                 elif self.epoch % self.cfg.SAVE_EVERY == 0:
-                    self.save_state(f'MAE_{MAE:.3f}')
-                print(f'MAE: {eval_MAE:.3f}, best MAE: {self.best_mae:.3f}')
+                    self.save_state(f'MAE_{eval_MAE:.3f}')
+                print(f'MAE: {eval_MAE:.3f}, best MAE: {self.best_mae:.3f} at ep({self.best_mae})')
 
             if self.epoch in self.cfg.LR_STEP_EPOCHS:
                 self.scheduler.step()
-                print(f'Learning rate adjusted to {self.scheduler.get_last_lr()} at epoch {self.epoch}')
+                print(f'Learning rate adjusted to {self.scheduler.get_last_lr()} at epoch {self.epoch}.'
+                      f' eval time: {eval_time:.3f}')
 
     def run_epoch(self):
         losses = []
@@ -82,6 +87,8 @@ class Trainer:
             self.optim.zero_grad()
             out_den, out_count = self.model(images)
             out_den = out_den.squeeze()
+            if self.epoch > 50:
+                out_den[out_den < 0] = out_den[out_den < 0] * self.epoch  # Punish negative counts
             loss = self.criterion(out_den, gts)
             loss.backward()
             self.optim.step()
@@ -99,7 +106,7 @@ class Trainer:
         with torch.no_grad():
             errors = []
 
-            abs_patch_errors = torch.zeros(cfg_data.PATCH_SIZE, cfg_data.PATCH_SIZE)
+            abs_patch_errors = torch.zeros(self.model.crop_size, self.model.crop_size)
             summed_patch_errors = torch.zeros(self.model.n_patches, self.model.n_patches)
 
             for idx, (img_patches, gt_patches, img_resolution) in enumerate(self.test_loader):

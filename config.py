@@ -24,8 +24,8 @@ cfg.LR_STEP_EPOCHS = [300, 1000]
 cfg.WEIGHT_DECAY = 1e-4
 
 cfg.MAX_EPOCH = 2500
-cfg.EVAL_EVERY = 25
-cfg.SAVE_EVERY_N_EVALS = 4  # Every Nth evaluation, save model regardless of performance
+cfg.EVAL_EVERY = 50
+cfg.SAVE_EVERY_N_EVALS = 2  # Every Nth evaluation, save model regardless of performance
 cfg.SAVE_EVERY = cfg.SAVE_EVERY_N_EVALS * cfg.EVAL_EVERY  # Don't touch this one
 
 cfg.SAVE_NUM_EVAL_EXAMPLES = 10  # How many examples from the test/evaluation set to save
