@@ -88,6 +88,58 @@ class RegressionTransformer(VisionTransformer):
         return den, count
 
 
+class RegressionTransformerCNN(VisionTransformer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.regression_head = nn.ModuleDict({
+            'global_counter': nn.Sequential(
+                nn.Linear(kwargs['embed_dim'], 1)
+            ),
+            'lin_scaler': nn.Sequential(
+                nn.Linear(kwargs['embed_dim'], 256)
+            ),
+            'folder': nn.Fold((kwargs['img_size'], kwargs['img_size']), kernel_size=16, stride=16),
+            'cnn': nn.Sequential(
+                nn.Conv2d(in_channels=1, out_channels=64, kernel_size=3, stride=1, padding=1),
+                nn.ReLU(),
+                nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, stride=1, padding=1),
+                nn.ReLU(),
+                nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, stride=1, padding=1),
+                nn.ReLU(),
+                nn.Conv2d(in_channels=64, out_channels=1, kernel_size=3, stride=1, padding=1)
+            )
+        })
+
+    def forward(self, x):
+        # taken from https://github.com/rwightman/pytorch-image-models/blob/master/timm/models/vision_transformer.py
+        # Adjusted to do Crowd Counting regression
+
+        batch_size = x.shape[0]
+        x = self.patch_embed(x)
+
+        # This token has been stolen by a lot of people now
+        cls_tokens = self.cls_token.expand(batch_size, -1, -1)  # stole cls_tokens impl from Phil Wang, thanks
+        x = torch.cat((cls_tokens, x), dim=1)
+        x = x + self.pos_embed
+        x = self.pos_drop(x)
+
+        for blk in self.blocks:
+            x = blk(x)
+
+        pre_count = x[:, 0]
+        pre_den = x[:, 1:]
+
+        count = self.regression_head['global_counter'](pre_count)
+
+        pre_den = self.regression_head['lin_scaler'](pre_den)
+        pre_den = pre_den.transpose(1, 2)
+        pre_den = self.regression_head['folder'](pre_den)
+        den = self.regression_head['cnn'](pre_den)
+
+        return den, count
+
+
 class DistilledRegressionTransformer(VisionTransformer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -132,6 +184,20 @@ class DistilledRegressionTransformer(VisionTransformer):
 # ======================================================================================================= #
 #                                               TINY MODEL                                                #
 # ======================================================================================================= #
+@register_model
+def deit_tiny_cnn_patch16_224(init_path=None, pretrained=False, **kwargs):
+    model = RegressionTransformerCNN(
+        img_size=224, patch_size=16, embed_dim=192, depth=12, num_heads=3, mlp_ratio=4, qkv_bias=True,
+        norm_layer=partial(nn.LayerNorm, eps=1e-6), **kwargs)
+    model.default_cfg = _cfg()
+    model.crop_size = 224
+    model.n_patches = 14
+
+    if init_path:
+        model = init_model_state(model, init_path)
+
+    return model
+
 
 @register_model
 def deit_tiny_patch16_224(init_path=None, pretrained=False, **kwargs):

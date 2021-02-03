@@ -66,12 +66,12 @@ class Trainer:
                     self.save_state(f'new_best_MAE_{eval_MAE:.3f}')
                 elif self.epoch % self.cfg.SAVE_EVERY == 0:
                     self.save_state(f'MAE_{eval_MAE:.3f}')
-                print(f'MAE: {eval_MAE:.3f}, best MAE: {self.best_mae:.3f} at ep({self.best_mae})')
+                print(f'MAE: {eval_MAE:.3f}, best MAE: {self.best_mae:.3f} at ep({self.best_mae}).'
+                      f' eval time: {eval_time:.3f}')
 
             if self.epoch in self.cfg.LR_STEP_EPOCHS:
                 self.scheduler.step()
-                print(f'Learning rate adjusted to {self.scheduler.get_last_lr()} at epoch {self.epoch}.'
-                      f' eval time: {eval_time:.3f}')
+                print(f'Learning rate adjusted to {self.scheduler.get_last_lr()} at epoch {self.epoch}.')
 
     def run_epoch(self):
         losses = []
@@ -87,8 +87,7 @@ class Trainer:
             self.optim.zero_grad()
             out_den, out_count = self.model(images)
             out_den = out_den.squeeze()
-            if self.epoch > 50:
-                out_den[out_den < 0] = out_den[out_den < 0] * self.epoch  # Punish negative counts
+
             loss = self.criterion(out_den, gts)
             loss.backward()
             self.optim.step()
@@ -126,7 +125,7 @@ class Trainer:
                 if idx % self.eval_save_example_every == 0:
                     plt.imshow(den, cmap=CM.jet)
                     save_path = os.path.join(self.cfg.PICS_DIR, f'pred_{idx}_ep_{self.epoch}.jpg')
-                    plt.title(f'Predicted count: {pred_cnt:.3f} (GT: {gt_cnt})')
+                    plt.title(f'Predicted count: {pred_cnt:.3f} (GT: {gt_cnt:.3f})')
                     plt.savefig(save_path)
 
                 abs_patch_errors += torch.sum(torch.abs(gt_patches - pred_den), dim=0)
@@ -164,12 +163,12 @@ class Trainer:
 
                 plt.imshow(img)
                 save_path = os.path.join(self.cfg.PICS_DIR, f'img_{idx}.jpg')
-                plt.title(f'GT count: {gt_count}')
+                plt.title(f'GT count: {gt_count:.3f}')
                 plt.savefig(save_path)
 
                 plt.imshow(gt, cmap=CM.jet)
                 save_path = os.path.join(self.cfg.PICS_DIR, f'gt_{idx}.jpg')
-                plt.title(f'GT count: {gt_count}')
+                plt.title(f'GT count: {gt_count:.3f}')
                 plt.savefig(save_path)
         plt.cla()
 
