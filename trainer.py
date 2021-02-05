@@ -33,15 +33,15 @@ class Trainer:
         if cfg.RESUME:
             self.load_state(cfg.RESUME_PATH)
             print(f'Resuming from epoch {self.epoch}')
-        # else:
-        #     self.save_eval_pics()
-        #     self.writer.add_scalar('lr', self.scheduler.get_last_lr()[0], self.epoch)
+        else:
+            self.save_eval_pics()
+            self.writer.add_scalar('lr', self.scheduler.get_last_lr()[0], self.epoch)
 
     def train(self):
-        # MAE = self.evaluate_model()
-        # print(f'Initial MAE: {MAE:.3f}')
-        self.model.train()
+        MAE = self.evaluate_model()
+        print(f'Initial MAE: {MAE:.3f}')
 
+        self.model.train()
         while self.epoch < self.cfg.MAX_EPOCH:
             self.epoch += 1
 
