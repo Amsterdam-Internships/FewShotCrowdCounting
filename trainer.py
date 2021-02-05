@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
-from datasets.dataset_utils import unsplit_den, unsplit_img
+from datasets.dataset_utils import img_equal_unsplit
 import matplotlib.pyplot as plt
 from matplotlib import cm as CM
 
@@ -33,13 +33,13 @@ class Trainer:
         if cfg.RESUME:
             self.load_state(cfg.RESUME_PATH)
             print(f'Resuming from epoch {self.epoch}')
-        else:
-            self.save_eval_pics()
-            self.writer.add_scalar('lr', self.scheduler.get_last_lr()[0], self.epoch)
+        # else:
+        #     self.save_eval_pics()
+        #     self.writer.add_scalar('lr', self.scheduler.get_last_lr()[0], self.epoch)
 
     def train(self):
-        MAE = self.evaluate_model()
-        print(f'Initial MAE: {MAE:.3f}')
+        # MAE = self.evaluate_model()
+        # print(f'Initial MAE: {MAE:.3f}')
         self.model.train()
 
         while self.epoch < self.cfg.MAX_EPOCH:
@@ -70,6 +70,7 @@ class Trainer:
 
                 if eval_MAE < self.best_mae:
                     self.best_mae = eval_MAE
+                    self.best_epoch = self.epoch
                     print_fancy_new_best_MAE()
                     self.save_state(f'new_best_MAE_{eval_MAE:.3f}')
                 elif self.epoch % self.cfg.SAVE_EVERY == 0:
@@ -96,7 +97,7 @@ class Trainer:
 
         for idx, (images, gts) in enumerate(self.train_loader):
             images = images.cuda()
-            den_gts = gts.cuda()
+            den_gts = gts.squeeze().cuda()
             count_gts = den_gts.sum(dim=(1, 2)).unsqueeze(-1)
 
             self.optim.zero_grad()
@@ -128,15 +129,18 @@ class Trainer:
             abs_patch_errors = torch.zeros(self.model.crop_size, self.model.crop_size)
             summed_patch_errors = torch.zeros(self.model.n_patches, self.model.n_patches)
 
-            for idx, (img_patches, gt_patches, img_resolution) in enumerate(self.test_loader):
+            for idx, (img, img_patches, gt_patches) in enumerate(self.test_loader):
                 img_patches = img_patches.squeeze().cuda()
-                gt_patches = gt_patches.squeeze()
-                img_resolution = img_resolution.squeeze()
+                gt_patches = gt_patches.squeeze().unsqueeze(1)  # Remove batch dim, insert channel dim
+                img = img.squeeze()  # Remove batch dimension
+                _, img_h, img_w = img.shape
 
                 pred_den, pred_count = self.model(img_patches)
-                pred_den = pred_den.squeeze().cpu()
+                pred_den = pred_den.cpu()
 
-                den, gt = unsplit_den(pred_den, gt_patches, img_resolution)
+                gt = img_equal_unsplit(gt_patches, self.cfg_data.OVERLAP, self.cfg_data.IGNORE_BUFFER, img_h, img_w, 1)
+                den = img_equal_unsplit(pred_den, self.cfg_data.OVERLAP, self.cfg_data.IGNORE_BUFFER, img_h, img_w, 1)
+                den = den.squeeze()  # Remove channel dim
 
                 pred_cnt = den.sum() / self.cfg_data.LABEL_FACTOR
                 gt_cnt = gt.sum() / self.cfg_data.LABEL_FACTOR
@@ -148,7 +152,7 @@ class Trainer:
                     plt.title(f'Predicted count: {pred_cnt:.3f} (GT: {gt_cnt:.3f})')
                     plt.savefig(save_path)
 
-                abs_patch_errors += torch.sum(torch.abs(gt_patches - pred_den), dim=0)
+                abs_patch_errors += torch.sum(torch.abs(gt_patches.squeeze() - pred_den.squeeze()), dim=0)
             for i in range(14):
                 for j in range(14):
                     lf = self.cfg_data.LABEL_FACTOR  # So next line fits on 1 line
@@ -167,16 +171,17 @@ class Trainer:
         return MAE
 
     def save_eval_pics(self):
-        for idx, (img_patches, gt_patches, img_resolution) in enumerate(self.test_loader):
-            img_patches = img_patches.squeeze().cuda()
-            gt_patches = gt_patches.squeeze()
-            img_resolution = img_resolution.squeeze()
+        plt.cla()
+        for idx, (img, img_patches, gt_patches) in enumerate(self.test_loader):
+            gt_patches = gt_patches.squeeze().unsqueeze(1)  # Remove batch dim, insert channel dim
+            img = img.squeeze()
 
-            # why create an extra function when you can do this?
-            _, gt = unsplit_den(gt_patches, gt_patches, img_resolution)
+            _, img_h, img_w = img.shape
+
+            gt = img_equal_unsplit(gt_patches, self.cfg_data.OVERLAP, self.cfg_data.IGNORE_BUFFER, img_h, img_w, 1)
+            gt = gt.squeeze()  # Remove channel dim
 
             if idx % self.eval_save_example_every == 0:
-                img = unsplit_img(img_patches, img_resolution)
                 img = self.restore_transform(img)
                 gt_count = gt.sum() / self.cfg_data.LABEL_FACTOR
                 gt_count = torch.round(gt_count)
@@ -190,7 +195,7 @@ class Trainer:
                 save_path = os.path.join(self.cfg.PICS_DIR, f'gt_{idx}.jpg')
                 plt.title(f'GT count: {gt_count:.3f}')
                 plt.savefig(save_path)
-        plt.cla()
+
 
     def save_state(self, name_extra=''):
 

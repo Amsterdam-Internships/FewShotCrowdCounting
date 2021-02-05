@@ -8,19 +8,19 @@ cfg = edict()
 
 # __all__ = [
 #     'deit_base_patch16_224',              'deit_small_patch16_224',               'deit_tiny_patch16_224',
-#     'deit_base_distilled_patch16_224',    'deit_small_distilled_patch16_224',     'deit_tiny_distilled_patch16_224'
-#     'deit_base_patch16_384',
+#     'deit_base_distilled_patch16_224',    'deit_small_distilled_patch16_224',     'deit_tiny_distilled_patch16_224',
+#     'deit_base_patch16_384',                                                      'deit_tiny_cnn_patch16_224',
 #     'deit_base_distilled_patch16_384',
 # ]
 
 cfg.SEED = 42
 
-cfg.MODEL = 'deit_tiny_patch16_224'
-cfg.DATASET = 'WE'
+cfg.MODEL = 'deit_tiny_cnn_patch16_224'
+cfg.DATASET = 'SHTB'
 
 cfg.COUNT_LOSS_FACTOR = 0
 cfg.LR = 1e-5
-cfg.LR_GAMMA = 0.1**2  # Scale LR by this at each step epoch
+cfg.LR_GAMMA = 0.3  # Scale LR by this at each step epoch
 cfg.LR_STEP_EPOCHS = [300, 1000]
 cfg.WEIGHT_DECAY = 1e-4
 

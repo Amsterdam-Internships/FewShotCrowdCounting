@@ -46,16 +46,29 @@ class RandomCrop(object):
         self.crop_w = crop_shape[0]
         self.crop_h = crop_shape[1]
 
-    def __call__(self, img, mask, bbx=None):
-        assert img.size == mask.size
+    def __call__(self, img, den, bbx=None):
+        assert img.size == den.size
 
         w, h = img.size
         x1 = random.randint(0, w - self.crop_w)
         y1 = random.randint(0, h - self.crop_h)
 
         crop_box = (x1, y1, x1 + self.crop_w, y1 + self.crop_h)
-        return img.crop(crop_box), mask.crop(crop_box)
+        return img.crop(crop_box), den.crop(crop_box)
 
+
+class RandomTensorCrop(object):
+    def __init__(self, crop_shape):
+        self.crop_w = crop_shape[0]
+        self.crop_h = crop_shape[1]
+
+    def __call__(self, img, den, bbx1=None):
+        assert img.shape[1:] == den.shape[1:]
+        _, h, w = img.shape
+        y1 = random.randint(0, h - self.crop_h)
+        x1 = random.randint(0, w - self.crop_w)
+
+        return img[:, y1:y1+self.crop_h, x1:x1+self.crop_w], den[:, y1:y1+self.crop_h, x1:x1+self.crop_w]
 
 class RandomGrayscale(object):
     def __call__(self, img):

@@ -49,12 +49,12 @@ def refine_density(model, den, img):
     for patches, patches_coords in zip(all_patches, all_patches_coords):
         patch_stack = torch.stack(patches).cuda()
 
-        out = model(patch_stack)
-        out = out.squeeze().cpu()
+        out_den, out_count = model(patch_stack)
+        out_den = out_den.squeeze().cpu()
 
         for i in range(len(patches_coords)):
             y1, y2, x1, x2 = patches_coords[i]
-            pred = out[i]
+            pred = out_den[i]
             den[y1:y2, x1:x2] = den[y1:y2, x1:x2] - mask * den[y1:y2, x1:x2]  # Remove old value
             den[y1:y2, x1:x2] = den[y1:y2, x1:x2] + mask * pred  # Insert new value
 

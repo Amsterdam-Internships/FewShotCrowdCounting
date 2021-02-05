@@ -17,71 +17,65 @@ def generate_density_municipality(img, gt_points, sigma):
     return density
 
 
-def split_image_and_den(img, den, p_size):
-    w, h = img.size
+def img_equal_split(img, crop_size, overlap):
+    channels, h, w = img.shape
 
-    n_cols = math.ceil(w / p_size)
-    n_rows = math.ceil(h / p_size)
+    n_cols = (w - crop_size) / (crop_size - overlap) + 1
+    n_cols = math.ceil(n_cols)  # At least this many crops needed to get >= overlap pixels of overlap
+    n_rows = (h - crop_size) / (crop_size - overlap) + 1
+    n_rows = math.ceil(n_rows)  # At least this many crops needed to get >= overlap pixels of overlap
 
-    img_patches = []
-    den_patches = []
-    for row in range(n_rows):
-        for col in range(n_cols):
-            x1 = row * p_size if row < (n_rows - 1) else h - p_size  # Last patch might not fit in image.
-            x2 = x1 + p_size
-            y1 = col * p_size if col < (n_cols - 1) else w - p_size  # Hence, there might also be some overlap
-            y2 = y1 + p_size
+    overlap_w = crop_size - (w - crop_size) / (n_cols - 1)
+    overlap_w = math.floor(overlap_w)
+    overlap_h = crop_size - (h - crop_size) / (n_rows - 1)
+    overlap_h = math.floor(overlap_h)
 
-            img_patches.append(img.crop((y1, x1, y2, x2)))
-            den_patches.append(den.crop((y1, x1, y2, x2)))
+    crops = torch.zeros((n_rows * n_cols, channels, crop_size, crop_size))
 
-    return img_patches, den_patches
+    for r in range(n_rows):
+        for c in range(n_cols):
+            y1 = r * (crop_size - overlap_h) if r * (crop_size - overlap_h) + crop_size <= h else h - crop_size
+            y2 = y1 + crop_size
+            x1 = c * (crop_size - overlap_w) if c * (crop_size - overlap_w) + crop_size <= w else w - crop_size
+            x2 = x1 + crop_size
 
+            item_idx = r * n_cols + c
+            crops[item_idx, :, :, :] = img[:, y1:y2, x1:x2]
 
-def unsplit_den(out_patches, gt_patches, img_resolution):
-    w, h = img_resolution[0], img_resolution[1]
-    p_size = out_patches.shape[1]
-    n_cols = math.ceil(w / p_size)
-    n_rows = math.ceil(h / p_size)
-
-    den = torch.zeros(h, w)
-    gt = torch.zeros(h, w)
-    divider = torch.zeros(h, w)  # Takes care of overlap
-
-    i = 0
-    for row in range(n_rows):
-        for col in range(n_cols):
-            x1 = row * p_size if row < (n_rows - 1) else h - p_size
-            x2 = x1 + p_size
-            y1 = col * p_size if col < (n_cols - 1) else w - p_size
-            y2 = y1 + p_size
-
-            den[x1:x2, y1:y2] += out_patches[i]
-            divider[x1:x2, y1:y2] += torch.ones(p_size, p_size)
-            gt[x1:x2, y1:y2] = gt_patches[i]  # GT does not need to average, as each pixel is guaranteed to be correct.
-
-            i += 1
-
-    return den / divider, gt
+    return crops
 
 
-def unsplit_img(img_patches, img_resolution):
-    w, h = img_resolution
-    p_size = img_patches.shape[2]
-    n_cols = math.ceil(w / p_size)
-    n_rows = math.ceil(h / p_size)
+def img_equal_unsplit(crops, overlap, ignore_buffer, img_h, img_w, img_channels):
+    w, h = img_w, img_h
+    crop_size = crops.shape[-1]
+    n_cols = (w - crop_size) / (crop_size - overlap) + 1
+    n_cols = math.ceil(n_cols)  # At least this many crops needed to get >= overlap pixels of overlap
+    n_rows = (h - crop_size) / (crop_size - overlap) + 1
+    n_rows = math.ceil(n_rows)  # At least this many crops needed to get >= overlap pixels of overlap
 
-    img = torch.zeros(3, h, w)
+    overlap_w = crop_size - (w - crop_size) / (n_cols - 1)
+    overlap_w = math.floor(overlap_w)
+    overlap_h = crop_size - (h - crop_size) / (n_rows - 1)
+    overlap_h = math.floor(overlap_h)
 
-    i = 0
-    for row in range(n_rows):
-        for col in range(n_cols):
-            x1 = row * p_size if row < (n_rows - 1) else h - p_size
-            x2 = x1 + p_size
-            y1 = col * p_size if col < (n_cols - 1) else w - p_size
-            y2 = y1 + p_size
+    new_img = torch.zeros((img_channels, h, w))
+    divider = torch.zeros((img_channels, h, w))
 
-            img[:, x1:x2, y1:y2] = img_patches[i]
-            i += 1
+    for r in range(n_rows):
+        for c in range(n_cols):
+            y1 = r * (crop_size - overlap_h) if r * (crop_size - overlap_h) + crop_size <= h else h - crop_size
+            y2 = y1 + crop_size
+            x1 = c * (crop_size - overlap_w) if c * (crop_size - overlap_w) + crop_size <= w else w - crop_size
+            x2 = x1 + crop_size
 
-    return img
+            ign_top = ignore_buffer if r != 0 else 0
+            ign_bot = ignore_buffer if r != n_rows - 1 else 0
+            ign_left = ignore_buffer if c != 0 else 0
+            ign_right = ignore_buffer if c != n_cols - 1 else 0
+
+            item_idx = r * n_cols + c
+            new_img[:, y1 + ign_top:y2 - ign_bot, x1 + ign_left:x2 - ign_right] += \
+                crops[item_idx, :, 0 + ign_top:crop_size - ign_bot, 0 + ign_left:crop_size - ign_right]
+            divider[:, y1 + ign_top:y2 - ign_bot, x1 + ign_left:x2 - ign_right] += 1
+
+    return new_img / divider

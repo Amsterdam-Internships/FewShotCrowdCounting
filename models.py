@@ -11,7 +11,7 @@ from timm.models.registry import register_model
 from timm.models.layers import trunc_normal_
 
 __all__ = [
-    'deit_tiny_patch16_224', 'deit_small_patch16_224', 'deit_base_patch16_224',
+    'deit_tiny_patch16_224', 'deit_small_patch16_224', 'deit_base_patch16_224', 'deit_tiny_cnn_patch16_224',
     'deit_tiny_distilled_patch16_224', 'deit_small_distilled_patch16_224',
     'deit_base_distilled_patch16_224', 'deit_base_patch16_384',
     'deit_base_distilled_patch16_384',
@@ -28,18 +28,18 @@ class DeiTRegressionHead(nn.Module):
 
         self.regression_head = nn.ModuleDict({
             'global_counter': nn.Sequential(
-                nn.Linear(embed_dim, 512),
+                nn.Linear(embed_dim, 1),
                 # nn.ReLU(),
                 # nn.Linear(512, 512),
-                nn.ReLU(),
-                nn.Linear(512, 1)
+                # nn.ReLU(),
+                # nn.Linear(512, 1)
             ),
             'lin_scaler': nn.Sequential(
-                nn.Linear(embed_dim, 512),
-                nn.ReLU(),
-                nn.Linear(512, 512),
-                nn.ReLU(),
-                nn.Linear(512, 256)
+                nn.Linear(embed_dim, 256)
+                # nn.ReLU(),
+                # nn.Linear(512, 512),
+                # nn.ReLU(),
+                # nn.Linear(512, 256)
             ),
             'folder': nn.Fold((crop_size, crop_size), kernel_size=16, stride=16)
         })
@@ -91,6 +91,7 @@ class RegressionTransformer(VisionTransformer):
 class RegressionTransformerCNN(VisionTransformer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        chn = 64  # Fixed value
 
         self.regression_head = nn.ModuleDict({
             'global_counter': nn.Sequential(
@@ -101,15 +102,26 @@ class RegressionTransformerCNN(VisionTransformer):
             ),
             'folder': nn.Fold((kwargs['img_size'], kwargs['img_size']), kernel_size=16, stride=16),
             'cnn': nn.Sequential(
-                nn.Conv2d(in_channels=1, out_channels=32, kernel_size=3, stride=1, padding=1),
+                nn.Conv2d(in_channels=1, out_channels=chn, kernel_size=3, stride=1, padding=1),
                 nn.ReLU(),
-                nn.Conv2d(in_channels=32, out_channels=32, kernel_size=3, stride=1, dilation=2, padding=2),
+                nn.Conv2d(in_channels=chn, out_channels=chn, kernel_size=3, stride=1, dilation=1, padding=1),
                 nn.ReLU(),
-                nn.Conv2d(in_channels=32, out_channels=32, kernel_size=3, stride=1, dilation=3, padding=3),
+                nn.Conv2d(in_channels=chn, out_channels=chn, kernel_size=3, stride=1, dilation=2, padding=2),
                 nn.ReLU(),
-                nn.Conv2d(in_channels=32, out_channels=1, kernel_size=3, stride=1, padding=1)
+                nn.Conv2d(in_channels=chn, out_channels=chn, kernel_size=3, stride=1, dilation=3, padding=3),
+                nn.ReLU(),
+                nn.Conv2d(in_channels=chn, out_channels=1, kernel_size=3, stride=1, padding=1)
             )
         })
+
+        self.init_conv_weights(self.regression_head['cnn'])
+
+    def init_conv_weights(self, module):
+        for m in module:
+            if isinstance(m, nn.Conv2d):
+                nn.init.normal_(m.weight, std=0.01)
+                if m.bias is not None:
+                    nn.init.constant_(m.bias, 0)
 
     def forward(self, x):
         # taken from https://github.com/rwightman/pytorch-image-models/blob/master/timm/models/vision_transformer.py
