@@ -38,8 +38,8 @@ class Trainer:
             self.writer.add_scalar('lr', self.scheduler.get_last_lr()[0], self.epoch)
 
     def train(self):
-        # MAE = self.evaluate_model()
-        # print(f'Initial MAE: {MAE:.3f}')
+        MAE = self.evaluate_model()
+        print(f'Initial MAE: {MAE:.3f}')
         self.model.train()
 
         while self.epoch < self.cfg.MAX_EPOCH:
