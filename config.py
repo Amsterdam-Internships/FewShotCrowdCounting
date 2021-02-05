@@ -15,17 +15,18 @@ cfg = edict()
 
 cfg.SEED = 42
 
-cfg.MODEL = 'deit_tiny_cnn_patch16_224'
+cfg.MODEL = 'deit_tiny_patch16_224'
 cfg.DATASET = 'WE'
 
+cfg.COUNT_LOSS_FACTOR = 0
 cfg.LR = 1e-5
 cfg.LR_GAMMA = 0.1**2  # Scale LR by this at each step epoch
 cfg.LR_STEP_EPOCHS = [300, 1000]
 cfg.WEIGHT_DECAY = 1e-4
 
 cfg.MAX_EPOCH = 2500
-cfg.EVAL_EVERY = 50
-cfg.SAVE_EVERY_N_EVALS = 2  # Every Nth evaluation, save model regardless of performance
+cfg.EVAL_EVERY = 25
+cfg.SAVE_EVERY_N_EVALS = 4  # Every Nth evaluation, save model regardless of performance
 cfg.SAVE_EVERY = cfg.SAVE_EVERY_N_EVALS * cfg.EVAL_EVERY  # Don't touch this one
 
 cfg.SAVE_NUM_EVAL_EXAMPLES = 10  # How many examples from the test/evaluation set to save
@@ -46,7 +47,7 @@ cfg.CODE_DIR = os.path.join(cfg.SAVE_DIR, 'code')
 
 
 cfg.RESUME = False
-cfg.RESUME_DIR = os.path.join('runs', '01-30_13-39')
+cfg.RESUME_DIR = os.path.join('runs', '02-03_18-43')
 cfg.RESUME_STATE = 'save_state_ep_200_new_best_MAE_2.002.pth'
 cfg.RESUME_PATH = os.path.join('runs', cfg.RESUME_DIR, 'state_dicts', cfg.RESUME_STATE)
 

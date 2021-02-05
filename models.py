@@ -29,8 +29,8 @@ class DeiTRegressionHead(nn.Module):
         self.regression_head = nn.ModuleDict({
             'global_counter': nn.Sequential(
                 nn.Linear(embed_dim, 512),
-                nn.ReLU(),
-                nn.Linear(512, 512),
+                # nn.ReLU(),
+                # nn.Linear(512, 512),
                 nn.ReLU(),
                 nn.Linear(512, 1)
             ),
@@ -101,13 +101,13 @@ class RegressionTransformerCNN(VisionTransformer):
             ),
             'folder': nn.Fold((kwargs['img_size'], kwargs['img_size']), kernel_size=16, stride=16),
             'cnn': nn.Sequential(
-                nn.Conv2d(in_channels=1, out_channels=64, kernel_size=3, stride=1, padding=1),
+                nn.Conv2d(in_channels=1, out_channels=32, kernel_size=3, stride=1, padding=1),
                 nn.ReLU(),
-                nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, stride=1, padding=1),
+                nn.Conv2d(in_channels=32, out_channels=32, kernel_size=3, stride=1, dilation=2, padding=2),
                 nn.ReLU(),
-                nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, stride=1, padding=1),
+                nn.Conv2d(in_channels=32, out_channels=32, kernel_size=3, stride=1, dilation=3, padding=3),
                 nn.ReLU(),
-                nn.Conv2d(in_channels=64, out_channels=1, kernel_size=3, stride=1, padding=1)
+                nn.Conv2d(in_channels=32, out_channels=1, kernel_size=3, stride=1, padding=1)
             )
         })
 

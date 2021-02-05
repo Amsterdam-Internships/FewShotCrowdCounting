@@ -33,8 +33,9 @@ class Trainer:
         if cfg.RESUME:
             self.load_state(cfg.RESUME_PATH)
             print(f'Resuming from epoch {self.epoch}')
-        # else:
-        #     self.save_eval_pics()
+        else:
+            self.save_eval_pics()
+            self.writer.add_scalar('lr', self.scheduler.get_last_lr()[0], self.epoch)
 
     def train(self):
         # MAE = self.evaluate_model()
@@ -45,15 +46,22 @@ class Trainer:
             self.epoch += 1
 
             epoch_start_time = time.time()
-            losses, errors, last_out_den, last_gts = self.run_epoch()
+            den_losses, count_losses, total_losses, errors, last_out_den, last_gts = self.run_epoch()
             epoch_time = time.time() - epoch_start_time
 
             MAE = torch.mean(torch.stack(errors)) / (self.cfg_data.TRAIN_BS * self.cfg_data.LABEL_FACTOR)
-            avg_loss = np.mean(losses)
+            avg_den_loss = np.mean(den_losses)
+            avg_count_loss = np.mean(count_losses)
+            avg_loss = np.mean(total_losses)
             pred_cnt = last_out_den[0].detach().cpu().sum() / self.cfg_data.LABEL_FACTOR
             gt_cnt = last_gts[0].cpu().sum() / self.cfg_data.LABEL_FACTOR
             print(f'ep {self.epoch}: Average loss={avg_loss:.3f}, Patch MAE={MAE:.3f}.'
                   f'  Example: pred={pred_cnt:.3f}, gt={gt_cnt:.3f}. Train time: {epoch_time:.3f}')
+
+            self.writer.add_scalar('Loss/train_den', avg_den_loss, self.epoch)
+            self.writer.add_scalar('Loss/train_count', avg_count_loss, self.epoch)
+            self.writer.add_scalar('Loss/train_combined', avg_loss, self.epoch)
+            self.writer.add_scalar('MAE/train', MAE, self.epoch)
 
             if self.epoch % self.cfg.EVAL_EVERY == 0:
                 eval_start_time = time.time()
@@ -66,37 +74,49 @@ class Trainer:
                     self.save_state(f'new_best_MAE_{eval_MAE:.3f}')
                 elif self.epoch % self.cfg.SAVE_EVERY == 0:
                     self.save_state(f'MAE_{eval_MAE:.3f}')
-                print(f'MAE: {eval_MAE:.3f}, best MAE: {self.best_mae:.3f} at ep({self.best_mae}).'
+
+                print(f'MAE: {eval_MAE:.3f}, best MAE: {self.best_mae:.3f} at ep({self.best_epoch}).'
                       f' eval time: {eval_time:.3f}')
+
+                self.writer.add_scalar('MAE/test', eval_MAE, self.epoch)
 
             if self.epoch in self.cfg.LR_STEP_EPOCHS:
                 self.scheduler.step()
-                print(f'Learning rate adjusted to {self.scheduler.get_last_lr()} at epoch {self.epoch}.')
+                print(f'Learning rate adjusted to {self.scheduler.get_last_lr()[0]} at epoch {self.epoch}.')
+                self.writer.add_scalar('lr', self.scheduler.get_last_lr()[0], self.epoch)
 
     def run_epoch(self):
-        losses = []
+        den_losses = []
+        count_losses = []
+        total_losses = []
         errors = []
 
         out_den = None  # SILENCE WENCH!
-        gts = None  # silences the 'might not be defined' warning below the for loop.
+        den_gts = None  # silences the 'might not be defined' warning below the for loop.
 
         for idx, (images, gts) in enumerate(self.train_loader):
             images = images.cuda()
-            gts = gts.cuda()
+            den_gts = gts.cuda()
+            count_gts = den_gts.sum(dim=(1, 2)).unsqueeze(-1)
 
             self.optim.zero_grad()
             out_den, out_count = self.model(images)
             out_den = out_den.squeeze()
 
-            loss = self.criterion(out_den, gts)
-            loss.backward()
+            den_loss = self.criterion(out_den, den_gts)
+            count_loss = self.criterion(out_count, count_gts)
+
+            total_loss = den_loss + self.cfg.COUNT_LOSS_FACTOR * count_loss
+            total_loss.backward()
             self.optim.step()
 
-            losses.append(loss.cpu().item())
-            errors.append(torch.abs(torch.sum(out_den - gts, dim=(1, 2))).sum())
+            den_losses.append(den_loss.cpu().item())
+            count_losses.append(den_loss.cpu().item())
+            total_losses.append((total_loss.cpu().item()))
+            errors.append(torch.abs(torch.sum(out_den - den_gts, dim=(1, 2))).sum())
 
         # Also return the last predicted densities and corresponding gts. This allows for informative prints
-        return losses, errors, out_den, gts
+        return den_losses, count_losses, total_losses, errors, out_den, den_gts
 
     def evaluate_model(self):
 

@@ -2,9 +2,9 @@ from easydict import EasyDict as edict
 
 cfg_data = edict()
 
-cfg_data.DATA_PATH = 'D:\\OneDrive\\OneDrive - UvA\\ThesisData\Datasets\\PreGenSHTB'
+cfg_data.DATA_PATH = 'D:\\OneDrive\\OneDrive - UvA\\ThesisData\Datasets\\PreGenSHTA'
 
-cfg_data.TRAIN_BS = 1
+cfg_data.TRAIN_BS = 30
 cfg_data.TEST_BS = 1
 cfg_data.N_WORKERS = 4
 
