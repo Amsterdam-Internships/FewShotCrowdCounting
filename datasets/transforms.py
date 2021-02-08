@@ -41,6 +41,19 @@ class RandomHorizontallyFlip(object):
         return img, mask, bbx
 
 
+class RandomScale(object):  # WARNING: THIS DOESNT WORK PROPERLY YET
+    def __call__(self, img, den):
+        if random.random() < 2:
+            w, h = img.size
+            scale = random.uniform(0.75, 1.25)
+            new_w = round(scale * w)
+            new_h = round(scale * h)
+            img = img.resize((new_w, new_h))
+            den = den.resize((new_w, new_h))
+
+        return img, den
+
+
 class RandomCrop(object):
     def __init__(self, crop_shape):
         self.crop_w = crop_shape[0]
@@ -68,7 +81,8 @@ class RandomTensorCrop(object):
         y1 = random.randint(0, h - self.crop_h)
         x1 = random.randint(0, w - self.crop_w)
 
-        return img[:, y1:y1+self.crop_h, x1:x1+self.crop_w], den[:, y1:y1+self.crop_h, x1:x1+self.crop_w]
+        return img[:, y1:y1 + self.crop_h, x1:x1 + self.crop_w], den[:, y1:y1 + self.crop_h, x1:x1 + self.crop_w]
+
 
 class RandomGrayscale(object):
     def __call__(self, img):

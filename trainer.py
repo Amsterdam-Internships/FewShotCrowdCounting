@@ -10,7 +10,7 @@ from matplotlib import cm as CM
 
 
 class Trainer:
-    def __init__(self, model, loading_data, cfg, cfg_data):  # Todo: with parameters etc. Like C3
+    def __init__(self, model, loading_data, cfg, cfg_data):
         self.model = model
         self.cfg = cfg
         self.cfg_data = cfg_data
@@ -33,13 +33,13 @@ class Trainer:
         if cfg.RESUME:
             self.load_state(cfg.RESUME_PATH)
             print(f'Resuming from epoch {self.epoch}')
-        else:
-            self.save_eval_pics()
-            self.writer.add_scalar('lr', self.scheduler.get_last_lr()[0], self.epoch)
+        # else:
+        #     self.save_eval_pics()
+        #     self.writer.add_scalar('lr', self.scheduler.get_last_lr()[0], self.epoch)
 
     def train(self):
-        MAE = self.evaluate_model()
-        print(f'Initial MAE: {MAE:.3f}')
+        # MAE = self.evaluate_model()
+        # print(f'Initial MAE: {MAE:.3f}')
 
         self.model.train()
         while self.epoch < self.cfg.MAX_EPOCH:
@@ -196,9 +196,7 @@ class Trainer:
                 plt.title(f'GT count: {gt_count:.3f}')
                 plt.savefig(save_path)
 
-
     def save_state(self, name_extra=''):
-
         if name_extra:
             save_name = f'{self.cfg.STATE_DICTS_DIR}/save_state_ep_{self.epoch}_{name_extra}.pth'
         else:

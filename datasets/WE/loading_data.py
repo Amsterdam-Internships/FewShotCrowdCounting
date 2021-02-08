@@ -26,21 +26,19 @@ def loading_data(crop_size):
         standard_transforms.ToPILImage()
     ])
 
-    # TODO: train, val, test support
-    # TODO: .json support
     train_set = WE(cfg_data.DATA_PATH + '/train', 'train', crop_size,
-                     main_transform=train_main_transform,
-                     img_transform=img_transform,
-                     gt_transform=gt_transform)
+                   main_transform=train_main_transform,
+                   img_transform=img_transform,
+                   gt_transform=gt_transform)
     train_loader = DataLoader(train_set,
                               batch_size=cfg_data.TRAIN_BS,
                               num_workers=cfg_data.N_WORKERS,
                               shuffle=True, drop_last=True)
 
     test_set = WE(cfg_data.DATA_PATH + '/test', 'test', crop_size,
-                    main_transform=None,
-                    img_transform=img_transform,
-                    gt_transform=gt_transform)
+                  main_transform=None,
+                  img_transform=img_transform,
+                  gt_transform=gt_transform)
     test_loader = DataLoader(test_set,
                              batch_size=cfg_data.TEST_BS,
                              num_workers=cfg_data.N_WORKERS,

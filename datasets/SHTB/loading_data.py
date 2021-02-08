@@ -7,7 +7,6 @@ from .SHTB import SHTB
 
 
 def loading_data(crop_size):
-
     # train transforms
     train_main_transform = own_transforms.Compose([
         own_transforms.RandomHorizontallyFlip()
@@ -41,8 +40,6 @@ def loading_data(crop_size):
         standard_transforms.ToPILImage()
     ])
 
-    # TODO: train, val, test support
-    # TODO: .json support
     train_set = SHTB(cfg_data.DATA_PATH + '/train', 'train', crop_size,
                      main_transform=train_main_transform,
                      img_transform=train_img_transform,
