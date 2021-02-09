@@ -3,6 +3,7 @@ import time
 import numpy as np
 import torch
 from torch.utils.tensorboard import SummaryWriter
+from collections import OrderedDict
 
 from datasets.dataset_utils import img_equal_unsplit
 import matplotlib.pyplot as plt
@@ -10,8 +11,9 @@ from matplotlib import cm as CM
 
 
 class Trainer:
-    def __init__(self, model, loading_data, cfg, cfg_data):
+    def __init__(self, model, model_funct, loading_data, cfg, cfg_data):
         self.model = model
+        self.model_funct = model_funct
         self.cfg = cfg
         self.cfg_data = cfg_data
 
@@ -20,9 +22,13 @@ class Trainer:
         self.test_samples = len(self.test_loader.dataset)
         self.eval_save_example_every = self.test_samples // self.cfg.SAVE_NUM_EVAL_EXAMPLES
 
+        self.alpha = 0.001
+        self.beta = 0.001  # TODO: MAKE IN CONFIG FILE
         self.criterion = torch.nn.MSELoss()
-        self.optim = torch.optim.Adam(model.parameters(), lr=cfg.LR, weight_decay=cfg.WEIGHT_DECAY)
-        self.scheduler = torch.optim.lr_scheduler.StepLR(self.optim, step_size=1, gamma=cfg.LR_GAMMA)
+        self.meta_optimiser = torch.optim.Adam(model.parameters(), lr=cfg.LR, weight_decay=cfg.WEIGHT_DECAY)
+        self.scheduler = torch.optim.lr_scheduler.StepLR(self.meta_optimiser, step_size=1, gamma=cfg.LR_GAMMA)
+
+        self.n_tasks = 5
 
         self.epoch = 0
         self.best_mae = 10 ** 10  # just something high
@@ -37,164 +43,58 @@ class Trainer:
         #     self.save_eval_pics()
         #     self.writer.add_scalar('lr', self.scheduler.get_last_lr()[0], self.epoch)
 
-    def train(self):
-        # MAE = self.evaluate_model()
-        # print(f'Initial MAE: {MAE:.3f}')
+    def train(self):  # Outer loop
+        items_left = 0
+        tasks_sampler = None
 
         self.model.train()
-        while self.epoch < self.cfg.MAX_EPOCH:
+        while self.epoch < self.cfg.MAX_EPOCH:  # While not done
             self.epoch += 1
+            theta = OrderedDict((name, param) for name, param in self.model.named_parameters())
+            theta_weights = list(theta.values())
 
-            epoch_start_time = time.time()
-            den_losses, count_losses, total_losses, errors, last_out_den, last_gts = self.run_epoch()
-            epoch_time = time.time() - epoch_start_time
+            # Check if enough tasks available
+            if items_left < self.n_tasks:
+                tasks_sampler = iter(self.train_loader)
+                items_left = len(self.train_loader.dataset)
 
-            MAE = torch.mean(torch.stack(errors)) / (self.cfg_data.TRAIN_BS * self.cfg_data.LABEL_FACTOR)
-            avg_den_loss = np.mean(den_losses)
-            avg_count_loss = np.mean(count_losses)
-            avg_loss = np.mean(total_losses)
-            pred_cnt = last_out_den[0].detach().cpu().sum() / self.cfg_data.LABEL_FACTOR
-            gt_cnt = last_gts[0].cpu().sum() / self.cfg_data.LABEL_FACTOR
-            print(f'ep {self.epoch}: Average loss={avg_loss:.3f}, Patch MAE={MAE:.3f}.'
-                  f'  Example: pred={pred_cnt:.3f}, gt={gt_cnt:.3f}. Train time: {epoch_time:.3f}')
+            metagrads = None
+            total_ep_loss = 0
+            for task_idx in range(self.n_tasks):
+                train_img, train_gt, test_img, test_gt = next(tasks_sampler)
+                items_left -= 1
 
-            self.writer.add_scalar('Loss/train_den', avg_den_loss, self.epoch)
-            self.writer.add_scalar('Loss/train_count', avg_count_loss, self.epoch)
-            self.writer.add_scalar('Loss/train_combined', avg_loss, self.epoch)
-            self.writer.add_scalar('MAE/train', MAE, self.epoch)
+                test_loss = self.inner_loop(train_img, train_gt, test_img, test_gt, theta)
 
-            if self.epoch % self.cfg.EVAL_EVERY == 0:
-                eval_start_time = time.time()
-                eval_MAE = self.evaluate_model()
-                eval_time = time.time() - eval_start_time
+                if metagrads:
+                    metagrads += torch.autograd.grad(test_loss, theta_weights)
+                else:
+                    metagrads = torch.autograd.grad(test_loss, theta_weights)
 
-                if eval_MAE < self.best_mae:
-                    self.best_mae = eval_MAE
-                    self.best_epoch = self.epoch
-                    print_fancy_new_best_MAE()
-                    self.save_state(f'new_best_MAE_{eval_MAE:.3f}')
-                elif self.epoch % self.cfg.SAVE_EVERY == 0:
-                    self.save_state(f'MAE_{eval_MAE:.3f}')
+                total_ep_loss = test_loss.detach().cpu().item()
 
-                print(f'MAE: {eval_MAE:.3f}, best MAE: {self.best_mae:.3f} at ep({self.best_epoch}).'
-                      f' eval time: {eval_time:.3f}')
+            for w, g in zip(theta_weights, metagrads):
+                w.grad = g
+            self.meta_optimiser.step()
 
-                self.writer.add_scalar('MAE/test', eval_MAE, self.epoch)
+            print(f'ep {self.epoch}: total_test_loss: {total_ep_loss}')
 
-            if self.epoch in self.cfg.LR_STEP_EPOCHS:
-                self.scheduler.step()
-                print(f'Learning rate adjusted to {self.scheduler.get_last_lr()[0]} at epoch {self.epoch}.')
-                self.writer.add_scalar('lr', self.scheduler.get_last_lr()[0], self.epoch)
+    def inner_loop(self, train_img, train_gt, test_img, test_gt, theta):
+        train_img, train_gt = train_img.cuda(), train_gt.cuda()
+        test_img, test_gt = test_img.cuda(), test_gt.cuda()
+        theta_weights = theta.values()
 
-    def run_epoch(self):
-        den_losses = []
-        count_losses = []
-        total_losses = []
-        errors = []
+        train_pred = self.model_funct.forward(train_img, theta)
+        train_pred = train_pred.squeeze(1)  # Remove channel dim
+        train_loss = self.criterion(train_pred, train_gt)
+        grads = torch.autograd.grad(train_loss, theta_weights)
+        theta_prime = OrderedDict((k, w - self.alpha * g) for k, w, g in zip(theta.keys(), theta.values(), grads))
 
-        out_den = None  # SILENCE WENCH!
-        den_gts = None  # silences the 'might not be defined' warning below the for loop.
+        test_pred = self.model_funct.forward(test_img, theta_prime)
+        test_pred = test_pred.squeeze(1)
+        test_loss = self.criterion(test_pred, test_gt)
 
-        for idx, (images, gts) in enumerate(self.train_loader):
-            images = images.cuda()
-            den_gts = gts.squeeze().cuda()
-            count_gts = den_gts.sum(dim=(1, 2)).unsqueeze(-1)
-
-            self.optim.zero_grad()
-            out_den, out_count = self.model(images)
-            out_den = out_den.squeeze()
-
-            den_loss = self.criterion(out_den, den_gts)
-            count_loss = self.criterion(out_count, count_gts)
-
-            total_loss = den_loss + self.cfg.COUNT_LOSS_FACTOR * count_loss
-            total_loss.backward()
-            self.optim.step()
-
-            den_losses.append(den_loss.cpu().item())
-            count_losses.append(den_loss.cpu().item())
-            total_losses.append((total_loss.cpu().item()))
-            errors.append(torch.abs(torch.sum(out_den - den_gts, dim=(1, 2))).sum())
-
-        # Also return the last predicted densities and corresponding gts. This allows for informative prints
-        return den_losses, count_losses, total_losses, errors, out_den, den_gts
-
-    def evaluate_model(self):
-
-        plt.cla()  # Clear plot for new ones
-        self.model.eval()
-        with torch.no_grad():
-            errors = []
-
-            abs_patch_errors = torch.zeros(self.model.crop_size, self.model.crop_size)
-            summed_patch_errors = torch.zeros(self.model.n_patches, self.model.n_patches)
-
-            for idx, (img, img_patches, gt_patches) in enumerate(self.test_loader):
-                img_patches = img_patches.squeeze().cuda()
-                gt_patches = gt_patches.squeeze().unsqueeze(1)  # Remove batch dim, insert channel dim
-                img = img.squeeze()  # Remove batch dimension
-                _, img_h, img_w = img.shape
-
-                pred_den, pred_count = self.model(img_patches)
-                pred_den = pred_den.cpu()
-
-                gt = img_equal_unsplit(gt_patches, self.cfg_data.OVERLAP, self.cfg_data.IGNORE_BUFFER, img_h, img_w, 1)
-                den = img_equal_unsplit(pred_den, self.cfg_data.OVERLAP, self.cfg_data.IGNORE_BUFFER, img_h, img_w, 1)
-                den = den.squeeze()  # Remove channel dim
-
-                pred_cnt = den.sum() / self.cfg_data.LABEL_FACTOR
-                gt_cnt = gt.sum() / self.cfg_data.LABEL_FACTOR
-                errors.append(torch.abs(pred_cnt - gt_cnt))
-
-                if idx % self.eval_save_example_every == 0:
-                    plt.imshow(den, cmap=CM.jet)
-                    save_path = os.path.join(self.cfg.PICS_DIR, f'pred_{idx}_ep_{self.epoch}.jpg')
-                    plt.title(f'Predicted count: {pred_cnt:.3f} (GT: {gt_cnt:.3f})')
-                    plt.savefig(save_path)
-
-                abs_patch_errors += torch.sum(torch.abs(gt_patches.squeeze() - pred_den.squeeze()), dim=0)
-            for i in range(14):
-                for j in range(14):
-                    lf = self.cfg_data.LABEL_FACTOR  # So next line fits on 1 line
-                    summed_patch_errors[i, j] = abs_patch_errors[i * 16:(i + 1) * 16, j * 16:(j + 1) * 16].sum() / lf
-
-            MAE = torch.mean(torch.stack(errors))
-
-        plt.cla()
-        plt.imshow(abs_patch_errors)
-        save_path = os.path.join(self.cfg.PICS_DIR, f'errors_ep_{self.epoch}.jpg')
-        plt.savefig(save_path)
-        plt.imshow(summed_patch_errors)
-        save_path = os.path.join(self.cfg.PICS_DIR, f'summed_patch_ep_{self.epoch}.jpg')
-        plt.savefig(save_path)
-
-        return MAE
-
-    def save_eval_pics(self):
-        plt.cla()
-        for idx, (img, img_patches, gt_patches) in enumerate(self.test_loader):
-            gt_patches = gt_patches.squeeze().unsqueeze(1)  # Remove batch dim, insert channel dim
-            img = img.squeeze()
-
-            _, img_h, img_w = img.shape
-
-            gt = img_equal_unsplit(gt_patches, self.cfg_data.OVERLAP, self.cfg_data.IGNORE_BUFFER, img_h, img_w, 1)
-            gt = gt.squeeze()  # Remove channel dim
-
-            if idx % self.eval_save_example_every == 0:
-                img = self.restore_transform(img)
-                gt_count = gt.sum() / self.cfg_data.LABEL_FACTOR
-                gt_count = torch.round(gt_count)
-
-                plt.imshow(img)
-                save_path = os.path.join(self.cfg.PICS_DIR, f'img_{idx}.jpg')
-                plt.title(f'GT count: {gt_count:.3f}')
-                plt.savefig(save_path)
-
-                plt.imshow(gt, cmap=CM.jet)
-                save_path = os.path.join(self.cfg.PICS_DIR, f'gt_{idx}.jpg')
-                plt.title(f'GT count: {gt_count:.3f}')
-                plt.savefig(save_path)
+        return test_loss
 
     def save_state(self, name_extra=''):
         if name_extra:

@@ -16,7 +16,7 @@ cfg = edict()
 cfg.SEED = 42
 
 cfg.MODEL = 'deit_tiny_cnn_patch16_224'
-cfg.DATASET = 'SHTB'
+cfg.DATASET = 'WE_MAML'
 
 cfg.COUNT_LOSS_FACTOR = 0
 cfg.LR = 1e-5
@@ -24,7 +24,7 @@ cfg.LR_GAMMA = 0.3  # Scale LR by this at each step epoch
 cfg.LR_STEP_EPOCHS = [300, 1000]
 cfg.WEIGHT_DECAY = 1e-4
 
-cfg.MAX_EPOCH = 2500
+cfg.MAX_EPOCH = 10000
 cfg.EVAL_EVERY = 25
 cfg.SAVE_EVERY_N_EVALS = 4  # Every Nth evaluation, save model regardless of performance
 cfg.SAVE_EVERY = cfg.SAVE_EVERY_N_EVALS * cfg.EVAL_EVERY  # Don't touch this one

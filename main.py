@@ -17,6 +17,9 @@ from trainer import Trainer
 from config import cfg
 from shutil import copyfile
 
+from CSRNet import CSRNet
+from CSRNet_functional import CSRNet_functional
+
 # __all__ = [
 #     'deit_base_patch16_224',              'deit_small_patch16_224',               'deit_tiny_patch16_224',
 #     'deit_base_distilled_patch16_224',    'deit_small_distilled_patch16_224',     'deit_tiny_distilled_patch16_224'
@@ -76,16 +79,18 @@ def main(cfg):
 
     print(f"Creating model: {cfg.MODEL}")
 
-    model = create_model(
-        cfg.MODEL,
-        init_path=model_mapping[cfg.MODEL],
-        num_classes=1000,  # Not yet used anyway. Must match pretrained model!
-        drop_rate=0.,
-        drop_path_rate=0.1,  # TODO: What does this do?
-        drop_block_rate=None,
-    )
-
+    # model = create_model(
+    #     cfg.MODEL,
+    #     init_path=model_mapping[cfg.MODEL],
+    #     num_classes=1000,  # Not yet used anyway. Must match pretrained model!
+    #     drop_rate=0.,
+    #     drop_path_rate=0.1,  # TODO: What does this do?
+    #     drop_block_rate=None,
+    # )
+    model = CSRNet()
     model.cuda()
+
+    model_funct = CSRNet_functional()
 
     n_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print('number of params:', n_parameters)
@@ -93,7 +98,7 @@ def main(cfg):
     dataloader = importlib.import_module(f'datasets.{cfg.DATASET}.loading_data').loading_data
     cfg_data = importlib.import_module(f'datasets.{cfg.DATASET}.settings').cfg_data
 
-    trainer = Trainer(model, dataloader, cfg, cfg_data)
+    trainer = Trainer(model, model_funct, dataloader, cfg, cfg_data)
     trainer.train()
 
 
