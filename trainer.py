@@ -28,7 +28,7 @@ class Trainer:
         self.meta_optimiser = torch.optim.Adam(model.parameters(), lr=cfg.LR, weight_decay=cfg.WEIGHT_DECAY)
         self.scheduler = torch.optim.lr_scheduler.StepLR(self.meta_optimiser, step_size=1, gamma=cfg.LR_GAMMA)
 
-        self.n_tasks = 5
+        self.n_tasks = 3
 
         self.epoch = 0
         self.best_mae = 10 ** 10  # just something high
@@ -58,26 +58,22 @@ class Trainer:
                 tasks_sampler = iter(self.train_loader)
                 items_left = len(self.train_loader.dataset)
 
-            metagrads = None
-            total_ep_loss = 0
+            total_metaloss = torch.tensor(0).float().cuda()
             for task_idx in range(self.n_tasks):
                 train_img, train_gt, test_img, test_gt = next(tasks_sampler)
                 items_left -= 1
 
                 test_loss = self.inner_loop(train_img, train_gt, test_img, test_gt, theta)
+                total_metaloss += test_loss
 
-                if metagrads:
-                    metagrads += torch.autograd.grad(test_loss, theta_weights)
-                else:
-                    metagrads = torch.autograd.grad(test_loss, theta_weights)
-
-                total_ep_loss = test_loss.detach().cpu().item()
+            metagrads = torch.autograd.grad(total_metaloss, theta_weights)
 
             for w, g in zip(theta_weights, metagrads):
                 w.grad = g
             self.meta_optimiser.step()
 
-            print(f'ep {self.epoch}: total_test_loss: {total_ep_loss}')
+            print(f'ep {self.epoch}: total_test_loss: {total_metaloss.detach().cpu().item():.3f}')
+        self.save_state()
 
     def inner_loop(self, train_img, train_gt, test_img, test_gt, theta):
         train_img, train_gt = train_img.cuda(), train_gt.cuda()
