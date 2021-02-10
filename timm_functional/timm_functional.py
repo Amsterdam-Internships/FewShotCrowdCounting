@@ -139,23 +139,12 @@ class Mlp_functional(nn.Module):
 
         assert act_layer == nn.GELU
 
-        # self.fc1 = nn.Linear(in_features, hidden_features)
-        # self.act = act_layer()
-        # self.fc2 = nn.Linear(hidden_features, out_features)
-        # self.drop = nn.Dropout(drop)
-
     def forward(self, x, mlp_fc1_weight, mlp_fc1_bias, mlp_fc2_weight, mlp_fc2_bias, training):
         x = F.linear(x, mlp_fc1_weight, bias=mlp_fc1_bias)  # fc1
         x = F.gelu(x)
         x = F.dropout(x, self.drop, training=training)
         x = F.linear(x, mlp_fc2_weight, bias=mlp_fc2_bias)  # fc2
         x = F.dropout(x, self.drop, training=training)
-
-        # x = self.fc1(x)
-        # x = self.act(x)
-        # x = self.drop(x)
-        # x = self.fc2(x)
-        # x = self.drop(x)
 
         return x
 
@@ -170,10 +159,6 @@ class Attention_functional(nn.Module):
 
         self.attn_drop = attn_drop
         self.proj_drop = proj_drop
-        # self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias)
-        # self.attn_drop = nn.Dropout(attn_drop)
-        # self.proj = nn.Linear(dim, dim)
-        # self.proj_drop = nn.Dropout(proj_drop)
 
     def forward(self, x, qkv_weight, qkv_bias, proj_weight, proj_bias, training):
         B, N, C = x.shape
@@ -198,9 +183,10 @@ class Block_functional(nn.Module):
                  drop_path=0., act_layer=nn.GELU, norm_layer=nn.LayerNorm, block_idx=None):
         super().__init__()
         assert block_idx is not None
+
         self.block_idx = block_idx
         self.dim = dim
-        # self.norm1 = norm_layer(dim)
+
         self.attn = Attention_functional(
             dim, num_heads=num_heads, qk_scale=qk_scale, attn_drop=attn_drop, proj_drop=drop)
         # NOTE: drop path for stochastic depth, we shall see if this is better than dropout here
@@ -208,30 +194,28 @@ class Block_functional(nn.Module):
 
         assert self.drop_path != nn.Identity  # Added because other not yet implemented
 
-        # self.norm2 = norm_layer(dim)
-        # mlp_hidden_dim = int(dim * mlp_ratio)
         self.mlp = Mlp_functional(act_layer=act_layer, drop=drop)
 
     def forward(self, x, weight, training):
         x_ = F.layer_norm(x, [self.dim, ], weight[f'blocks.{self.block_idx}.norm1.weight'],
-                         weight[f'blocks.{self.block_idx}.norm1.bias'], eps=1e-6)
+                          weight[f'blocks.{self.block_idx}.norm1.bias'], eps=1e-6)
 
         x_ = self.attn(x_, weight[f'blocks.{self.block_idx}.attn.qkv.weight'],
-                      weight[f'blocks.{self.block_idx}.attn.qkv.bias'],
-                      weight[f'blocks.{self.block_idx}.attn.proj.weight'],
-                      weight[f'blocks.{self.block_idx}.attn.proj.bias'],
-                      training)
+                       weight[f'blocks.{self.block_idx}.attn.qkv.bias'],
+                       weight[f'blocks.{self.block_idx}.attn.proj.weight'],
+                       weight[f'blocks.{self.block_idx}.attn.proj.bias'],
+                       training)
 
         x = x + self.drop_path(x_)
 
         x_ = F.layer_norm(x, [self.dim, ], weight[f'blocks.{self.block_idx}.norm2.weight'],
-                         weight[f'blocks.{self.block_idx}.norm2.bias'], eps=1e-6)
+                          weight[f'blocks.{self.block_idx}.norm2.bias'], eps=1e-6)
 
         x_ = self.mlp(x_, weight[f'blocks.{self.block_idx}.mlp.fc1.weight'],
-                     weight[f'blocks.{self.block_idx}.mlp.fc1.bias'],
-                     weight[f'blocks.{self.block_idx}.mlp.fc2.weight'],
-                     weight[f'blocks.{self.block_idx}.mlp.fc2.bias'],
-                     training)
+                      weight[f'blocks.{self.block_idx}.mlp.fc1.bias'],
+                      weight[f'blocks.{self.block_idx}.mlp.fc2.weight'],
+                      weight[f'blocks.{self.block_idx}.mlp.fc2.bias'],
+                      training)
         x = x + self.drop_path(x_)
 
         return x
@@ -293,14 +277,8 @@ class VisionTransformer_functional(nn.Module):
         super().__init__()
         self.num_classes = num_classes
         self.num_features = self.embed_dim = embed_dim  # num_features for consistency with other models
-        norm_layer = norm_layer or partial(nn.LayerNorm, eps=1e-6)
 
         self.patch_embed = PatchEmbed_functional(img_size=img_size, patch_size=patch_size)
-        # num_patches = self.patch_embed.num_patches
-
-        # self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim))  # TODO
-        # self.pos_embed = nn.Parameter(torch.zeros(1, num_patches + 1, embed_dim))  # TODO
-        # self.pos_drop = nn.Dropout(p=drop_rate)
 
         self.drop_rate = drop_rate
         dpr = [x.item() for x in torch.linspace(0, drop_path_rate, depth)]  # stochastic depth decay rule
@@ -309,36 +287,12 @@ class VisionTransformer_functional(nn.Module):
                 dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qk_scale=qk_scale, drop=drop_rate,
                 attn_drop=attn_drop_rate, drop_path=dpr[i], norm_layer=norm_layer, block_idx=i)
             for i in range(depth)])
-        self.norm = norm_layer(embed_dim)
 
-        # Representation layer
-        if representation_size:
-            print('oh ohhhh')
-            exit(1)
-            self.num_features = representation_size
-            self.pre_logits = nn.Sequential(OrderedDict([
-                ('fc', nn.Linear(embed_dim, representation_size)),
-                ('act', nn.Tanh())
-            ]))
-        else:
-            self.pre_logits = nn.Identity()
+
+        self.pre_logits = nn.Identity()
 
         # Classifier head
         self.num_classes = num_classes
-        # self.head = nn.Linear(self.num_features, num_classes) if num_classes > 0 else nn.Identity()
-
-        # trunc_normal_(self.pos_embed, std=.02)
-        # trunc_normal_(self.cls_token, std=.02)
-        # self.apply(self._init_weights)
-
-    def _init_weights(self, m):
-        if isinstance(m, nn.Linear):
-            trunc_normal_(m.weight, std=.02)
-            if isinstance(m, nn.Linear) and m.bias is not None:
-                nn.init.constant_(m.bias, 0)
-        elif isinstance(m, nn.LayerNorm):
-            nn.init.constant_(m.bias, 0)
-            nn.init.constant_(m.weight, 1.0)
 
     @torch.jit.ignore
     def no_weight_decay(self):
@@ -352,6 +306,7 @@ class VisionTransformer_functional(nn.Module):
         self.head = nn.Linear(self.embed_dim, num_classes) if num_classes > 0 else nn.Identity()
 
     def forward_features(self, x):
+        assert False  # Should not be called
         B = x.shape[0]
         x = self.patch_embed(x)
 
@@ -368,76 +323,8 @@ class VisionTransformer_functional(nn.Module):
         return x
 
     def forward(self, x, weights, training):
-        print('this should not have been called')
-        exit(1)
+        assert False  # Should not be called
         x = self.forward_features(x)
         x = self.head(x)
         return x
 
-#
-# class DistilledVisionTransformer(VisionTransformer):
-#     """ Vision Transformer with distillation token.
-#
-#     Paper: `Training data-efficient image transformers & distillation through attention` -
-#         https://arxiv.org/abs/2012.12877
-#
-#     This impl of distilled ViT is taken from https://github.com/facebookresearch/deit
-#     """
-#
-#     def __init__(self, *args, **kwargs):
-#         super().__init__(*args, **kwargs)
-#         self.dist_token = nn.Parameter(torch.zeros(1, 1, self.embed_dim))
-#         num_patches = self.patch_embed.num_patches
-#         self.pos_embed = nn.Parameter(torch.zeros(1, num_patches + 2, self.embed_dim))
-#         self.head_dist = nn.Linear(self.embed_dim, self.num_classes) if self.num_classes > 0 else nn.Identity()
-#
-#         trunc_normal_(self.dist_token, std=.02)
-#         trunc_normal_(self.pos_embed, std=.02)
-#         self.head_dist.apply(self._init_weights)
-#
-#     def forward_features(self, x):
-#         B = x.shape[0]
-#         x = self.patch_embed(x)
-#
-#         cls_tokens = self.cls_token.expand(B, -1, -1)  # stole cls_tokens impl from Phil Wang, thanks
-#         dist_token = self.dist_token.expand(B, -1, -1)
-#         x = torch.cat((cls_tokens, dist_token, x), dim=1)
-#
-#         x = x + self.pos_embed
-#         x = self.pos_drop(x)
-#
-#         for blk in self.blocks:
-#             x = blk(x)
-#
-#         x = self.norm(x)
-#         return x[:, 0], x[:, 1]
-#
-#     def forward(self, x):
-#         x, x_dist = self.forward_features(x)
-#         x = self.head(x)
-#         x_dist = self.head_dist(x_dist)
-#         if self.training:
-#             return x, x_dist
-#         else:
-#             # during inference, return the average of both classifier predictions
-#             return (x + x_dist) / 2
-
-
-def resize_pos_embed(posemb, posemb_new):
-    # Rescale the grid of position embeddings when loading from state_dict. Adapted from
-    # https://github.com/google-research/vision_transformer/blob/00883dd691c63a6830751563748663526e811cee/vit_jax/checkpoint.py#L224
-    _logger.info('Resized position embedding: %s to %s', posemb.shape, posemb_new.shape)
-    ntok_new = posemb_new.shape[1]
-    if True:
-        posemb_tok, posemb_grid = posemb[:, :1], posemb[0, 1:]
-        ntok_new -= 1
-    else:
-        posemb_tok, posemb_grid = posemb[:, :0], posemb[0]
-    gs_old = int(math.sqrt(len(posemb_grid)))
-    gs_new = int(math.sqrt(ntok_new))
-    _logger.info('Position embedding grid-size from %s to %s', gs_old, gs_new)
-    posemb_grid = posemb_grid.reshape(1, gs_old, gs_old, -1).permute(0, 3, 1, 2)
-    posemb_grid = F.interpolate(posemb_grid, size=(gs_new, gs_new), mode='bilinear')
-    posemb_grid = posemb_grid.permute(0, 2, 3, 1).reshape(1, gs_new * gs_new, -1)
-    posemb = torch.cat([posemb_tok, posemb_grid], dim=1)
-    return posemb

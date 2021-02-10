@@ -27,13 +27,6 @@ class DeiTRegressionHead(nn.Module):
         super().__init__()
 
         self.regression_head = nn.ModuleDict({
-            'global_counter': nn.Sequential(
-                nn.Linear(embed_dim, 1),
-                # nn.ReLU(),
-                # nn.Linear(512, 512),
-                # nn.ReLU(),
-                # nn.Linear(512, 1)
-            ),
             'lin_scaler': nn.Sequential(
                 nn.Linear(embed_dim, 512),
                 nn.ReLU(),
@@ -43,11 +36,9 @@ class DeiTRegressionHead(nn.Module):
         })
 
         if init_weights:
-            self.regression_head['global_counter'].apply(init_weights)
             self.regression_head['lin_scaler'].apply(init_weights)
 
     def forward(self, pre_den):
-        # count = self.regression_head['global_counter'](pre_count)
 
         pre_den = self.regression_head['lin_scaler'](pre_den)
         pre_den = pre_den.transpose(1, 2)

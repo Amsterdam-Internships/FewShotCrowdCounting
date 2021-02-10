@@ -38,26 +38,32 @@ class WE_MAML(data.Dataset):
 
     def __getitem__(self, index):
         scene = self.scenes[index]
-        n_datapoints = 1 + 1
-        data_files = random.sample(self.data_files[scene], n_datapoints)
+        n_datapoints = cfg_data.K_TRAIN + cfg_data.K_META  # D + D'
         _img_stack = []
         _gts_stack = []
+        flip = random.random() > 0.5  # whether or not to flip the scene
+
+        data_files = random.sample(self.data_files[scene], n_datapoints)
         for file in data_files:
             img, den = self.read_image_and_gt(file)
-            if self.main_transform is not None:
-                img, den = self.main_transform(img, den)
+
+            if self.main_transform is not None:  # Should be deterministic!
+                img, den, _ = self.main_transform(img, den, flip)
             if self.img_transform is not None:
                 img = self.img_transform(img)
             if self.gt_transform is not None:
                 den = self.gt_transform(den)
-            # imgs = self.splitter(img, self.crop_size, cfg_data.OVERLAP)  # Must be provided!
-            # dens = self.splitter(den.unsqueeze(0), self.crop_size, cfg_data.OVERLAP)  # Must be provided!
-            # _img_stack.append(imgs)
-            # _gts_stack.append(dens)
-            _img_stack.append(img)
-            _gts_stack.append(den)
-        return torch.cat(_img_stack[0:1]), torch.cat(_gts_stack[0:1]), \
-               torch.cat(_img_stack[1:n_datapoints]), torch.cat(_gts_stack[1:n_datapoints])  # Meow Meow
+
+            imgs = self.splitter(img, self.crop_size, cfg_data.OVERLAP)  # Must be provided!
+            dens = self.splitter(den.unsqueeze(0), self.crop_size, cfg_data.OVERLAP)  # Must be provided!
+            _img_stack.append(imgs)
+            _gts_stack.append(dens)
+            # _img_stack.append(img)
+            # _gts_stack.append(den)
+        return torch.cat(_img_stack[0:cfg_data.K_TRAIN]), \
+               torch.cat(_gts_stack[0:cfg_data.K_TRAIN]), \
+               torch.cat(_img_stack[cfg_data.K_TRAIN:n_datapoints]), \
+               torch.cat(_gts_stack[cfg_data.K_TRAIN:n_datapoints])  # Meow Meow
 
     def read_image_and_gt(self, img_path):
         den_path = img_path.replace('frames', 'csvs').replace(self.img_extension, '.csv')

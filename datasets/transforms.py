@@ -41,6 +41,14 @@ class RandomHorizontallyFlip(object):
         return img, mask, bbx
 
 
+class DeterministicHorizontallyFlip(object):
+    def __call__(self, img, den, flip):  # I think I am hacking this bbox thing here :/
+        if flip:
+            return img.transpose(Image.FLIP_LEFT_RIGHT), den.transpose(Image.FLIP_LEFT_RIGHT), flip
+        else:
+            return img, den, flip
+
+
 class RandomScale(object):  # WARNING: THIS DOESNT WORK PROPERLY YET
     def __call__(self, img, den):
         if random.random() < 2:

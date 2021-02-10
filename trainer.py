@@ -19,8 +19,8 @@ class Trainer:
 
         self.train_loader, self.test_loader, self.restore_transform = loading_data(self.model.crop_size)
         self.train_samples = len(self.train_loader.dataset)
-        self.test_samples = len(self.test_loader.dataset)
-        self.eval_save_example_every = self.test_samples // self.cfg.SAVE_NUM_EVAL_EXAMPLES
+        # self.test_samples = len(self.test_loader.dataset) # TODO
+        # self.eval_save_example_every = self.test_samples // self.cfg.SAVE_NUM_EVAL_EXAMPLES
 
         self.alpha = 0.001
         self.beta = 0.001  # TODO: MAKE IN CONFIG FILE
@@ -28,7 +28,7 @@ class Trainer:
         self.meta_optimiser = torch.optim.Adam(model.parameters(), lr=cfg.LR, weight_decay=cfg.WEIGHT_DECAY)
         self.scheduler = torch.optim.lr_scheduler.StepLR(self.meta_optimiser, step_size=1, gamma=cfg.LR_GAMMA)
 
-        self.n_tasks = 3
+        self.n_tasks = 1
 
         self.epoch = 0
         self.best_mae = 10 ** 10  # just something high
@@ -45,30 +45,29 @@ class Trainer:
 
         # self.test_functional()
 
-    # def test_functional(self):
-    #
-    #
-    #     tasks_sampler = iter(self.train_loader)
-    #     img, gt, _, _ = next(tasks_sampler)
-    #     img = img.squeeze()
-    #     model_weights = self.model.state_dict()
-    #     # model_pred = self.model.forward(img)
-    #     model_func_pred = self.model_funct.forward(img, model_weights, True)
-    #     print('done')
+    def test_functional(self):
 
-    def inner_loop(self, train_img, train_gt, test_img, test_gt, theta):
-        train_img, train_gt = train_img.cuda(), train_gt.cuda()
-        test_img, test_gt = test_img.cuda(), test_gt.cuda()
-        theta_weights = theta.values()
 
-        train_pred = self.model_funct.forward(train_img, theta)
+        tasks_sampler = iter(self.train_loader)
+        img, gt, _, _ = next(tasks_sampler)
+        img = img.squeeze()
+        model_weights = self.model.state_dict()
+        # model_pred = self.model.forward(img)
+        model_func_pred = self.model_funct.forward(img, model_weights, True)
+        print('done')
+
+    def inner_loop(self, train_img, train_gt, test_img, test_gt, theta, theta_weights):
+        train_img, train_gt = train_img.squeeze().cuda(), train_gt.squeeze().cuda()
+        test_img, test_gt = test_img.squeeze().cuda(), test_gt.squeeze().cuda()
+
+        train_pred = self.model_funct.forward(train_img, theta, True)  # training is True
         train_pred = train_pred.squeeze(1)  # Remove channel dim
         train_loss = self.criterion(train_pred, train_gt)
         grads = torch.autograd.grad(train_loss, theta_weights)
 
         theta_prime = OrderedDict((k, w - self.alpha * g) for k, w, g in zip(theta.keys(), theta.values(), grads))
 
-        test_pred = self.model_funct.forward(test_img, theta_prime)
+        test_pred = self.model_funct.forward(test_img, theta_prime, True)
         test_pred = test_pred.squeeze(1)
         test_loss = self.criterion(test_pred, test_gt)
 
@@ -82,6 +81,10 @@ class Trainer:
         while self.epoch < self.cfg.MAX_EPOCH:  # While not done
             self.epoch += 1
             theta = OrderedDict((name, param) for name, param in self.model.named_parameters())
+            del theta['norm.weight']
+            del theta['norm.bias']
+            del theta['head.weight']
+            del theta['head.bias']
             theta_weights = list(theta.values())
 
             # Check if enough tasks available
@@ -94,7 +97,7 @@ class Trainer:
                 train_img, train_gt, test_img, test_gt = next(tasks_sampler)
                 items_left -= 1
 
-                test_loss = self.inner_loop(train_img, train_gt, test_img, test_gt, theta)
+                test_loss = self.inner_loop(train_img, train_gt, test_img, test_gt, theta, theta_weights)
                 total_metaloss += test_loss
 
             metagrads = torch.autograd.grad(total_metaloss, theta_weights)

@@ -88,6 +88,7 @@ def main(cfg):
         drop_path_rate=0.1,  # TODO: What does this do?
         drop_block_rate=None,
     )
+    model.cuda()
 
     model_functional = create_model(
         cfg.MODEL_FUNCTIONAL,
@@ -102,6 +103,9 @@ def main(cfg):
     # model.cuda()
     #
     # model_funct = CSRNet_functional()
+
+
+
 
     n_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print('number of params:', n_parameters)
