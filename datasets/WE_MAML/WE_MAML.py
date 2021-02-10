@@ -74,3 +74,62 @@ class WE_MAML(data.Dataset):
 
     def __len__(self):
         return self.num_samples
+
+
+
+class WE_MAML_test(data.Dataset):
+    def __init__(self, data_path, mode, crop_size, scene,
+                 main_transform=None, img_transform=None, gt_transform=None, splitter=None):
+        self.data_path = os.path.join(data_path, 'frames', scene)  # Only save img paths, replace with csvs when getitem
+        self.crop_size = crop_size
+        self.mode = mode  # train or test
+
+        self.main_transform = main_transform
+        self.img_transform = img_transform
+        self.gt_transform = gt_transform
+        self.splitter = splitter
+
+        self.img_extension = '.jpg'
+
+        self.scenes = os.listdir(self.data_path)
+
+        self.data_files = [os.path.join(self.data_path, image) for image in os.listdir(self.data_path)]
+
+        self.num_samples = len(self.data_files)
+
+        print(f'{self.num_samples} images found.')
+
+    def __getitem__(self, index):
+        n_datapoints = 1 + 1
+        _img_stack = []
+        _gts_stack = []
+
+        img, den = self.read_image_and_gt(self.data_files[index])
+        if self.main_transform is not None:
+            img, den = self.main_transform(img, den)
+        if self.img_transform is not None:
+            img = self.img_transform(img)
+        if self.gt_transform is not None:
+            den = self.gt_transform(den)
+        # imgs = self.splitter(img, self.crop_size, cfg_data.OVERLAP)  # Must be provided!
+        # dens = self.splitter(den.unsqueeze(0), self.crop_size, cfg_data.OVERLAP)  # Must be provided!
+        # _img_stack.append(imgs)
+        # _gts_stack.append(dens)
+
+        return img, den
+
+    def read_image_and_gt(self, img_path):
+        den_path = img_path.replace('frames', 'csvs').replace(self.img_extension, '.csv')
+
+        img = Image.open(img_path)
+        if img.mode == 'L':
+            img = img.convert('RGB')
+
+        den = pd.read_csv(den_path, header=None).values
+        den = den.astype(np.float32, copy=False)
+        den = Image.fromarray(den)
+
+        return img, den
+
+    def __len__(self):
+        return self.num_samples

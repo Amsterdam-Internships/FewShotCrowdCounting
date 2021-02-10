@@ -43,6 +43,37 @@ class Trainer:
         #     self.save_eval_pics()
         #     self.writer.add_scalar('lr', self.scheduler.get_last_lr()[0], self.epoch)
 
+        # self.test_functional()
+
+    # def test_functional(self):
+    #
+    #
+    #     tasks_sampler = iter(self.train_loader)
+    #     img, gt, _, _ = next(tasks_sampler)
+    #     img = img.squeeze()
+    #     model_weights = self.model.state_dict()
+    #     # model_pred = self.model.forward(img)
+    #     model_func_pred = self.model_funct.forward(img, model_weights, True)
+    #     print('done')
+
+    def inner_loop(self, train_img, train_gt, test_img, test_gt, theta):
+        train_img, train_gt = train_img.cuda(), train_gt.cuda()
+        test_img, test_gt = test_img.cuda(), test_gt.cuda()
+        theta_weights = theta.values()
+
+        train_pred = self.model_funct.forward(train_img, theta)
+        train_pred = train_pred.squeeze(1)  # Remove channel dim
+        train_loss = self.criterion(train_pred, train_gt)
+        grads = torch.autograd.grad(train_loss, theta_weights)
+
+        theta_prime = OrderedDict((k, w - self.alpha * g) for k, w, g in zip(theta.keys(), theta.values(), grads))
+
+        test_pred = self.model_funct.forward(test_img, theta_prime)
+        test_pred = test_pred.squeeze(1)
+        test_loss = self.criterion(test_pred, test_gt)
+
+        return test_loss
+
     def train(self):  # Outer loop
         items_left = 0
         tasks_sampler = None
@@ -75,23 +106,6 @@ class Trainer:
             print(f'ep {self.epoch}: total_test_loss: {total_metaloss.detach().cpu().item():.3f}')
         self.save_state()
 
-    def inner_loop(self, train_img, train_gt, test_img, test_gt, theta):
-        train_img, train_gt = train_img.cuda(), train_gt.cuda()
-        test_img, test_gt = test_img.cuda(), test_gt.cuda()
-        theta_weights = theta.values()
-
-        train_pred = self.model_funct.forward(train_img, theta)
-        train_pred = train_pred.squeeze(1)  # Remove channel dim
-        train_loss = self.criterion(train_pred, train_gt)
-        grads = torch.autograd.grad(train_loss, theta_weights)
-        theta_prime = OrderedDict((k, w - self.alpha * g) for k, w, g in zip(theta.keys(), theta.values(), grads))
-
-        test_pred = self.model_funct.forward(test_img, theta_prime)
-        test_pred = test_pred.squeeze(1)
-        test_loss = self.criterion(test_pred, test_gt)
-
-        return test_loss
-
     def save_state(self, name_extra=''):
         if name_extra:
             save_name = f'{self.cfg.STATE_DICTS_DIR}/save_state_ep_{self.epoch}_{name_extra}.pth'
@@ -103,7 +117,7 @@ class Trainer:
             'best_epoch': self.best_epoch,
             'best_mae': self.best_mae,
             'net': self.model.state_dict(),
-            'optim': self.optim.state_dict(),
+            'optim': self.meta_optimiser.state_dict(),
             'scheduler': self.scheduler.state_dict(),
             'save_dir_path': self.cfg.SAVE_DIR,
         }
@@ -117,7 +131,7 @@ class Trainer:
         self.best_mae = resume_state['best_mae']
 
         self.model.load_state_dict(resume_state['net'])
-        self.optim.load_state_dict(resume_state['optim'])
+        self.meta_optimiser.load_state_dict(resume_state['optim'])
         self.scheduler.load_state_dict(resume_state['scheduler'])
 
 

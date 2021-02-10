@@ -4,7 +4,7 @@ import datasets.transforms as own_transforms
 from datasets.dataset_utils import img_equal_split
 
 from .settings import cfg_data
-from .WE_MAML import WE_MAML
+from .WE_MAML import WE_MAML, WE_MAML_test
 
 
 def loading_data(crop_size):
@@ -35,14 +35,18 @@ def loading_data(crop_size):
                               shuffle=True, drop_last=True)
 
     # Test set provided to follow standard. TODO: Make seperate test dataloader
-    test_set = WE_MAML(cfg_data.DATA_PATH + '/test', 'test', crop_size,
-                       main_transform=None,
-                       img_transform=img_transform,
-                       gt_transform=gt_transform,
-                       splitter=img_equal_split)
-    test_loader = DataLoader(test_set,
-                             batch_size=cfg_data.TEST_BS,
-                             num_workers=cfg_data.N_WORKERS,
-                             shuffle=False, drop_last=False)
 
-    return train_loader, test_loader, restore_transform
+    test_loaders = []
+    for scene in ['104207', '200608', '200702', '202201', '500717']:
+        test_set = WE_MAML_test(cfg_data.DATA_PATH + '/test', 'test', crop_size, scene,
+                                main_transform=None,
+                                img_transform=img_transform,
+                                gt_transform=gt_transform,
+                                splitter=img_equal_split)
+        test_loader = DataLoader(test_set,
+                                 batch_size=cfg_data.TEST_BS,
+                                 num_workers=cfg_data.N_WORKERS,
+                                 shuffle=False, drop_last=False)
+        test_loaders.append(test_loader)
+
+    return train_loader, test_loaders, restore_transform

@@ -35,11 +35,9 @@ class DeiTRegressionHead(nn.Module):
                 # nn.Linear(512, 1)
             ),
             'lin_scaler': nn.Sequential(
-                nn.Linear(embed_dim, 256)
-                # nn.ReLU(),
-                # nn.Linear(512, 512),
-                # nn.ReLU(),
-                # nn.Linear(512, 256)
+                nn.Linear(embed_dim, 512),
+                nn.ReLU(),
+                nn.Linear(512, 256)
             ),
             'folder': nn.Fold((crop_size, crop_size), kernel_size=16, stride=16)
         })
@@ -48,14 +46,14 @@ class DeiTRegressionHead(nn.Module):
             self.regression_head['global_counter'].apply(init_weights)
             self.regression_head['lin_scaler'].apply(init_weights)
 
-    def forward(self, pre_count, pre_den):
-        count = self.regression_head['global_counter'](pre_count)
+    def forward(self, pre_den):
+        # count = self.regression_head['global_counter'](pre_count)
 
         pre_den = self.regression_head['lin_scaler'](pre_den)
         pre_den = pre_den.transpose(1, 2)
         den = self.regression_head['folder'](pre_den)
 
-        return den, count
+        return den
 
 
 class RegressionTransformer(VisionTransformer):
@@ -80,12 +78,12 @@ class RegressionTransformer(VisionTransformer):
         for blk in self.blocks:
             x = blk(x)
 
-        pre_count = x[:, 0]
+        # pre_count = x[:, 0]
         pre_den = x[:, 1:]
 
-        den, count = self.regression_head(pre_count, pre_den)
+        den = self.regression_head(pre_den)
 
-        return den, count
+        return den
 
 
 class RegressionTransformerCNN(VisionTransformer):

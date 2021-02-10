@@ -9,6 +9,7 @@ import torch.backends.cudnn as cudnn
 import os
 
 import models  # Need to register the models!
+import models_functional
 from timm.models import create_model
 
 import importlib
@@ -79,18 +80,28 @@ def main(cfg):
 
     print(f"Creating model: {cfg.MODEL}")
 
-    # model = create_model(
-    #     cfg.MODEL,
-    #     init_path=model_mapping[cfg.MODEL],
-    #     num_classes=1000,  # Not yet used anyway. Must match pretrained model!
-    #     drop_rate=0.,
-    #     drop_path_rate=0.1,  # TODO: What does this do?
-    #     drop_block_rate=None,
-    # )
-    model = CSRNet()
-    model.cuda()
+    model = create_model(
+        cfg.MODEL,
+        init_path=model_mapping[cfg.MODEL],
+        num_classes=1000,  # Not yet used anyway. Must match pretrained model!
+        drop_rate=0.,
+        drop_path_rate=0.1,  # TODO: What does this do?
+        drop_block_rate=None,
+    )
 
-    model_funct = CSRNet_functional()
+    model_functional = create_model(
+        cfg.MODEL_FUNCTIONAL,
+        init_path=None,
+        num_classes=1000,  # Not yet used anyway. Must match pretrained model!
+        drop_rate=0.,
+        drop_path_rate=0.1,  # TODO: What does this do?
+        drop_block_rate=None,
+    )
+
+    # model = CSRNet()
+    # model.cuda()
+    #
+    # model_funct = CSRNet_functional()
 
     n_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print('number of params:', n_parameters)
@@ -98,7 +109,7 @@ def main(cfg):
     dataloader = importlib.import_module(f'datasets.{cfg.DATASET}.loading_data').loading_data
     cfg_data = importlib.import_module(f'datasets.{cfg.DATASET}.settings').cfg_data
 
-    trainer = Trainer(model, model_funct, dataloader, cfg, cfg_data)
+    trainer = Trainer(model, model_functional, dataloader, cfg, cfg_data)
     trainer.train()
 
 
