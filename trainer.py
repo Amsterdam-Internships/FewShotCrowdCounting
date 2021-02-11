@@ -22,10 +22,10 @@ class Trainer:
         # self.test_samples = len(self.test_loader.dataset) # TODO
         # self.eval_save_example_every = self.test_samples // self.cfg.SAVE_NUM_EVAL_EXAMPLES
 
-        self.alpha = 0.001
-        self.beta = 0.001  # TODO: MAKE IN CONFIG FILE
+        self.alpha = self.cfg.ALPHA
+        self.beta = self.cfg.BETA  # TODO: MAKE IN CONFIG FILE
         self.criterion = torch.nn.MSELoss()
-        self.meta_optimiser = torch.optim.Adam(model.parameters(), lr=cfg.LR, weight_decay=cfg.WEIGHT_DECAY)
+        self.meta_optimiser = torch.optim.Adam(model.parameters(), lr=self.beta, weight_decay=cfg.WEIGHT_DECAY)
         self.scheduler = torch.optim.lr_scheduler.StepLR(self.meta_optimiser, step_size=1, gamma=cfg.LR_GAMMA)
 
         self.n_tasks = 1
@@ -46,7 +46,7 @@ class Trainer:
         # self.test_functional()
 
     def test_functional(self):
-
+        """ Just a small function so I can verify with Pycharm debugger if functional model even works"""
 
         tasks_sampler = iter(self.train_loader)
         img, gt, _, _ = next(tasks_sampler)
@@ -71,7 +71,10 @@ class Trainer:
         test_pred = test_pred.squeeze(1)
         test_loss = self.criterion(test_pred, test_gt)
 
-        return test_loss
+        AEs_ = (torch.sum(test_pred.detach(), dim=(1, 2)) - torch.sum(test_gt, dim=(1, 2))) / self.cfg_data.LABEL_FACTOR
+        AEs = torch.mean(torch.abs(AEs_)).cpu().item()
+
+        return test_loss, AEs
 
     def train(self):  # Outer loop
         items_left = 0
@@ -93,12 +96,14 @@ class Trainer:
                 items_left = len(self.train_loader.dataset)
 
             total_metaloss = torch.tensor(0).float().cuda()
+            total_AEs = 0
             for task_idx in range(self.n_tasks):
                 train_img, train_gt, test_img, test_gt = next(tasks_sampler)
                 items_left -= 1
 
-                test_loss = self.inner_loop(train_img, train_gt, test_img, test_gt, theta, theta_weights)
+                test_loss, AEs = self.inner_loop(train_img, train_gt, test_img, test_gt, theta, theta_weights)
                 total_metaloss += test_loss
+                total_AEs += AEs
 
             metagrads = torch.autograd.grad(total_metaloss, theta_weights)
 
@@ -106,7 +111,10 @@ class Trainer:
                 w.grad = g
             self.meta_optimiser.step()
 
-            print(f'ep {self.epoch}: total_test_loss: {total_metaloss.detach().cpu().item():.3f}')
+            print(f'ep {self.epoch}: Mean Patch Error: {total_AEs / self.n_tasks:.3f}')
+
+            if self.epoch % self.cfg.SAVE_EVERY == 0:
+                self.save_state()
         self.save_state()
 
     def save_state(self, name_extra=''):

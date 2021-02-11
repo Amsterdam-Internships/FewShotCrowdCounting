@@ -20,14 +20,15 @@ cfg.MODEL_FUNCTIONAL = 'deit_tiny_patch16_224_functional'
 cfg.DATASET = 'WE_MAML'
 
 cfg.COUNT_LOSS_FACTOR = 0
-cfg.LR = 1e-3
-cfg.LR_GAMMA = 0.3  # Scale LR by this at each step epoch
-cfg.LR_STEP_EPOCHS = [1000, 5000]
-cfg.WEIGHT_DECAY = 1e-4
+cfg.ALPHA = 0.01  # Inner update
+cfg.BETA = 0.001  # Outer/meta update
+cfg.LR_GAMMA = 0.1  # Scale LR by this at each step epoch
+cfg.LR_STEP_EPOCHS = [2000, 7500, 20000]
+cfg.WEIGHT_DECAY = 1e-5
 
-cfg.MAX_EPOCH = 10000
-cfg.EVAL_EVERY = 25
-cfg.SAVE_EVERY_N_EVALS = 4  # Every Nth evaluation, save model regardless of performance
+cfg.MAX_EPOCH = 25000
+cfg.EVAL_EVERY = 1000  # Not yet implemented, but used still for save every!
+cfg.SAVE_EVERY_N_EVALS = 3  # Every Nth evaluation, save model regardless of performance
 cfg.SAVE_EVERY = cfg.SAVE_EVERY_N_EVALS * cfg.EVAL_EVERY  # Don't touch this one
 
 cfg.SAVE_NUM_EVAL_EXAMPLES = 10  # How many examples from the test/evaluation set to save
