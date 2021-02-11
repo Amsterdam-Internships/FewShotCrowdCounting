@@ -28,7 +28,7 @@ class Trainer:
         self.meta_optimiser = torch.optim.Adam(model.parameters(), lr=self.beta, weight_decay=cfg.WEIGHT_DECAY)
         self.scheduler = torch.optim.lr_scheduler.StepLR(self.meta_optimiser, step_size=1, gamma=cfg.LR_GAMMA)
 
-        self.n_tasks = 1
+        self.n_tasks = cfg.N_TASKS
 
         self.epoch = 0
         self.best_mae = 10 ** 10  # just something high

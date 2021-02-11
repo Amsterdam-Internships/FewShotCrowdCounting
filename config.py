@@ -26,6 +26,9 @@ cfg.LR_GAMMA = 0.1  # Scale LR by this at each step epoch
 cfg.LR_STEP_EPOCHS = [2000, 7500, 20000]
 cfg.WEIGHT_DECAY = 1e-5
 
+cfg.N_TASKS = 5  # How many tasks to perform before performing an outer backprop
+
+
 cfg.MAX_EPOCH = 25000
 cfg.EVAL_EVERY = 1000  # Not yet implemented, but used still for save every!
 cfg.SAVE_EVERY_N_EVALS = 3  # Every Nth evaluation, save model regardless of performance
