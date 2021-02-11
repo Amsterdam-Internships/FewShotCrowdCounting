@@ -105,7 +105,8 @@ class Trainer:
                 total_metaloss += test_loss
                 total_AEs += AEs
 
-            metagrads = torch.autograd.grad(total_metaloss, theta_weights)
+            avg_metaloss = total_metaloss / self.n_tasks
+            metagrads = torch.autograd.grad(avg_metaloss, theta_weights)
 
             for w, g in zip(theta_weights, metagrads):
                 w.grad = g
