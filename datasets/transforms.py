@@ -49,17 +49,24 @@ class DeterministicHorizontallyFlip(object):
             return img, den, flip
 
 
-class RandomScale(object):  # WARNING: THIS DOESNT WORK PROPERLY YET
-    def __call__(self, img, den):
-        if random.random() < 2:
+class RandomScale(object):
+    def __call__(self, img, den, bbx=None):
+        if random.random() < 0.25:
             w, h = img.size
-            scale = random.uniform(0.75, 1.25)
+            scale = random.uniform(0.5, 1.5)  # Equal chance to up or downscale. Also, it already performs oke on sparse
             new_w = round(scale * w)
             new_h = round(scale * h)
+            crowd_count = np.array(den).sum()
+
             img = img.resize((new_w, new_h))
             den = den.resize((new_w, new_h))
 
-        return img, den
+            new_count = np.array(den).sum()
+            den = Image.fromarray(np.array(den) * crowd_count / new_count)  # Would be even better to remake dens
+
+            print(f'{crowd_count}, {np.array(den).sum()}')
+
+        return img, den, None
 
 
 class RandomCrop(object):
