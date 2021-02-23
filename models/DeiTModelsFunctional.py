@@ -7,9 +7,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from functools import partial
 
-from timm_functional.timm_functional import VisionTransformer_functional, _cfg
+from models.timm_functional.timm_functional import VisionTransformer_functional, _cfg
 from timm.models.registry import register_model
-from timm.models.layers import trunc_normal_
 
 # __all__ = [
 #     'deit_tiny_patch16_224', 'deit_small_patch16_224', 'deit_base_patch16_224', 'deit_tiny_cnn_patch16_224',
@@ -30,29 +29,6 @@ class DeiTRegressionHead_functional(nn.Module):
         super().__init__()
 
         self.crop_size = crop_size
-        # self.regression_head = nn.ModuleDict({
-        #     'global_counter': nn.Sequential(
-        #         nn.Linear(embed_dim, 1),
-        #         # nn.ReLU(),
-        #         # nn.Linear(512, 512),
-        #         # nn.ReLU(),
-        #         # nn.Linear(512, 1)
-        #     ),
-        #     'lin_scaler': nn.Sequential(
-        #         nn.Linear(embed_dim, 256)
-        #         # nn.ReLU(),
-        #         # nn.Linear(512, 512),
-        #         # nn.ReLU(),
-        #         # nn.Linear(512, 256)
-        #     ),
-        #     'folder': nn.Fold((crop_size, crop_size), kernel_size=16, stride=16)
-        # })
-        #
-        # if init_weights:
-        #     self.regression_head['global_counter'].apply(init_weights)
-        #     self.regression_head['lin_scaler'].apply(init_weights)
-
-        # self.folder = nn.Fold((crop_size, crop_size), kernel_size=16, stride=16)
 
     def forward(self, pre_den, weights):
         pre_den = F.linear(pre_den, weights['regression_head.regression_head.lin_scaler.0.weight'],
@@ -82,7 +58,8 @@ class RegressionTransformer_functional(VisionTransformer_functional):
 
         # This token has been stolen by a lot of people now
         cls_tokens = weights['cls_token'].expand(batch_size, -1, -1)
-        x = torch.cat((cls_tokens, x), dim=1)
+        dist_token = weights['dist_token'].expand(batch_size, -1, -1)
+        x = torch.cat((cls_tokens, dist_token, x), dim=1)
         x = x + weights['pos_embed']
         x = F.dropout(x, self.drop_rate, training=training)
 
@@ -90,7 +67,7 @@ class RegressionTransformer_functional(VisionTransformer_functional):
             x = blk(x, weights, training)
 
         # pre_count = x[:, 0]
-        pre_den = x[:, 1:]
+        pre_den = x[:, 2:]
 
         den = self.regression_head(pre_den, weights)
 
@@ -159,7 +136,7 @@ class RegressionTransformer_functional(VisionTransformer_functional):
 
 
 @register_model
-def deit_tiny_patch16_224_functional(init_path=None, pretrained=False, **kwargs):
+def deit_tiny_distilled_patch16_224_functional(init_path=None, pretrained=False, **kwargs):
     model = RegressionTransformer_functional(
         img_size=224, patch_size=16, embed_dim=192, depth=12, num_heads=3, mlp_ratio=4, qkv_bias=True,
         norm_layer=partial(nn.LayerNorm, eps=1e-6), **kwargs)

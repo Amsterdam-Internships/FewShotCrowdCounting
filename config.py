@@ -15,21 +15,24 @@ cfg = edict()
 
 cfg.SEED = 42
 
-cfg.MODEL = 'deit_tiny_patch16_224'
-cfg.MODEL_FUNCTIONAL = 'deit_tiny_patch16_224_functional'
+cfg.MODEL = 'deit_tiny_distilled_patch16_224'
 cfg.DATASET = 'WE_MAML'
 
+cfg.MAML = False
+cfg.ALPHA_START = 123
+cfg.ALPHA_INIT = 0.001  # Use also for Alpha lr in MAML
+
 cfg.COUNT_LOSS_FACTOR = 0
-cfg.ALPHA = 0.01  # Inner update
-cfg.BETA = 0.001  # Outer/meta update
+# cfg.ALPHA = 0.01  # Inner update
+cfg.BETA = 1e-4  # Outer/meta update
 cfg.LR_GAMMA = 0.1  # Scale LR by this at each step epoch
 cfg.LR_STEP_EPOCHS = [2000, 7500, 20000]
 cfg.WEIGHT_DECAY = 1e-5
 
-cfg.N_TASKS = 5  # How many tasks to perform before performing an outer backprop
+cfg.N_TASKS = 1  # How many tasks to perform before performing an outer backprop
 
 
-cfg.MAX_EPOCH = 25000
+cfg.MAX_EPOCH = 10**10
 cfg.EVAL_EVERY = 1000  # Not yet implemented, but used still for save every!
 cfg.SAVE_EVERY_N_EVALS = 3  # Every Nth evaluation, save model regardless of performance
 cfg.SAVE_EVERY = cfg.SAVE_EVERY_N_EVALS * cfg.EVAL_EVERY  # Don't touch this one

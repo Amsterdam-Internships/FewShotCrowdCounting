@@ -116,12 +116,12 @@ class WE_MAML_test(data.Dataset):
             img = self.img_transform(img)
         if self.gt_transform is not None:
             den = self.gt_transform(den)
-        imgs = self.splitter(img, self.crop_size, cfg_data.OVERLAP)  # Must be provided!
-        dens = self.splitter(den.unsqueeze(0), self.crop_size, cfg_data.OVERLAP)  # Must be provided!
+        # imgs = self.splitter(img, self.crop_size, cfg_data.OVERLAP)  # Must be provided!
+        # dens = self.splitter(den.unsqueeze(0), self.crop_size, cfg_data.OVERLAP)  # Must be provided!
         # _img_stack.append(imgs)
         # _gts_stack.append(dens)
 
-        return imgs, dens
+        return img, den
 
     def read_image_and_gt(self, img_path):
         den_path = img_path.replace('frames', 'csvs').replace(self.img_extension, '.csv')

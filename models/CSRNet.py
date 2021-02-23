@@ -7,7 +7,7 @@ import torch.nn.functional as F
 class CSRNet(nn.Module):
     def __init__(self, load_weights=False):
         super(CSRNet, self).__init__()
-        self.crop_size = 224  # TODO: fix this
+
         self.seen = 0
         self.frontend_feat = [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'M', 512, 512, 512]
         self.backend_feat = [512, 512, 512, 256, 128, 64]
@@ -18,6 +18,14 @@ class CSRNet(nn.Module):
             mod = models.vgg16(pretrained=True)
             self._initialize_weights()
             self.frontend.load_state_dict(mod.features[0:23].state_dict())
+
+        self.alpha = None
+
+    def make_alpha(self, alpha_init):
+        self.alpha = torch.nn.ParameterDict()
+        for k, v in self.state_dict().items():
+            alpha_value = torch.nn.Parameter(torch.zeros(v.shape, requires_grad=True) + alpha_init)
+            self.alpha[k.replace('.', '_')] = alpha_value
 
     def forward(self, x):
         # x = self.frontend(x)

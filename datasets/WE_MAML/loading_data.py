@@ -9,8 +9,7 @@ from .WE_MAML import WE_MAML, WE_MAML_test
 
 def loading_data(crop_size):
     train_main_transform = own_transforms.Compose([
-        own_transforms.DeterministicHorizontallyFlip(),
-        own_transforms.RandomScale()
+        own_transforms.DeterministicHorizontallyFlip()
     ])
 
     img_transform = standard_transforms.Compose([

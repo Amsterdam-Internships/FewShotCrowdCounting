@@ -53,6 +53,8 @@ class RegressionTransformer(VisionTransformer):
 
         self.regression_head = DeiTRegressionHead(kwargs['img_size'], kwargs['embed_dim'], self._init_weights)
 
+        self.alpha = None
+
     def forward(self, x):
         # taken from https://github.com/rwightman/pytorch-image-models/blob/master/timm/models/vision_transformer.py
         # Adjusted to do Crowd Counting regression
@@ -76,69 +78,15 @@ class RegressionTransformer(VisionTransformer):
 
         return den
 
+    def remove_unused(self):
+        self.norm = None
+        self.head = None
 
-class RegressionTransformerCNN(VisionTransformer):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        chn = 64  # Fixed value
-
-        self.regression_head = nn.ModuleDict({
-            'global_counter': nn.Sequential(
-                nn.Linear(kwargs['embed_dim'], 1)
-            ),
-            'lin_scaler': nn.Sequential(
-                nn.Linear(kwargs['embed_dim'], 256)
-            ),
-            'folder': nn.Fold((kwargs['img_size'], kwargs['img_size']), kernel_size=16, stride=16),
-            'cnn': nn.Sequential(
-                nn.Conv2d(in_channels=1, out_channels=chn, kernel_size=3, stride=1, padding=1),
-                nn.ReLU(),
-                nn.Conv2d(in_channels=chn, out_channels=chn, kernel_size=3, stride=1, dilation=1, padding=1),
-                nn.ReLU(),
-                nn.Conv2d(in_channels=chn, out_channels=chn, kernel_size=3, stride=1, dilation=2, padding=2),
-                nn.ReLU(),
-                nn.Conv2d(in_channels=chn, out_channels=chn, kernel_size=3, stride=1, dilation=3, padding=3),
-                nn.ReLU(),
-                nn.Conv2d(in_channels=chn, out_channels=1, kernel_size=3, stride=1, padding=1)
-            )
-        })
-
-        self.init_conv_weights(self.regression_head['cnn'])
-
-    def init_conv_weights(self, module):
-        for m in module:
-            if isinstance(m, nn.Conv2d):
-                nn.init.normal_(m.weight, std=0.01)
-                if m.bias is not None:
-                    nn.init.constant_(m.bias, 0)
-
-    def forward(self, x):
-        # taken from https://github.com/rwightman/pytorch-image-models/blob/master/timm/models/vision_transformer.py
-        # Adjusted to do Crowd Counting regression
-
-        batch_size = x.shape[0]
-        x = self.patch_embed(x)
-
-        # This token has been stolen by a lot of people now
-        cls_tokens = self.cls_token.expand(batch_size, -1, -1)  # stole cls_tokens impl from Phil Wang, thanks
-        x = torch.cat((cls_tokens, x), dim=1)
-        x = x + self.pos_embed
-        x = self.pos_drop(x)
-
-        for blk in self.blocks:
-            x = blk(x)
-
-        pre_count = x[:, 0]
-        pre_den = x[:, 1:]
-
-        count = self.regression_head['global_counter'](pre_count)
-
-        pre_den = self.regression_head['lin_scaler'](pre_den)
-        pre_den = pre_den.transpose(1, 2)
-        pre_den = self.regression_head['folder'](pre_den)
-        den = self.regression_head['cnn'](pre_den)
-
-        return den, count
+    def make_alpha(self, alpha_init):
+        self.alpha = torch.nn.ParameterDict()
+        for k, v in self.state_dict().items():
+            alpha_value = torch.nn.Parameter(torch.zeros(v.shape, requires_grad=True) + alpha_init)
+            self.alpha[k.replace('.', '_')] = alpha_value
 
 
 class DistilledRegressionTransformer(VisionTransformer):
@@ -155,6 +103,18 @@ class DistilledRegressionTransformer(VisionTransformer):
         self.regression_head = DeiTRegressionHead(kwargs['img_size'], kwargs['embed_dim'], self._init_weights)
 
         self.head_dist.apply(self._init_weights)
+        self.alpha = None
+
+    def remove_unused(self):
+        self.norm = None
+        self.head = None
+        self.head_dist = None
+
+    def make_alpha(self, alpha_init):
+        self.alpha = torch.nn.ParameterDict()
+        for k, v in self.state_dict().items():
+            alpha_values = torch.nn.Parameter(torch.zeros(v.shape, requires_grad=True) + alpha_init)
+            self.alpha[k.replace('.', '_')] = alpha_values
 
     def forward(self, x):
         # taken from https://github.com/rwightman/pytorch-image-models/blob/master/timm/models/vision_transformer.py
@@ -174,32 +134,16 @@ class DistilledRegressionTransformer(VisionTransformer):
         for blk in self.blocks:
             x = blk(x)
 
-        pre_count = x[:, 0]
         pre_den = x[:, 2:]
 
-        den, count = self.regression_head(pre_count, pre_den)
+        den, count = self.regression_head(pre_den)
 
-        return den, count
+        return den
 
 
 # ======================================================================================================= #
 #                                               TINY MODEL                                                #
 # ======================================================================================================= #
-@register_model
-def deit_tiny_cnn_patch16_224(init_path=None, pretrained=False, **kwargs):
-    model = RegressionTransformerCNN(
-        img_size=224, patch_size=16, embed_dim=192, depth=12, num_heads=3, mlp_ratio=4, qkv_bias=True,
-        norm_layer=partial(nn.LayerNorm, eps=1e-6), **kwargs)
-    model.default_cfg = _cfg()
-    model.crop_size = 224
-    model.n_patches = 14
-
-    if init_path:
-        model = init_model_state(model, init_path)
-
-    return model
-
-
 @register_model
 def deit_tiny_patch16_224(init_path=None, pretrained=False, **kwargs):
     model = RegressionTransformer(
@@ -211,6 +155,8 @@ def deit_tiny_patch16_224(init_path=None, pretrained=False, **kwargs):
 
     if init_path:
         model = init_model_state(model, init_path)
+
+    model.remove_unused()
 
     return model
 
@@ -226,6 +172,8 @@ def deit_tiny_distilled_patch16_224(init_path=None, pretrained=False, **kwargs):
 
     if init_path:
         model = init_model_state(model, init_path)
+
+    model.remove_unused()
 
     return model
 
@@ -246,6 +194,8 @@ def deit_small_patch16_224(init_path=None, pretrained=False, **kwargs):
     if init_path:
         model = init_model_state(model, init_path)
 
+    model.remove_unused()
+
     return model
 
 
@@ -260,6 +210,8 @@ def deit_small_distilled_patch16_224(init_path=None, pretrained=False, **kwargs)
 
     if init_path:
         model = init_model_state(model, init_path)
+
+    model.remove_unused()
 
     return model
 
@@ -280,6 +232,8 @@ def deit_base_patch16_224(init_path, pretrained=False, **kwargs):
     if init_path:
         model = init_model_state(model, init_path)
 
+    model.remove_unused()
+
     return model
 
 
@@ -295,6 +249,8 @@ def deit_base_distilled_patch16_224(init_path, pretrained=False, **kwargs):
     if init_path:
         model = init_model_state(model, init_path)
 
+    model.remove_unused()
+
     return model
 
 @register_model
@@ -308,6 +264,8 @@ def deit_base_patch16_384(init_path=None, pretrained=False, **kwargs):
 
     if init_path:
         model = init_model_state(model, init_path)
+
+    model.remove_unused()
 
     return model
 
@@ -323,6 +281,8 @@ def deit_base_distilled_patch16_384(init_path=None, pretrained=False, **kwargs):
 
     if init_path:
         model = init_model_state(model, init_path)
+
+    model.remove_unused()
 
     return model
 

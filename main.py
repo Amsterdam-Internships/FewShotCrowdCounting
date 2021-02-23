@@ -1,25 +1,21 @@
 # Copyright (c) 2015-present, Facebook, Inc.
 # All rights reserved.
-import argparse
-import datetime
 import numpy as np
-import time
 import torch
 import torch.backends.cudnn as cudnn
 import os
 
-import models  # Need to register the models!
-import models_functional
+import models.DeiTModels
+import models.DeiTModelsFunctional
 from timm.models import create_model
+
+from models.meta_DeiT import MetaDeiT
 
 import importlib
 
 from trainer import Trainer
 from config import cfg
 from shutil import copyfile
-
-from CSRNet import CSRNet
-from CSRNet_functional import CSRNet_functional
 
 # __all__ = [
 #     'deit_base_patch16_224',              'deit_small_patch16_224',               'deit_tiny_patch16_224',
@@ -63,7 +59,7 @@ def main(cfg):
         make_save_dirs(cfg)
         copyfile('config.py', os.path.join(cfg.CODE_DIR, 'config.py'))
         copyfile('trainer.py', os.path.join(cfg.CODE_DIR, 'trainer.py'))
-        copyfile('models.py', os.path.join(cfg.CODE_DIR, 'models.py'))
+        # copyfile('models.py', os.path.join(cfg.CODE_DIR, 'models.py'))
         copyfile(os.path.join('datasets', cfg.DATASET, 'settings.py'),
                  os.path.join(cfg.CODE_DIR, 'settings.py'))
         copyfile(os.path.join('datasets', cfg.DATASET, 'loading_data.py'),
@@ -88,10 +84,10 @@ def main(cfg):
         drop_path_rate=0.1,  # TODO: What does this do?
         drop_block_rate=None,
     )
-    model.cuda()
+
 
     model_functional = create_model(
-        cfg.MODEL_FUNCTIONAL,
+        cfg.MODEL + '_functional',
         init_path=None,
         num_classes=1000,  # Not yet used anyway. Must match pretrained model!
         drop_rate=0.,
@@ -102,7 +98,12 @@ def main(cfg):
     # model = CSRNet()
     # model.cuda()
     #
-    # model_funct = CSRNet_functional()
+    # model_functional = CSRNet_functional()
+    model.make_alpha(cfg.ALPHA_INIT)
+    model.cuda()
+
+    crit = torch.nn.MSELoss()
+    meta_learner = MetaDeiT(model, model_functional, crit)
 
     n_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print('number of params:', n_parameters)
@@ -110,7 +111,7 @@ def main(cfg):
     dataloader = importlib.import_module(f'datasets.{cfg.DATASET}.loading_data').loading_data
     cfg_data = importlib.import_module(f'datasets.{cfg.DATASET}.settings').cfg_data
 
-    trainer = Trainer(model, model_functional, dataloader, cfg, cfg_data)
+    trainer = Trainer(meta_learner, dataloader, cfg, cfg_data)
     trainer.train()
 
 
