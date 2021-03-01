@@ -16,6 +16,15 @@ The end goal of this project is to have one or more of the DeiT architectures th
 
 <p align="center"> <i> RQ 1: How can transformers be utilised to generate density maps of crowds in images? </i> </p> 
 
+I plan to perform an ablation study with DeiT on the Shanghaitech part B dataset. With this I expect to find how to properly train a transformer-based crowd counting model. I also plan to extend these findings to the datasets of the Municipality, although that will probably not be part of my thesis.  
+
 <p align="center"> <i> RQ 2: Do transformer-based models generalise better than CNN-based models? </i> </p> 
 
+Zero-shot adaptation, or transfer learning, in which we use a model pretrained on some dataset on another dataset without fine-tuning. This result will be especially usefull for scenarios where we dont have the time or resources to train a new model (as we have already found that fine-tuning with limited data is not sufficient). So far, I did find some settings where DeiT provides far superior transfer learning performance. Can we maximize transfer-learning performance? When does it work better and when does it fail?
+
+Furthermore, the holy grail would be a model so good that no fine-tuning is necessary for adequate performance. We know no existing method is able to provide this. Can transformers be the key to supremacy? It's a far stretch, but nevertheless interesting to see how far we can push DeiT.
+
 <p align="center"> <i> RQ 3: Do transformer-based models provide better few-shot scene adaptation performance than CNN-based models? </i> </p> 
+
+Using Meta-SGD or MAML, can we train a model that adapts better to unseen scenarios than standard pre-trained models? [one work](https://arxiv.org/pdf/2002.00264.pdf) did show very promosing results, although I failed to reproduce their work so far. I start to lose my trust in these methods, though it's the direction of my research and so I want to conclude formally how well these methods perform. Should these experiments prove fruitful, we would no longer be required to annotate 100+ images for each new camera we place.
+
