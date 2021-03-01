@@ -8,12 +8,12 @@ import torch
 import torch.backends.cudnn as cudnn
 import os
 
-import models  # Need to register the models!
+import models.DeiTModels  # Need to register the models!
 from timm.models import create_model
 
 import importlib
 
-from trainer import Trainer
+from trainer_standard import Trainer
 from config import cfg
 from shutil import copyfile
 
@@ -58,8 +58,8 @@ def main(cfg):
     else:
         make_save_dirs(cfg)
         copyfile('config.py', os.path.join(cfg.CODE_DIR, 'config.py'))
-        copyfile('trainer.py', os.path.join(cfg.CODE_DIR, 'trainer.py'))
-        copyfile('models.py', os.path.join(cfg.CODE_DIR, 'models.py'))
+        copyfile('trainer_standard.py', os.path.join(cfg.CODE_DIR, 'trainer_standard.py'))
+        copyfile('models/DeiTModels.py', os.path.join(cfg.CODE_DIR, 'DeiTModels.py'))
         copyfile(os.path.join('datasets', cfg.DATASET, 'settings.py'),
                  os.path.join(cfg.CODE_DIR, 'settings.py'))
         copyfile(os.path.join('datasets', cfg.DATASET, 'loading_data.py'),

@@ -15,15 +15,13 @@ cfg = edict()
 
 cfg.SEED = 42
 
-cfg.MODEL = 'deit_tiny_distilled_patch16_224'
-cfg.DATASET = 'WE_MAML'
+cfg.MODEL = 'deit_tiny_patch16_224'
+cfg.DATASET = 'SHTB'
 
 cfg.MAML = False
 cfg.ALPHA_START = 123
 cfg.ALPHA_INIT = 0.001  # Use also for Alpha lr in MAML
 
-cfg.COUNT_LOSS_FACTOR = 0
-# cfg.ALPHA = 0.01  # Inner update
 cfg.BETA = 1e-4  # Outer/meta update
 cfg.LR_GAMMA = 0.1  # Scale LR by this at each step epoch
 cfg.LR_STEP_EPOCHS = [2000, 7500, 20000]

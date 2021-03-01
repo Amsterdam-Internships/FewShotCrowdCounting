@@ -21,7 +21,7 @@ class Trainer:
         self.eval_save_example_every = self.test_samples // self.cfg.SAVE_NUM_EVAL_EXAMPLES
 
         self.criterion = torch.nn.MSELoss()
-        self.optim = torch.optim.Adam(model.parameters(), lr=cfg.LR, weight_decay=cfg.WEIGHT_DECAY)
+        self.optim = torch.optim.Adam(model.parameters(), lr=cfg.BETA, weight_decay=cfg.WEIGHT_DECAY)  # BETA = LR
         self.scheduler = torch.optim.lr_scheduler.StepLR(self.optim, step_size=1, gamma=cfg.LR_GAMMA)
 
         self.epoch = 0
@@ -38,48 +38,45 @@ class Trainer:
         #     self.writer.add_scalar('lr', self.scheduler.get_last_lr()[0], self.epoch)
 
     def train(self):
-        # MAE = self.evaluate_model()
-        # print(f'Initial MAE: {MAE:.3f}')
+        # MAE, MSE = self.evaluate_model()
+        # print(f'Initial MAE: {MAE:.3f}, MSE: {MSE:.3f}')
 
         self.model.train()
         while self.epoch < self.cfg.MAX_EPOCH:
             self.epoch += 1
 
             epoch_start_time = time.time()
-            den_losses, count_losses, total_losses, errors, last_out_den, last_gts = self.run_epoch()
+            losses, MAPE, MSPE, last_out_den, last_gts = self.run_epoch()
             epoch_time = time.time() - epoch_start_time
 
-            MAE = torch.mean(torch.stack(errors)) / (self.cfg_data.TRAIN_BS * self.cfg_data.LABEL_FACTOR)
-            avg_den_loss = np.mean(den_losses)
-            avg_count_loss = np.mean(count_losses)
-            avg_loss = np.mean(total_losses)
+            avg_loss = np.mean(losses)
             pred_cnt = last_out_den[0].detach().cpu().sum() / self.cfg_data.LABEL_FACTOR
             gt_cnt = last_gts[0].cpu().sum() / self.cfg_data.LABEL_FACTOR
-            print(f'ep {self.epoch}: Average loss={avg_loss:.3f}, Patch MAE={MAE:.3f}.'
+            print(f'ep {self.epoch}: Average loss={avg_loss:.3f}, Patch MAE={MAPE:.3f}, Patch MSE={MSPE:.3f}.'
                   f'  Example: pred={pred_cnt:.3f}, gt={gt_cnt:.3f}. Train time: {epoch_time:.3f}')
 
-            self.writer.add_scalar('Loss/train_den', avg_den_loss, self.epoch)
-            self.writer.add_scalar('Loss/train_count', avg_count_loss, self.epoch)
-            self.writer.add_scalar('Loss/train_combined', avg_loss, self.epoch)
-            self.writer.add_scalar('MAE/train', MAE, self.epoch)
+            self.writer.add_scalar('Loss/train', avg_loss, self.epoch)
+            self.writer.add_scalar('MAE/train', MAPE, self.epoch)
+            self.writer.add_scalar('MSE/train', MSPE, self.epoch)
 
             if self.epoch % self.cfg.EVAL_EVERY == 0:
                 eval_start_time = time.time()
-                eval_MAE = self.evaluate_model()
+                MAE, MSE = self.evaluate_model()
                 eval_time = time.time() - eval_start_time
 
-                if eval_MAE < self.best_mae:
-                    self.best_mae = eval_MAE
+                if MAE < self.best_mae:
+                    self.best_mae = MAE
                     self.best_epoch = self.epoch
                     print_fancy_new_best_MAE()
-                    self.save_state(f'new_best_MAE_{eval_MAE:.3f}')
+                    self.save_state(f'new_best_MAE_{MAE:.3f}')
                 elif self.epoch % self.cfg.SAVE_EVERY == 0:
-                    self.save_state(f'MAE_{eval_MAE:.3f}')
+                    self.save_state(f'MAE_{MAE:.3f}')
 
-                print(f'MAE: {eval_MAE:.3f}, best MAE: {self.best_mae:.3f} at ep({self.best_epoch}).'
+                print(f'MAE: {MAE:.3f}, MSE: {MSE:.3f}. best MAE: {self.best_mae:.3f} at ep({self.best_epoch}).'
                       f' eval time: {eval_time:.3f}')
 
-                self.writer.add_scalar('MAE/test', eval_MAE, self.epoch)
+                self.writer.add_scalar('MAE/eval', MAE, self.epoch)
+                self.writer.add_scalar('MSE/eval', MSE, self.epoch)
 
             if self.epoch in self.cfg.LR_STEP_EPOCHS:
                 self.scheduler.step()
@@ -87,44 +84,42 @@ class Trainer:
                 self.writer.add_scalar('lr', self.scheduler.get_last_lr()[0], self.epoch)
 
     def run_epoch(self):
-        den_losses = []
-        count_losses = []
-        total_losses = []
-        errors = []
+        losses = []
+        APEs = []  # Absolute Patch Errors
+        SPEs = []  # Squared Patch Errors
 
         out_den = None  # SILENCE WENCH!
-        den_gts = None  # silences the 'might not be defined' warning below the for loop.
+        gt_stack = None  # silences the 'might not be defined' warning below the for loop.
 
-        for idx, (images, gts) in enumerate(self.train_loader):
-            images = images.cuda()
-            den_gts = gts.squeeze().cuda()
-            count_gts = den_gts.sum(dim=(1, 2)).unsqueeze(-1)
+        for idx, (img_stack, gt_stack) in enumerate(self.train_loader):
+            img_stack = img_stack.squeeze().cuda()
+            gt_stack = gt_stack.squeeze().cuda()
 
             self.optim.zero_grad()
-            out_den, out_count = self.model(images)
+            out_den = self.model(img_stack)
             out_den = out_den.squeeze()
-
-            den_loss = self.criterion(out_den, den_gts)
-            count_loss = self.criterion(out_count, count_gts)
-
-            total_loss = den_loss + self.cfg.COUNT_LOSS_FACTOR * count_loss
-            total_loss.backward()
+            loss = self.criterion(out_den, gt_stack)
+            loss.backward()
             self.optim.step()
 
-            den_losses.append(den_loss.cpu().item())
-            count_losses.append(den_loss.cpu().item())
-            total_losses.append((total_loss.cpu().item()))
-            errors.append(torch.abs(torch.sum(out_den - den_gts, dim=(1, 2))).sum())
+            losses.append(loss.cpu().item())
+            errors = torch.sum(out_den - gt_stack, dim=(1, 2)) / self.cfg_data.LABEL_FACTOR
+            APEs.extend(torch.abs(errors).tolist())
+            SPEs.extend(torch.square(errors).tolist())
+
+        MAPE = np.mean(APEs)  # Mean Absolute Patch Error
+        MSPE = np.mean(SPEs)  # Mean Squared Patch Error
 
         # Also return the last predicted densities and corresponding gts. This allows for informative prints
-        return den_losses, count_losses, total_losses, errors, out_den, den_gts
+        return losses, MAPE, MSPE, out_den, gt_stack
 
     def evaluate_model(self):
 
         plt.cla()  # Clear plot for new ones
         self.model.eval()
         with torch.no_grad():
-            errors = []
+            AEs = []  # Absolute Errors
+            SEs = []  # Squared Errors
 
             abs_patch_errors = torch.zeros(self.model.crop_size, self.model.crop_size)
             summed_patch_errors = torch.zeros(self.model.n_patches, self.model.n_patches)
@@ -135,7 +130,7 @@ class Trainer:
                 img = img.squeeze()  # Remove batch dimension
                 _, img_h, img_w = img.shape
 
-                pred_den, pred_count = self.model(img_patches)
+                pred_den = self.model(img_patches)
                 pred_den = pred_den.cpu()
 
                 gt = img_equal_unsplit(gt_patches, self.cfg_data.OVERLAP, self.cfg_data.IGNORE_BUFFER, img_h, img_w, 1)
@@ -144,7 +139,8 @@ class Trainer:
 
                 pred_cnt = den.sum() / self.cfg_data.LABEL_FACTOR
                 gt_cnt = gt.sum() / self.cfg_data.LABEL_FACTOR
-                errors.append(torch.abs(pred_cnt - gt_cnt))
+                AEs.append(torch.abs(pred_cnt - gt_cnt).item())
+                SEs.append(torch.square(pred_cnt - gt_cnt).item())
 
                 if idx % self.eval_save_example_every == 0:
                     plt.imshow(den, cmap=CM.jet)
@@ -153,22 +149,16 @@ class Trainer:
                     plt.savefig(save_path)
 
                 abs_patch_errors += torch.sum(torch.abs(gt_patches.squeeze() - pred_den.squeeze()), dim=0)
-            for i in range(14):
-                for j in range(14):
-                    lf = self.cfg_data.LABEL_FACTOR  # So next line fits on 1 line
-                    summed_patch_errors[i, j] = abs_patch_errors[i * 16:(i + 1) * 16, j * 16:(j + 1) * 16].sum() / lf
 
-            MAE = torch.mean(torch.stack(errors))
+            MAE = np.mean(AEs)
+            MSE = np.mean(SEs)
 
         plt.cla()
         plt.imshow(abs_patch_errors)
         save_path = os.path.join(self.cfg.PICS_DIR, f'errors_ep_{self.epoch}.jpg')
         plt.savefig(save_path)
-        plt.imshow(summed_patch_errors)
-        save_path = os.path.join(self.cfg.PICS_DIR, f'summed_patch_ep_{self.epoch}.jpg')
-        plt.savefig(save_path)
 
-        return MAE
+        return MAE, MSE
 
     def save_eval_pics(self):
         plt.cla()
