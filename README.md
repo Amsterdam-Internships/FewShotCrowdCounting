@@ -14,4 +14,8 @@ The end goal of this project is to have one or more of the DeiT architectures th
 
 ## Research questions and research directions
 
-<p align="center"> <i> test <\i> </p> 
+<p align="center"> <i> RQ 1: How can transformers be utilised to generate density maps of crowds in images? </i> </p> 
+
+<p align="center"> <i> RQ 2: Do transformer-based models generalise better than \gls{CNN}-based models? </i> </p> 
+
+<p align="center"> <i> RQ 3: Do transformer-based models provide better few-shot scene adaptation performance than CNN-based models? </i> </p> 
