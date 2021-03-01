@@ -6,9 +6,12 @@ Apart from a potential groundbreaking paper, the reptilian overlords of Facebook
 
 Preliminary results indicate that transformers have major potentials and that crowd counting competes with modern CNN methods. On some datasets, DeiT showed its superiority over CSRNet. On others it lost (just slightly) to CSRNet.
 
-Current work focusses on simply making a solid code-base from which we can expand upon. Furthermore, since this is the first work to do regression in this way with transformers, I will perform extensive experiments to find what modifications work and which dont. Afterwards, I will use this architecture as a baseline in my persuit of a 'general' model that can quickly adapt to novel scenes it has never seen before. For this, I plan to implement and test three so called '[meta-learning](https://lilianweng.github.io/lil-log/2018/11/30/meta-learning.html)' algorithms: 1) [MAML](https://arxiv.org/abs/1703.03400), 2) [Meta-SGD](https://arxiv.org/abs/1707.09835), and 3) [reptile](https://openai.com/blog/reptile/)
+Current work focusses on simply making a solid code-base from which we can expand upon. Furthermore, since this is the first work to do regression in this way with transformers, I will perform extensive experiments to find what modifications work and which dont. Afterwards, I will use this architecture as a baseline in my persuit of a 'general' model that can quickly adapt to novel scenes it has never seen before. For this, I plan to implement and test two so called '[meta-learning](https://lilianweng.github.io/lil-log/2018/11/30/meta-learning.html)' algorithms: 1) [MAML](https://arxiv.org/abs/1703.03400) and 2) [Meta-SGD](https://arxiv.org/abs/1707.09835)
 
 I write these meta-learning algorithms is a general, model-agnostic, way, such that it is almost trivial to swap out DeiT for any deep learning crowd counting architecture. This, because there is still a possibility that DeiT shows major defects on some part later in my thesis. We can then change the architecture without much trouble for the practical viewpoint of this project.
 
 The end goal of this project is to have one or more of the DeiT architectures that can readily adjust to new scenes with just 1 to 5 annotated examples of this scene.  
 
+## Research questions and research directions
+
+<p align="center"> <i> test <\i> </p> 
