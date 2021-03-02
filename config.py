@@ -16,23 +16,23 @@ cfg = edict()
 cfg.SEED = 42
 
 cfg.MODEL = 'deit_tiny_patch16_224'
-cfg.DATASET = 'SHTB'
+cfg.DATASET = 'SHTB_DeiT'
 
 cfg.MAML = False
 cfg.ALPHA_START = 123
 cfg.ALPHA_INIT = 0.001  # Use also for Alpha lr in MAML
 
-cfg.BETA = 1e-4  # Outer/meta update
+cfg.BETA = 1e-5  # Outer/meta update
 cfg.LR_GAMMA = 0.1  # Scale LR by this at each step epoch
-cfg.LR_STEP_EPOCHS = [2000, 7500, 20000]
-cfg.WEIGHT_DECAY = 1e-5
+cfg.LR_STEP_EPOCHS = [500]
+cfg.WEIGHT_DECAY = 1e-4
 
 cfg.N_TASKS = 1  # How many tasks to perform before performing an outer backprop
 
 
-cfg.MAX_EPOCH = 10**10
-cfg.EVAL_EVERY = 1000  # Not yet implemented, but used still for save every!
-cfg.SAVE_EVERY_N_EVALS = 3  # Every Nth evaluation, save model regardless of performance
+cfg.MAX_EPOCH = 1000
+cfg.EVAL_EVERY = 10  # Not yet implemented, but used still for save every!
+cfg.SAVE_EVERY_N_EVALS = 10  # Every Nth evaluation, save model regardless of performance
 cfg.SAVE_EVERY = cfg.SAVE_EVERY_N_EVALS * cfg.EVAL_EVERY  # Don't touch this one
 
 cfg.SAVE_NUM_EVAL_EXAMPLES = 10  # How many examples from the test/evaluation set to save
@@ -53,9 +53,9 @@ cfg.CODE_DIR = os.path.join(cfg.SAVE_DIR, 'code')
 
 
 cfg.RESUME = False
-cfg.RESUME_DIR = os.path.join('runs', '02-03_18-43')
-cfg.RESUME_STATE = 'save_state_ep_200_new_best_MAE_2.002.pth'
-cfg.RESUME_PATH = os.path.join('runs', cfg.RESUME_DIR, 'state_dicts', cfg.RESUME_STATE)
+# cfg.RESUME_DIR = os.path.join('runs', '02-03_18-43')
+# cfg.RESUME_STATE = 'save_state_ep_200_new_best_MAE_2.002.pth'
+# cfg.RESUME_PATH = os.path.join('runs', cfg.RESUME_DIR, 'state_dicts', cfg.RESUME_STATE)
 
 
 

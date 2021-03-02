@@ -71,7 +71,6 @@ class RegressionTransformer(VisionTransformer):
         for blk in self.blocks:
             x = blk(x)
 
-        # pre_count = x[:, 0]
         pre_den = x[:, 1:]
 
         den = self.regression_head(pre_den)
