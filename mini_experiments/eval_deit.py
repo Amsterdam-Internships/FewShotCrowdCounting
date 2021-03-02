@@ -57,7 +57,7 @@ def main():
 
     model.cuda()
 
-    resume_state = torch.load('save_state_ep_50_new_best_MAE_14.271.pth')
+    resume_state = torch.load('save_state_ep_430_new_best_MAE_9.058.pth')
     model.load_state_dict(resume_state['net'])
 
     MAE, MSE = evaluate_model(model, test_loader)
