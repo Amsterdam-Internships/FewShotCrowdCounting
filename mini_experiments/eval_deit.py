@@ -39,7 +39,7 @@ def evaluate_model(model, dataloader):
             print(f'pred: {pred_cnt:.3f}, gt: {gt_cnt:.3f}, AE: {AEs[-1]:.3f}, SE: {SEs[-1]:.3f}')
 
         MAE = np.mean(AEs)
-        MSE = np.mean(SEs)
+        MSE = np.sqrt(np.mean(SEs))
 
     return MAE, MSE
 
@@ -57,7 +57,7 @@ def main():
 
     model.cuda()
 
-    resume_state = torch.load('save_state.pth')
+    resume_state = torch.load('save_state_ep_50_new_best_MAE_14.271.pth')
     model.load_state_dict(resume_state['net'])
 
     MAE, MSE = evaluate_model(model, test_loader)

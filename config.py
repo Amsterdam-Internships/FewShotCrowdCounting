@@ -22,9 +22,9 @@ cfg.MAML = False
 cfg.ALPHA_START = 123
 cfg.ALPHA_INIT = 0.001  # Use also for Alpha lr in MAML
 
-cfg.BETA = 1e-5  # Outer/meta update
+cfg.BETA = 1e-4  # Outer/meta update
 cfg.LR_GAMMA = 0.1  # Scale LR by this at each step epoch
-cfg.LR_STEP_EPOCHS = [500]
+cfg.LR_STEP_EPOCHS = [100, 400, 700]
 cfg.WEIGHT_DECAY = 1e-4
 
 cfg.N_TASKS = 1  # How many tasks to perform before performing an outer backprop

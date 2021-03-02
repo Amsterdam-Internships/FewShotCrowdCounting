@@ -108,7 +108,7 @@ class Trainer:
             SPEs.extend(torch.square(errors).tolist())
 
         MAPE = np.mean(APEs)  # Mean Absolute Patch Error
-        MSPE = np.mean(SPEs)  # Mean Squared Patch Error
+        MSPE = np.sqrt(np.mean(SPEs))  # Mean (root) Squared Patch Error
 
         # Also return the last predicted densities and corresponding gts. This allows for informative prints
         return losses, MAPE, MSPE, out_den, gt_stack
@@ -151,7 +151,7 @@ class Trainer:
                 abs_patch_errors += torch.sum(torch.abs(gt_patches.squeeze() - pred_den.squeeze()), dim=0)
 
             MAE = np.mean(AEs)
-            MSE = np.mean(SEs)
+            MSE = np.sqrt(np.mean(SEs))  # (root) MSE
 
         plt.cla()
         plt.imshow(abs_patch_errors)

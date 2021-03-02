@@ -5,7 +5,7 @@ import torch.backends.cudnn as cudnn
 import os
 
 from models.CSRNet import CSRNet
-from datasets.SHTB.loading_data import loading_data
+from datasets.SHTB_CSRNet.loading_data import loading_data
 
 
 def evaluate_model(model, dataloader):
