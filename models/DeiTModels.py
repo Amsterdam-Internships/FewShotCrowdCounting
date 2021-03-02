@@ -136,7 +136,7 @@ class DistilledRegressionTransformer(VisionTransformer):
 
         pre_den = x[:, 2:]
 
-        den, count = self.regression_head(pre_den)
+        den = self.regression_head(pre_den)
 
         return den
 
