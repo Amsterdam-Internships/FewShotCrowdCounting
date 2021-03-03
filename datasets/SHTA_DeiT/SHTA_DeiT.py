@@ -8,18 +8,20 @@ from torch.utils import data
 
 from PIL import Image
 from .settings import cfg_data
-from datasets.dataset_utils import split_image_and_den
+from datasets.dataset_utils import img_equal_split, img_equal_unsplit
 
 
-class SHTA(data.Dataset):
-    def __init__(self, data_path, mode, crop_size, main_transform=None, img_transform=None, gt_transform=None):
+class SHTA_DeiT(data.Dataset):
+    def __init__(self, data_path, mode, crop_size,
+                 main_transform=None, img_transform=None, gt_transform=None, cropper=None):
         self.data_path = data_path
         self.crop_size = crop_size
         self.mode = mode  # train or test
 
-        self.main_transform = main_transform
         self.img_transform = img_transform
         self.gt_transform = gt_transform
+        self.main_transform = main_transform
+        self.cropper = cropper
 
         self.img_extension = '.jpg'
 
@@ -33,10 +35,21 @@ class SHTA(data.Dataset):
     def __getitem__(self, index):
         img_path = self.data_files[index]
         img, den = self.read_image_and_gt(img_path)
+
+        if self.main_transform is not None:
+            img, den = self.main_transform(img, den)
+        if self.img_transform is not None:
+            img = self.img_transform(img)
+        if self.gt_transform is not None:
+            den = self.gt_transform(den)
+
         if self.mode == 'train':
-            return self.process_getitem_train(img, den)
+            img, den = self.cropper(img, den.unsqueeze(0))
+            return img, den
         else:
-            return self.process_getitem_test(img, den)
+            img_stack = img_equal_split(img, self.crop_size, cfg_data.OVERLAP)
+            gts_stack = img_equal_split(den.unsqueeze(0), self.crop_size, cfg_data.OVERLAP)
+            return img, img_stack, gts_stack
 
     def read_image_and_gt(self, img_path):
         den_path = img_path.replace('img', 'den').replace(self.img_extension, '.csv')
@@ -50,24 +63,6 @@ class SHTA(data.Dataset):
         den = Image.fromarray(den)
 
         return img, den
-
-    def process_getitem_train(self, img, den):
-        if self.main_transform is not None:
-            img, den = self.main_transform(img, den)
-        if self.img_transform is not None:
-            img = self.img_transform(img)
-        if self.gt_transform is not None:
-            den = self.gt_transform(den)
-        return img, den
-
-    def process_getitem_test(self, img, den):
-        imgs, dens = split_image_and_den(img, den, self.crop_size)
-        for i in range(len(imgs)):
-            if self.img_transform:  # These should always be provided
-                imgs[i] = self.img_transform(imgs[i])
-            if self.gt_transform:
-                dens[i] = self.gt_transform(dens[i])
-        return torch.stack(imgs), torch.stack(dens), torch.tensor(img.size)
 
     def __len__(self):
         return self.num_samples

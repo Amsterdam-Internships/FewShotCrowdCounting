@@ -3,19 +3,16 @@ from torch.utils.data import DataLoader
 import datasets.transforms as own_transforms
 
 from .settings import cfg_data
-from .SHTA import SHTA
+from .SHTA_DeiT import SHTA_DeiT
 
 
 def loading_data(crop_size):
-    # Train transforms
+    # train transforms
     train_main_transform = own_transforms.Compose([
-        own_transforms.RandomCrop([crop_size, crop_size]),
         own_transforms.RandomHorizontallyFlip()
     ])
 
     train_img_transform = standard_transforms.Compose([
-        own_transforms.RandomGammaTransform(),
-        own_transforms.RandomGrayscale(),
         standard_transforms.ToTensor(),
         standard_transforms.Normalize(*cfg_data.MEAN_STD)
     ])
@@ -24,15 +21,19 @@ def loading_data(crop_size):
         own_transforms.LabelScale(cfg_data.LABEL_FACTOR)
     ])
 
-    # Test transforms
-    test_main_transform = None
+    train_cropper = own_transforms.Compose([
+        own_transforms.RandomTensorCrop([crop_size, crop_size])
+    ])
 
-    test_image_transform = standard_transforms.Compose([
+    # Test transforms
+    val_main_transform = None
+
+    val_img_transform = standard_transforms.Compose([
         standard_transforms.ToTensor(),
         standard_transforms.Normalize(*cfg_data.MEAN_STD)
     ])
 
-    test_gt_transform = standard_transforms.Compose([
+    val_gt_transform = standard_transforms.Compose([
         own_transforms.LabelScale(cfg_data.LABEL_FACTOR)
     ])
 
@@ -42,21 +43,23 @@ def loading_data(crop_size):
         standard_transforms.ToPILImage()
     ])
 
-    train_set = SHTA(cfg_data.DATA_PATH + '/train', 'train', crop_size,
-                     main_transform=train_main_transform,
-                     img_transform=train_img_transform,
-                     gt_transform=train_gt_transform)
+    train_set = SHTA_DeiT(cfg_data.DATA_PATH + '/train', 'train', crop_size,
+                          main_transform=train_main_transform,
+                          img_transform=train_img_transform,
+                          gt_transform=train_gt_transform,
+                          cropper=train_cropper)
     train_loader = DataLoader(train_set,
                               batch_size=cfg_data.TRAIN_BS,
                               num_workers=cfg_data.N_WORKERS,
                               shuffle=True, drop_last=True)
 
-    test_set = SHTA(cfg_data.DATA_PATH + '/test', 'test', crop_size,
-                    main_transform=test_main_transform,
-                    img_transform=test_image_transform,
-                    gt_transform=test_gt_transform)
+    test_set = SHTA_DeiT(cfg_data.DATA_PATH + '/val', 'val', crop_size,
+                         main_transform=val_main_transform,
+                         img_transform=val_img_transform,
+                         gt_transform=val_gt_transform,
+                         cropper=None)
     test_loader = DataLoader(test_set,
-                             batch_size=cfg_data.TEST_BS,
+                             batch_size=cfg_data.VAL_BS,
                              num_workers=cfg_data.N_WORKERS,
                              shuffle=False, drop_last=False)
 

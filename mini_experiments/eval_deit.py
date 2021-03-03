@@ -8,7 +8,7 @@ import models.DeiTModels  # Need to register the models!
 from timm.models import create_model
 
 from datasets.dataset_utils import img_equal_unsplit
-from datasets.SHTB_DeiT.loading_data import loading_data
+from datasets.SHTA_DeiT.loading_data import loading_data
 
 
 def evaluate_model(model, dataloader):
@@ -56,8 +56,9 @@ def main():
     )
 
     model.cuda()
+    # model.remove_unused()
 
-    resume_state = torch.load('save_state_ep_430_new_best_MAE_9.058.pth')
+    resume_state = torch.load('save_state_ep_800_new_best_MAE_8.183.pth')
     model.load_state_dict(resume_state['net'])
 
     MAE, MSE = evaluate_model(model, test_loader)
