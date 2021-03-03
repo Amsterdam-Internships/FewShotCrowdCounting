@@ -33,13 +33,13 @@ class Trainer:
         if cfg.RESUME:
             self.load_state(cfg.RESUME_PATH)
             print(f'Resuming from epoch {self.epoch}')
-        # else:
-        #     self.save_eval_pics()
-        #     self.writer.add_scalar('lr', self.scheduler.get_last_lr()[0], self.epoch)
+        else:
+            self.save_eval_pics()
+            self.writer.add_scalar('lr', self.scheduler.get_last_lr()[0], self.epoch)
 
     def train(self):
-        # MAE, MSE = self.evaluate_model()
-        # print(f'Initial MAE: {MAE:.3f}, MSE: {MSE:.3f}')
+        MAE, MSE, avg_val_loss = self.evaluate_model()
+        print(f'Initial MAE: {MAE:.3f}, MSE: {MSE:.3f}, avg loss: {avg_val_loss:.3f}')
 
         self.model.train()
         while self.epoch < self.cfg.MAX_EPOCH:
@@ -49,19 +49,19 @@ class Trainer:
             losses, MAPE, MSPE, last_out_den, last_gts = self.run_epoch()
             epoch_time = time.time() - epoch_start_time
 
-            avg_loss = np.mean(losses)
+            avg_train_loss = np.mean(losses)
             pred_cnt = last_out_den[0].detach().cpu().sum() / self.cfg_data.LABEL_FACTOR
             gt_cnt = last_gts[0].cpu().sum() / self.cfg_data.LABEL_FACTOR
-            print(f'ep {self.epoch}: Average loss={avg_loss:.3f}, Patch MAE={MAPE:.3f}, Patch MSE={MSPE:.3f}.'
+            print(f'ep {self.epoch}: Average loss={avg_train_loss:.3f}, Patch MAE={MAPE:.3f}, Patch MSE={MSPE:.3f}.'
                   f'  Example: pred={pred_cnt:.3f}, gt={gt_cnt:.3f}. Train time: {epoch_time:.3f}')
 
-            self.writer.add_scalar('Loss/train', avg_loss, self.epoch)
+            self.writer.add_scalar('AvgLoss/train', avg_train_loss, self.epoch)
             self.writer.add_scalar('MAE/train', MAPE, self.epoch)
             self.writer.add_scalar('MSE/train', MSPE, self.epoch)
 
             if self.epoch % self.cfg.EVAL_EVERY == 0:
                 eval_start_time = time.time()
-                MAE, MSE = self.evaluate_model()
+                MAE, MSE, avg_val_loss = self.evaluate_model()
                 eval_time = time.time() - eval_start_time
 
                 if MAE < self.best_mae:
@@ -75,6 +75,7 @@ class Trainer:
                 print(f'MAE: {MAE:.3f}, MSE: {MSE:.3f}. best MAE: {self.best_mae:.3f} at ep({self.best_epoch}).'
                       f' eval time: {eval_time:.3f}')
 
+                self.writer.add_scalar('AvgLoss/eval', avg_val_loss, self.epoch)
                 self.writer.add_scalar('MAE/eval', MAE, self.epoch)
                 self.writer.add_scalar('MSE/eval', MSE, self.epoch)
 
@@ -120,20 +121,22 @@ class Trainer:
         with torch.no_grad():
             AEs = []  # Absolute Errors
             SEs = []  # Squared Errors
+            losses = []
 
             abs_patch_errors = torch.zeros(self.model.crop_size, self.model.crop_size)
-            summed_patch_errors = torch.zeros(self.model.n_patches, self.model.n_patches)
 
-            for idx, (img, img_patches, gt_patches) in enumerate(self.test_loader):
-                img_patches = img_patches.squeeze().cuda()
-                gt_patches = gt_patches.squeeze().unsqueeze(1)  # Remove batch dim, insert channel dim
+            for idx, (img, img_stack, gt_stack) in enumerate(self.test_loader):
+                img_stack = img_stack.squeeze().cuda()
+                gt_stack = gt_stack.squeeze().unsqueeze(1)  # Remove batch dim, insert channel dim
                 img = img.squeeze()  # Remove batch dimension
                 _, img_h, img_w = img.shape
 
-                pred_den = self.model(img_patches)
+                pred_den = self.model(img_stack)
+                loss = self.criterion(pred_den, gt_stack.cuda())
+                losses.append(loss.cpu().item())
                 pred_den = pred_den.cpu()
 
-                gt = img_equal_unsplit(gt_patches, self.cfg_data.OVERLAP, self.cfg_data.IGNORE_BUFFER, img_h, img_w, 1)
+                gt = img_equal_unsplit(gt_stack, self.cfg_data.OVERLAP, self.cfg_data.IGNORE_BUFFER, img_h, img_w, 1)
                 den = img_equal_unsplit(pred_den, self.cfg_data.OVERLAP, self.cfg_data.IGNORE_BUFFER, img_h, img_w, 1)
                 den = den.squeeze()  # Remove channel dim
 
@@ -148,17 +151,18 @@ class Trainer:
                     plt.title(f'Predicted count: {pred_cnt:.3f} (GT: {gt_cnt:.3f})')
                     plt.savefig(save_path)
 
-                abs_patch_errors += torch.sum(torch.abs(gt_patches.squeeze() - pred_den.squeeze()), dim=0)
+                abs_patch_errors += torch.sum(torch.abs(gt_stack.squeeze() - pred_den.squeeze()), dim=0)
 
             MAE = np.mean(AEs)
             MSE = np.sqrt(np.mean(SEs))  # (root) MSE
+            avg_loss = np.mean(losses)
 
         plt.cla()
         plt.imshow(abs_patch_errors)
         save_path = os.path.join(self.cfg.PICS_DIR, f'errors_ep_{self.epoch}.jpg')
         plt.savefig(save_path)
 
-        return MAE, MSE
+        return MAE, MSE, avg_loss
 
     def save_eval_pics(self):
         plt.cla()

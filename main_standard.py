@@ -16,6 +16,7 @@ import importlib
 from trainer_standard import Trainer
 from config import cfg
 from shutil import copyfile
+import random
 
 # __all__ = [
 #     'deit_base_patch16_224',              'deit_small_patch16_224',               'deit_tiny_patch16_224',
@@ -26,7 +27,6 @@ from shutil import copyfile
 
 
 model_mapping = {
-    'deit_tiny_cnn_patch16_224': 'https://dl.fbaipublicfiles.com/deit/deit_tiny_patch16_224-a1311bcf.pth',
     'deit_tiny_patch16_224': 'https://dl.fbaipublicfiles.com/deit/deit_tiny_patch16_224-a1311bcf.pth',
     'deit_tiny_distilled_patch16_224': 'https://dl.fbaipublicfiles.com/deit/deit_tiny_distilled_patch16_224-b40b3cf7.pth',
     'deit_small_patch16_224': 'https://dl.fbaipublicfiles.com/deit/deit_small_patch16_224-cd65a155.pth',
@@ -70,18 +70,19 @@ def main(cfg):
     # fix the seed for reproducibility
     torch.manual_seed(cfg.SEED)
     np.random.seed(cfg.SEED)
-    # random.seed(seed)
+    random.seed(cfg.SEED)
 
     cudnn.benchmark = True
 
     print(f"Creating model: {cfg.MODEL}")
 
+    # Default settings from the original DeiT framework
     model = create_model(
         cfg.MODEL,
         init_path=model_mapping[cfg.MODEL],
         num_classes=1000,  # Not yet used anyway. Must match pretrained model!
         drop_rate=0.,
-        drop_path_rate=0.1,  # TODO: What does this do?
+        drop_path_rate=0.1,
         drop_block_rate=None,
     )
 

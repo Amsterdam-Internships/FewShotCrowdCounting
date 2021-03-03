@@ -1,6 +1,7 @@
 from easydict import EasyDict as edict
 import time
 import os
+import math
 
 cfg = edict()
 
@@ -9,28 +10,27 @@ cfg = edict()
 # __all__ = [
 #     'deit_base_patch16_224',              'deit_small_patch16_224',               'deit_tiny_patch16_224',
 #     'deit_base_distilled_patch16_224',    'deit_small_distilled_patch16_224',     'deit_tiny_distilled_patch16_224',
-#     'deit_base_patch16_384',                                                      'deit_tiny_cnn_patch16_224',
+#     'deit_base_patch16_384',
 #     'deit_base_distilled_patch16_384',
 # ]
 
 cfg.SEED = 42
 
-cfg.MODEL = 'deit_tiny_patch16_224'
+cfg.MODEL = 'deit_small_distilled_patch16_224'
 cfg.DATASET = 'SHTB_DeiT'
+
+cfg.BETA = 1e-4  # Outer/meta update. Also used as LR when normal training
+cfg.LR_GAMMA = math.sqrt(0.1)  # Scale LR by this at each step epoch
+cfg.LR_STEP_EPOCHS = [100, 500, 900]
+cfg.WEIGHT_DECAY = 1e-4
 
 cfg.MAML = False
 cfg.ALPHA_START = 123
 cfg.ALPHA_INIT = 0.001  # Use also for Alpha lr in MAML
 
-cfg.BETA = 1e-4  # Outer/meta update
-cfg.LR_GAMMA = 0.1  # Scale LR by this at each step epoch
-cfg.LR_STEP_EPOCHS = [100, 400]
-cfg.WEIGHT_DECAY = 1e-4
-
 cfg.N_TASKS = 1  # How many tasks to perform before performing an outer backprop
 
-
-cfg.MAX_EPOCH = 1000
+cfg.MAX_EPOCH = 1300
 cfg.EVAL_EVERY = 10  # Not yet implemented, but used still for save every!
 cfg.SAVE_EVERY_N_EVALS = 10  # Every Nth evaluation, save model regardless of performance
 cfg.SAVE_EVERY = cfg.SAVE_EVERY_N_EVALS * cfg.EVAL_EVERY  # Don't touch this one
