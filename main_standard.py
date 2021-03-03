@@ -80,7 +80,7 @@ def main(cfg):
     model = create_model(
         cfg.MODEL,
         init_path=model_mapping[cfg.MODEL],
-        num_classes=1000,  # Not yet used anyway. Must match pretrained model!
+        num_classes=1000,  # Not yet used anyway. But must match pretrained model!
         drop_rate=0.,
         drop_path_rate=0.1,
         drop_block_rate=None,

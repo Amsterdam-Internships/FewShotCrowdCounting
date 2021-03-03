@@ -11,7 +11,7 @@ from timm.models.registry import register_model
 from timm.models.layers import trunc_normal_
 
 __all__ = [
-    'deit_tiny_patch16_224', 'deit_small_patch16_224', 'deit_base_patch16_224', 'deit_tiny_cnn_patch16_224',
+    'deit_tiny_patch16_224', 'deit_small_patch16_224', 'deit_base_patch16_224',
     'deit_tiny_distilled_patch16_224', 'deit_small_distilled_patch16_224',
     'deit_base_distilled_patch16_224', 'deit_base_patch16_384',
     'deit_base_distilled_patch16_384',
