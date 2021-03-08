@@ -25,7 +25,8 @@ class SHTB_DeiT(data.Dataset):
 
         self.img_extension = '.jpg'
 
-        self.data_files = [os.path.join(data_path, 'img', file) for file in os.listdir(os.path.join(data_path, 'img'))
+        self.data_files = [os.path.join(self.data_path, 'img', file)
+                           for file in os.listdir(os.path.join(self.data_path, 'img'))
                            if file.endswith(self.img_extension)]
 
         self.num_samples = len(self.data_files)
