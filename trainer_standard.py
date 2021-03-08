@@ -15,10 +15,10 @@ class Trainer:
         self.cfg = cfg
         self.cfg_data = cfg_data
 
-        self.train_loader, self.test_loader, self.restore_transform = loading_data(self.model.crop_size)
+        self.train_loader, self.val_loader, self.test_loader, self.restore_transform = loading_data(self.model.crop_size)
         self.train_samples = len(self.train_loader.dataset)
-        self.test_samples = len(self.test_loader.dataset)
-        self.eval_save_example_every = self.test_samples // self.cfg.SAVE_NUM_EVAL_EXAMPLES
+        self.val_samples = len(self.val_loader.dataset)
+        self.eval_save_example_every = self.val_samples // self.cfg.SAVE_NUM_EVAL_EXAMPLES
 
         self.criterion = torch.nn.MSELoss()
         self.optim = torch.optim.Adam(model.parameters(), lr=cfg.BETA, weight_decay=cfg.WEIGHT_DECAY)  # BETA = LR
@@ -125,7 +125,7 @@ class Trainer:
 
             abs_patch_errors = torch.zeros(self.model.crop_size, self.model.crop_size)
 
-            for idx, (img, img_stack, gt_stack) in enumerate(self.test_loader):
+            for idx, (img, img_stack, gt_stack) in enumerate(self.val_loader):
                 img_stack = img_stack.squeeze().cuda()
                 gt_stack = gt_stack.squeeze().unsqueeze(1)  # Remove batch dim, insert channel dim
                 img = img.squeeze()  # Remove batch dimension
@@ -166,7 +166,7 @@ class Trainer:
 
     def save_eval_pics(self):
         plt.cla()
-        for idx, (img, img_patches, gt_patches) in enumerate(self.test_loader):
+        for idx, (img, img_patches, gt_patches) in enumerate(self.val_loader):
             gt_patches = gt_patches.squeeze().unsqueeze(1)  # Remove batch dim, insert channel dim
             img = img.squeeze()
 

@@ -25,7 +25,7 @@ def loading_data(crop_size):
         own_transforms.RandomTensorCrop([crop_size, crop_size])
     ])
 
-    # Test transforms
+    # Val/Test transforms
     val_main_transform = None
 
     val_img_transform = standard_transforms.Compose([
@@ -37,13 +37,15 @@ def loading_data(crop_size):
         own_transforms.LabelScale(cfg_data.LABEL_FACTOR)
     ])
 
+    val_cropper = None
+
     # Restore transform
     restore_transform = standard_transforms.Compose([
         own_transforms.DeNormalize(*cfg_data.MEAN_STD),
         standard_transforms.ToPILImage()
     ])
 
-    train_set = SHTB_DeiT(cfg_data.DATA_PATH + '/train', 'train', crop_size,
+    train_set = SHTB_DeiT(cfg_data.DATA_PATH, 'train', crop_size,
                           main_transform=train_main_transform,
                           img_transform=train_img_transform,
                           gt_transform=train_gt_transform,
@@ -53,14 +55,24 @@ def loading_data(crop_size):
                               num_workers=cfg_data.N_WORKERS,
                               shuffle=True, drop_last=True)
 
-    test_set = SHTB_DeiT(cfg_data.DATA_PATH + '/val', 'val', crop_size,
+    val_set = SHTB_DeiT(cfg_data.DATA_PATH, 'val', crop_size,
+                        main_transform=val_main_transform,
+                        img_transform=val_img_transform,
+                        gt_transform=val_gt_transform,
+                        cropper=val_cropper)
+    val_loader = DataLoader(val_set,
+                            batch_size=cfg_data.VAL_BS,
+                            num_workers=cfg_data.N_WORKERS,
+                            shuffle=False, drop_last=False)
+
+    test_set = SHTB_DeiT(cfg_data.DATA_PATH, 'test', crop_size,
                          main_transform=val_main_transform,
                          img_transform=val_img_transform,
                          gt_transform=val_gt_transform,
-                         cropper=None)
+                         cropper=val_cropper)
     test_loader = DataLoader(test_set,
                              batch_size=cfg_data.VAL_BS,
                              num_workers=cfg_data.N_WORKERS,
                              shuffle=False, drop_last=False)
 
-    return train_loader, test_loader, restore_transform
+    return train_loader, val_loader, test_loader, restore_transform

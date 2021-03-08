@@ -4,7 +4,7 @@ from torch.utils.data import DataLoader
 import datasets.transforms as own_transforms
 
 from .settings import cfg_data
-from .Municipality import Muni
+from .Municipality_DeiT import Municipality_DeiT
 
 
 def loading_data(crop_size):
@@ -27,21 +27,19 @@ def loading_data(crop_size):
         standard_transforms.ToPILImage()
     ])
 
-    # TODO: train, val, test support
-    # TODO: .json support
-    train_set = Muni(os.path.join(cfg_data.DATA_PATH, 'train'), 'train', crop_size,
-                     main_transform=train_main_transform,
-                     img_transform=img_transform,
-                     gt_transform=gt_transform)
+    train_set = Municipality_DeiT(os.path.join(cfg_data.DATA_PATH, 'train'), 'train', crop_size,
+                                  main_transform=train_main_transform,
+                                  img_transform=img_transform,
+                                  gt_transform=gt_transform)
     train_loader = DataLoader(train_set,
                               batch_size=cfg_data.TRAIN_BS,
                               num_workers=cfg_data.N_WORKERS,
                               shuffle=True, drop_last=True)
 
-    test_set = Muni(os.path.join(cfg_data.DATA_PATH, 'val'), 'test', crop_size,
-                    main_transform=None,
-                    img_transform=img_transform,
-                    gt_transform=gt_transform)
+    test_set = Municipality_DeiT(os.path.join(cfg_data.DATA_PATH, 'val'), 'test', crop_size,
+                                 main_transform=None,
+                                 img_transform=img_transform,
+                                 gt_transform=gt_transform)
     test_loader = DataLoader(test_set,
                              batch_size=cfg_data.TEST_BS,
                              num_workers=cfg_data.N_WORKERS,

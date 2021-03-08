@@ -8,7 +8,7 @@ import models.DeiTModels  # Need to register the models!
 from timm.models import create_model
 
 from datasets.dataset_utils import img_equal_unsplit
-from datasets.SHTA_DeiT.loading_data import loading_data
+from datasets.SHTB_DeiT.loading_data import loading_data
 
 
 def evaluate_model(model, dataloader):
@@ -32,7 +32,7 @@ def evaluate_model(model, dataloader):
             den = img_equal_unsplit(pred_den, 8, 4, img_h, img_w, 1)
             den = den.squeeze()  # Remove channel dim
 
-            pred_cnt = den.sum() / 1000
+            pred_cnt = den.sum() / 10000
             gt_cnt = gt.sum() / 1000
             AEs.append(torch.abs(pred_cnt - gt_cnt).item())
             SEs.append(torch.square(pred_cnt - gt_cnt).item())
@@ -58,7 +58,7 @@ def main():
     model.cuda()
     # model.remove_unused()
 
-    resume_state = torch.load('save_state_ep_800_new_best_MAE_8.183.pth')
+    resume_state = torch.load('save_state_ep_210_new_best_MAE_7.448.pth')
     model.load_state_dict(resume_state['net'])
 
     MAE, MSE = evaluate_model(model, test_loader)

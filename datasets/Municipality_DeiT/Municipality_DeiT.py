@@ -13,7 +13,7 @@ from datasets.dataset_utils import generate_density_municipality
 
 
 
-class Muni(data.Dataset):
+class Municipality_DeiT(data.Dataset):
     def __init__(self, data_path, mode, crop_size, main_transform=None, img_transform=None, gt_transform=None):
         self.data_path = data_path
         self.crop_size = crop_size
