@@ -20,7 +20,7 @@ Folder structure:
 2) [`mini_experiments`](./mini_experiments): Just some quick hardcoded prototyping experiments. Will be replaced with formal notebooks later
 3) [`mist`](./mist): Some utility functions and stuff for the GitHub page
 4) [`models`](./models): Contains the model architectures, as well as wrappers for meta-learning models
-5) ['notebooks'](./notebooks): Notebooks for quick prototyping, but also easy to read notebooks for functionalities such as testing pretrained models on the test set.
+5) [`notebooks`](./notebooks): Notebooks for quick prototyping, but also easy to read notebooks for functionalities such as testing pretrained models on the test set.
 
 
 
