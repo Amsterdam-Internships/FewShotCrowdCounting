@@ -32,11 +32,6 @@ Global parameters for a run are specified in [`config.py`](./config.py). Set the
 
 # Acknowledgements
 
-
-[![copy code](https://user-images.githubusercontent.com/22976610/110474281-c8365b80-80df-11eb-97e5-8348b116d426.mp4)](https://user-images.githubusercontent.com/22976610/110474281-c8365b80-80df-11eb-97e5-8348b116d426.mp4)
-
-
-
 The content of this repository is heavily inspired by the Crowd Counting Code Framework ([`C^3-Framework`](https://github.com/gjy3035/C-3-Framework)) with their corresponding [`paper`](https://arxiv.org/abs/1907.02724). In fact, this repository uses parts of their codebase!
 
 I use [`CSRNet`](https://arxiv.org/abs/1802.10062) as a CNN-based model. I took code from [`this`](https://github.com/leeyeehoo/CSRNet-pytorch) repository to implement the model. 
