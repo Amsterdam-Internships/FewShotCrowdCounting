@@ -1,3 +1,9 @@
+# Few-shot crowd counting
+## What is Crowd counting?
+
+## What is few-shot learning?
+
+
 # DEATH to the CNNs
 
 The field of computer vision received a wild contribution from researches at Facebook, whom succeeded in training a fully transformer based architecture (DeiT) to do image classification on ImageNet. In this repository, I build upon their findings by adjusting their architecture to perform regression in the context of crowd counting. That is, I transform the embedding vectors from DeiT such that a density map can be constructed. Learning is then performed as usual. I can highly recommend [this](https://arxiv.org/abs/2012.12877) read.
