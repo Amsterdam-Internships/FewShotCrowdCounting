@@ -33,7 +33,7 @@ Global parameters for a run are specified in [`config.py`](./config.py). Set the
 # Acknowledgements
 
 
-![copy code](https://user-images.githubusercontent.com/22976610/110474281-c8365b80-80df-11eb-97e5-8348b116d426.mp4)
+[![copy code](https://user-images.githubusercontent.com/22976610/110474281-c8365b80-80df-11eb-97e5-8348b116d426.mp4)](https://user-images.githubusercontent.com/22976610/110474281-c8365b80-80df-11eb-97e5-8348b116d426.mp4)
 
 
 
