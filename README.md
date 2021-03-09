@@ -11,6 +11,7 @@ Few-shot learning means that the model must learn something with only a few trai
 ## Why do we need few-shot learning for scene adaptation?
 The standard approach to obtain a model for a novel scene is to manually annotate many images of this scene, usually in the hundreds of images. This is extremely tedious and labour intensive. Should we succeed in obtaining a model that can adapt to new scenes with just a few images, we greatly reduce the required annotation time whenever we place a new camera.
 
+<!--
 # DEATH to the CNNs
 The field of computer vision received a wild contribution from researches at Facebook, whom succeeded in training a fully transformer based architecture (DeiT) to do image classification on ImageNet. In this repository, I build upon their findings by adjusting their architecture to perform regression in the context of crowd counting. That is, I transform the embedding vectors from DeiT such that a density map can be constructed. Learning is then performed as usual. I can highly recommend [this](https://arxiv.org/abs/2012.12877) read.
 
@@ -39,4 +40,4 @@ Furthermore, the holy grail would be a model so good that no fine-tuning is nece
 <p align="center"> <i> RQ 3: Do transformer-based models provide better few-shot scene adaptation performance than CNN-based models? </i> </p> 
 
 Using Meta-SGD or MAML, can we train a model that adapts better to unseen scenarios than standard pre-trained models? [one work](https://arxiv.org/pdf/2002.00264.pdf) did show very promosing results, although I failed to reproduce their work so far. I start to lose my trust in these methods, though it's the direction of my research and so I want to conclude formally how well these methods perform. Should these experiments prove fruitful, we would no longer be required to annotate 100+ images for each new camera we place.
-
+-->
