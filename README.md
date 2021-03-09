@@ -11,6 +11,52 @@ Few-shot learning means that the model must learn something with only a few trai
 ## Why do we need few-shot learning for scene adaptation?
 The standard approach to obtain a model for a novel scene is to manually annotate many images of this scene, usually in the hundreds of images. This is extremely tedious and labour intensive. Should we succeed in obtaining a model that can adapt to new scenes with just a few images, we greatly reduce the required annotation time whenever we place a new camera.
 
+
+# Content of this repository
+This repository contains the code to train a regression DeiT model, both for normal learning and for meta-learning (basically two projects in one). For standard training, images are provided to the network with their GT values and the model is updates accordingly based on its error. For meta training, we feed images specific to a scene to a model and update it to obtain model-prime. This model-prime is evaluated on new images from the same scene. The loss of model-prime on these new images is backpropagated all the way to the original model. Hence, literally 'learning to learn'.
+
+Folder structure:
+1) ['datasets'](./datasets): Dataloaders for specific datasets. \_DeiT indicates that the dataloader is for DeiT models, and \_CSRNet indicates that the dataloader is for CSRNet.
+2) ['mini_experiments']: Just some quick hardcoded prototyping experiments. Will be replaced with formal notebooks later
+3) ['mist']: Some utility functions and stuff for the GitHub page
+4) ['models']: Contains the model architectures, as well as wrappers for meta-learning models
+5) ['notebooks']: Notebooks for quick prototyping, but also easy to read notebooks for functionalities such as testing pretrained models on the test set.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 <!--
 # DEATH to the CNNs
 The field of computer vision received a wild contribution from researches at Facebook, whom succeeded in training a fully transformer based architecture (DeiT) to do image classification on ImageNet. In this repository, I build upon their findings by adjusting their architecture to perform regression in the context of crowd counting. That is, I transform the embedding vectors from DeiT such that a density map can be constructed. Learning is then performed as usual. I can highly recommend [this](https://arxiv.org/abs/2012.12877) read.
