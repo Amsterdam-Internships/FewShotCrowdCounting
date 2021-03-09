@@ -2,6 +2,8 @@
 ## What is Crowd Counting?
 As the name suggest, crowd counting involves estimating the number of people in a location. Most modern computer vision methods achieve this with density map regression. That is, given an image of a scene (for example, surveillance footage), predict a density map where each pixel indicated the accumalative density of all people at that point.
 
+![Alt text](misc/example_images/density_example?raw=true "Example of density map regression")
+
 ## What is few-shot learning?
 
 
