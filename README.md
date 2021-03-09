@@ -32,7 +32,11 @@ Global parameters for a run are specified in [`config.py`](./config.py). Set the
 
 # Acknowledgements
 
-The content of this repository is heavily inspired by the Crowd Counting Code Framework ([`C^3-Framework`](https://github.com/gjy3035/C-3-Framework)). [`paper`](https://arxiv.org/abs/1907.02724)
+The content of this repository is heavily inspired by the Crowd Counting Code Framework ([`C^3-Framework`](https://github.com/gjy3035/C-3-Framework)) with their corresponding [`paper`](https://arxiv.org/abs/1907.02724). In fact, this repository uses parts of their codebase!
+
+I use [`CSRNet`](https://arxiv.org/abs/1802.10062) as a CNN-based model. I took code from [`this`](https://github.com/leeyeehoo/CSRNet-pytorch) repository to implement the model. 
+
+The DeiT framework is from [`this`](https://arxiv.org/abs/2012.12877) paper. I use code from [` their repository`](https://github.com/facebookresearch/deit) to implement the models.
 
 
 
