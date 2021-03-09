@@ -15,14 +15,14 @@ The standard approach to obtain a model for a novel scene is to manually annotat
 # Content of this repository
 This repository contains the code to train a regression DeiT model, both for normal learning and for meta-learning (basically two projects in one). For standard training, images are provided to the network with their GT values and the model is updates accordingly based on its error. For meta training, we feed images specific to a scene to a model and update it to obtain model-prime. This model-prime is evaluated on new images from the same scene. The loss of model-prime on these new images is backpropagated all the way to the original model. Hence, literally 'learning to learn'.
 
-Folder structure:
+## Folder structure:
 1) [`datasets`](./datasets): Dataloaders for specific datasets. \_DeiT indicates that the dataloader is for DeiT models, and \_CSRNet indicates that the dataloader is for CSRNet.
 2) [`mini_experiments`](./mini_experiments): Just some quick hardcoded prototyping experiments. Will be replaced with formal notebooks later
 3) [`mist`](./mist): Some utility functions and stuff for the GitHub page
 4) [`models`](./models): Contains the model architectures, as well as wrappers for meta-learning models
 5) [`notebooks`](./notebooks): Notebooks for quick prototyping, but also easy to read notebooks for functionalities such as testing pretrained models on the test set of a dataset.
-
-Using this repository:
+6) 
+## Using this repository:
 [`environment.yml`](./environment.yml) contains the conda environment of this project. One can install this environment with 'conda env create -f environment.yml'.
 
 Global parameters for a run are specified in [`config.py`](./config.py). Set these parameters accordingly when training a new model. For each dataset, specific settings for that dataset are specified in 'settings' in a [`datasets`](./datasets) sub-folder. Most importantly is 'cfg_data.DATA_PATH' that specifies where the dataset is located. Training a standard model is performed by executing [`train_standard`](./train_standard). Training a model with meta-learning is performed by executing [`train_meta`](./train_meta).
