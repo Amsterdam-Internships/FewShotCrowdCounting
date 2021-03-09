@@ -17,10 +17,10 @@ This repository contains the code to train a regression DeiT model, both for nor
 
 Folder structure:
 1) ['datasets'](./datasets): Dataloaders for specific datasets. \_DeiT indicates that the dataloader is for DeiT models, and \_CSRNet indicates that the dataloader is for CSRNet.
-2) ['mini_experiments']: Just some quick hardcoded prototyping experiments. Will be replaced with formal notebooks later
-3) ['mist']: Some utility functions and stuff for the GitHub page
-4) ['models']: Contains the model architectures, as well as wrappers for meta-learning models
-5) ['notebooks']: Notebooks for quick prototyping, but also easy to read notebooks for functionalities such as testing pretrained models on the test set.
+2) ['mini_experiments'](./mini_experiments): Just some quick hardcoded prototyping experiments. Will be replaced with formal notebooks later
+3) ['mist'](./mist): Some utility functions and stuff for the GitHub page
+4) ['models'](./models): Contains the model architectures, as well as wrappers for meta-learning models
+5) ['notebooks'](./notebooks): Notebooks for quick prototyping, but also easy to read notebooks for functionalities such as testing pretrained models on the test set.
 
 
 
