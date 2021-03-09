@@ -32,7 +32,9 @@ Global parameters for a run are specified in [`config.py`](./config.py). Set the
 
 # Acknowledgements
 
-<video src="./misc/example_images/code.mp4" width="320" height="200" controls preload></video>
+
+https://user-images.githubusercontent.com/22976610/110474281-c8365b80-80df-11eb-97e5-8348b116d426.mp4
+
 
 
 The content of this repository is heavily inspired by the Crowd Counting Code Framework ([`C^3-Framework`](https://github.com/gjy3035/C-3-Framework)) with their corresponding [`paper`](https://arxiv.org/abs/1907.02724). In fact, this repository uses parts of their codebase!
