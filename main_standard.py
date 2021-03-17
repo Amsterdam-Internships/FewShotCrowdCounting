@@ -39,6 +39,8 @@ model_mapping = {
 
 
 def make_save_dirs(loaded_cfg):
+    """ Each run has its own directory structure, which is created here."""
+
     if not os.path.exists(loaded_cfg.SAVE_DIR):
         os.mkdir(loaded_cfg.SAVE_DIR)
         os.mkdir(loaded_cfg.PICS_DIR)
@@ -52,10 +54,12 @@ def make_save_dirs(loaded_cfg):
 
 
 def main(cfg):
-    if cfg.RESUME:
+    """ Load the settings and model, then creates a trainer with which the model is trained."""
+
+    if cfg.RESUME:  # Not fully tested yet
         module = importlib.import_module(cfg.RESUME_DIR.replace(os.sep, '.') + 'code.config')
         cfg = module.cfg
-    else:
+    else:  # Make a backup of some important files for archiving purposes.
         make_save_dirs(cfg)
         copyfile('config.py', os.path.join(cfg.CODE_DIR, 'config.py'))
         copyfile('trainer_standard.py', os.path.join(cfg.CODE_DIR, 'trainer_standard.py'))
@@ -72,7 +76,7 @@ def main(cfg):
     np.random.seed(cfg.SEED)
     random.seed(cfg.SEED)
 
-    cudnn.benchmark = True
+    cudnn.benchmark = True  # For efficiency
 
     print(f"Creating model: {cfg.MODEL}")
 
@@ -91,11 +95,12 @@ def main(cfg):
     n_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print('number of params:', n_parameters)
 
+    # Dynamically load the dataloader and its settings as specified in the config file
     dataloader = importlib.import_module(f'datasets.{cfg.DATASET}.loading_data').loading_data
     cfg_data = importlib.import_module(f'datasets.{cfg.DATASET}.settings').cfg_data
 
-    trainer = Trainer(model, dataloader, cfg, cfg_data)
-    trainer.train()
+    trainer = Trainer(model, dataloader, cfg, cfg_data)  # Make a trainer
+    trainer.train()  # Train the model
 
 
 if __name__ == '__main__':

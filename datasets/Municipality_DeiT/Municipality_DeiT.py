@@ -12,7 +12,6 @@ from datasets.dataset_utils import split_image_and_den, unsplit_den
 from datasets.dataset_utils import generate_density_municipality
 
 
-
 class Municipality_DeiT(data.Dataset):
     def __init__(self, data_path, mode, crop_size, main_transform=None, img_transform=None, gt_transform=None):
         self.data_path = data_path
@@ -35,7 +34,7 @@ class Municipality_DeiT(data.Dataset):
         self.data_files = [os.path.join(data_path, file) for file in os.listdir(data_path)
                            if file.endswith(self.img_extension)]
 
-        if not self.data_files:          # If we only have a train or test set, we can still initialize the dataloader.
+        if not self.data_files:  # If we only have a train or test set, we can still initialize the dataloader.
             self.data_files = ['Dummy']  # Handy for testing on a separate test set that doesn't have a train set.
         self.num_samples = len(self.data_files)
 

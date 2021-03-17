@@ -4,7 +4,8 @@ from PIL import Image
 import torch
 import torchvision.transforms as standard_transforms
 from skimage import exposure, img_as_float, img_as_ubyte
-
+from datasets.dataset_utils import generate_scaled_density
+import math
 
 class Compose(object):
     def __init__(self, transforms):
@@ -50,21 +51,18 @@ class DeterministicHorizontallyFlip(object):
 
 
 class RandomScale(object):
-    def __call__(self, img, den, bbx=None):
-        if random.random() < 0.25:
+    def __call__(self, img, mat, den):
+        if random.random() < 1.:
             w, h = img.size
-            scale = random.uniform(0.5, 1.5)  # Equal chance to up or downscale. Also, it already performs oke on sparse
-            new_w = round(scale * w)
-            new_h = round(scale * h)
-            crowd_count = np.array(den).sum()
+            scale = random.uniform(0.5, 1.5)
+            new_w = math.ceil(scale * w)
+            new_h = math.ceil(scale * h)
 
             img = img.resize((new_w, new_h))
-            den = den.resize((new_w, new_h))
 
-            new_count = np.array(den).sum()
-            den = Image.fromarray(np.array(den) * crowd_count / new_count)  # Would be even better to remake dens
-
-            print(f'{crowd_count}, {np.array(den).sum()}')
+            den = generate_scaled_density(img, mat, 4, scale)
+            den = den.astype(np.float32, copy=False)
+            den = Image.fromarray(den)
 
         return img, den, None
 

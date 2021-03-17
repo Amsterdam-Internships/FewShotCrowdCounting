@@ -17,7 +17,7 @@ cfg = edict()
 cfg.SEED = 42
 
 cfg.MODEL = 'deit_small_distilled_patch16_224'
-cfg.DATASET = 'SHTB_DeiT'
+cfg.DATASET = 'SHTB_DeiT_Dynamic'
 
 cfg.BETA = 1e-4  # Outer/meta update. Also used as LR when normal training
 cfg.LR_GAMMA = math.sqrt(0.1)  # Scale LR by this at each step epoch
