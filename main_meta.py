@@ -4,16 +4,22 @@ import numpy as np
 import torch
 import torch.backends.cudnn as cudnn
 import os
+import random
+
+from models.CSRNet import CSRNet
+from models.CSRNet_functional import CSRNet_functional
+from models.meta_CSRNet import MetaCSRNet
 
 import models.DeiTModels
 import models.DeiTModelsFunctional
+from models.meta_DeiT import MetaDeiT
 from timm.models import create_model
 
 from models.meta_DeiT import MetaDeiT
 
 import importlib
 
-from trainer import Trainer
+from trainer_meta import Trainer
 from config import cfg
 from shutil import copyfile
 
@@ -58,7 +64,7 @@ def main(cfg):
     else:
         make_save_dirs(cfg)
         copyfile('config.py', os.path.join(cfg.CODE_DIR, 'config.py'))
-        copyfile('trainer.py', os.path.join(cfg.CODE_DIR, 'trainer.py'))
+        copyfile('trainer_meta.py', os.path.join(cfg.CODE_DIR, 'trainer_meta.py'))
         # copyfile('models.py', os.path.join(cfg.CODE_DIR, 'models.py'))
         copyfile(os.path.join('datasets', cfg.DATASET, 'settings.py'),
                  os.path.join(cfg.CODE_DIR, 'settings.py'))
@@ -70,40 +76,43 @@ def main(cfg):
     # fix the seed for reproducibility
     torch.manual_seed(cfg.SEED)
     np.random.seed(cfg.SEED)
-    # random.seed(seed)
+    random.seed(cfg.SEED)
 
     cudnn.benchmark = True
 
     print(f"Creating model: {cfg.MODEL}")
 
-    model = create_model(
-        cfg.MODEL,
-        init_path=model_mapping[cfg.MODEL],
-        num_classes=1000,  # Not yet used anyway. Must match pretrained model!
-        drop_rate=0.,
-        drop_path_rate=0.1,  # TODO: What does this do?
-        drop_block_rate=None,
-    )
+    criterion = torch.nn.MSELoss()
+    if cfg.MODEL == 'CSRNet':
+        model = CSRNet()
+        model_functional = CSRNet_functional()
+        meta_wrapper = MetaCSRNet(model, model_functional, criterion)
+    else:
+        model = create_model(
+            cfg.MODEL,
+            init_path=model_mapping[cfg.MODEL],
+            num_classes=1000,  # Not yet used anyway. Must match pretrained model!
+            drop_rate=0.,
+            drop_path_rate=0.1,  # TODO: What does this do?
+            drop_block_rate=None,
+        )
 
+        model_functional = create_model(
+            cfg.MODEL + '_functional',
+            init_path=None,
+            num_classes=1000,  # Not yet used anyway. Must match pretrained model!
+            drop_rate=0.,
+            drop_path_rate=0.1,  # TODO: What does this do?
+            drop_block_rate=None,
+        )
 
-    model_functional = create_model(
-        cfg.MODEL + '_functional',
-        init_path=None,
-        num_classes=1000,  # Not yet used anyway. Must match pretrained model!
-        drop_rate=0.,
-        drop_path_rate=0.1,  # TODO: What does this do?
-        drop_block_rate=None,
-    )
+        model.make_alpha(cfg.ALPHA_INIT)
+        model.cuda()
 
-    # model = CSRNet()
-    # model.cuda()
-    #
-    # model_functional = CSRNet_functional()
+        meta_wrapper = MetaDeiT(model, model_functional, criterion)
+
     model.make_alpha(cfg.ALPHA_INIT)
     model.cuda()
-
-    crit = torch.nn.MSELoss()
-    meta_learner = MetaDeiT(model, model_functional, crit)
 
     n_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print('number of params:', n_parameters)
@@ -111,7 +120,7 @@ def main(cfg):
     dataloader = importlib.import_module(f'datasets.{cfg.DATASET}.loading_data').loading_data
     cfg_data = importlib.import_module(f'datasets.{cfg.DATASET}.settings').cfg_data
 
-    trainer = Trainer(meta_learner, dataloader, cfg, cfg_data)
+    trainer = Trainer(meta_wrapper, dataloader, cfg, cfg_data)
     trainer.train()
 
 

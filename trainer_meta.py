@@ -11,8 +11,8 @@ from matplotlib import cm as CM
 
 
 class Trainer:
-    def __init__(self, meta_learner, loading_data, cfg, cfg_data):
-        self.meta_learner = meta_learner
+    def __init__(self, meta_wrapper, loading_data, cfg, cfg_data):
+        self.meta_wrapper = meta_wrapper
 
         self.cfg = cfg
         self.cfg_data = cfg_data
@@ -23,7 +23,7 @@ class Trainer:
         # self.eval_save_example_every = self.test_samples // self.cfg.SAVE_NUM_EVAL_EXAMPLES
 
         self.beta = self.cfg.BETA
-        self.meta_optimiser = torch.optim.Adam(self.meta_learner.get_params(),
+        self.meta_optimiser = torch.optim.Adam(self.meta_wrapper.get_params(),
                                                lr=self.beta, weight_decay=cfg.WEIGHT_DECAY)
         self.scheduler = torch.optim.lr_scheduler.StepLR(self.meta_optimiser, step_size=1, gamma=cfg.LR_GAMMA)
 
@@ -36,7 +36,7 @@ class Trainer:
         self.writer = SummaryWriter(cfg.SAVE_DIR)
 
         if self.cfg.MAML or self.epoch < self.cfg.ALPHA_START:
-            self.meta_learner.disable_alpha_updates()
+            self.meta_wrapper.disable_alpha_updates()
 
         # if cfg.RESUME:
         #     self.load_state(cfg.RESUME_PATH)
@@ -63,12 +63,12 @@ class Trainer:
         theta_names = list(k for k in theta if not k.startswith('alpha.'))
         alpha_values = list(theta[k] for k in theta if k.startswith('alpha.'))
 
-        train_loss, train_pred, train_error = self.meta_learner.train_forward(train_data, theta)
+        train_loss, train_pred, train_error = self.meta_wrapper.train_forward(train_data, theta)
         grads = torch.autograd.grad(train_loss, theta_values)
 
         theta_prime = OrderedDict((n, w - a * g) for n, w, a, g in zip(theta_names, theta_values, alpha_values, grads))
 
-        test_loss, test_pred, test_error = self.meta_learner.train_forward(test_data, theta_prime)
+        test_loss, test_pred, test_error = self.meta_wrapper.train_forward(test_data, theta_prime)
 
         before_error = train_error / (self.cfg_data.LABEL_FACTOR * self.cfg_data.K_TRAIN)
         after_error = test_error / (self.cfg_data.LABEL_FACTOR * self.cfg_data.K_META)
@@ -80,13 +80,13 @@ class Trainer:
         items_left = 0
         tasks_sampler = None
 
-        self.meta_learner.train()
+        self.meta_wrapper.train()
         while self.epoch < self.cfg.MAX_EPOCH:  # While not done
             self.epoch += 1
             if self.epoch == self.cfg.ALPHA_START:
-                self.meta_learner.enable_alpha_updates()
+                self.meta_wrapper.enable_alpha_updates()
 
-            theta = self.meta_learner.get_theta()
+            theta = self.meta_wrapper.get_theta()
             if self.cfg.MAML or self.epoch < self.cfg.ALPHA_START:
                 theta_weights = [v for k, v in theta.items() if not k.startswith('alpha.')]
             else:
@@ -120,11 +120,14 @@ class Trainer:
 
             mean_improvement = total_AEs / self.n_tasks
             print(f'ep {self.epoch} mean test improvement: {mean_improvement:.3f}')
-            print(f'alpha: {torch.min(list(self.meta_learner.base_model.alpha.values())[12])}')
+            print(f'alpha: {torch.min(list(self.meta_wrapper.base_model.alpha.values())[12])}')
 
             if self.epoch % self.cfg.SAVE_EVERY == 0:
                 self.save_state()
         self.save_state()
+
+    def evaluate_model(self):
+        pass
 
     def save_state(self, name_extra=''):
         if name_extra:
@@ -136,7 +139,7 @@ class Trainer:
             'epoch': self.epoch,
             'best_epoch': self.best_epoch,
             'best_mae': self.best_mae,
-            'net': self.meta_learner.base_model.state_dict(),
+            'net': self.meta_wrapper.base_model.state_dict(),
             'optim': self.meta_optimiser.state_dict(),
             'scheduler': self.scheduler.state_dict(),
             'save_dir_path': self.cfg.SAVE_DIR,
