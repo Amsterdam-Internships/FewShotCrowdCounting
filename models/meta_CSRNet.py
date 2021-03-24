@@ -43,5 +43,19 @@ class MetaCSRNet:
 
         return loss, pred, avg_abs_error
 
-    def test_forward(self):
-        pass
+    def test_forward(self, data, weights_dict=None):
+        img, gt = data
+        img, gt = img.cuda(), gt.squeeze().cuda()
+
+        if weights_dict:
+            pred = self.functional_model.forward(img, weights_dict, training=False)
+        else:
+            pred = self.base_model.forward(img)
+        pred = pred.squeeze()
+
+        loss = self.criterion(pred, gt)
+        abs_error = torch.abs(torch.sum(pred.detach() - gt, dim=(-2, -1)))
+        squared_error = torch.square(abs_error)
+
+        return img, pred, gt, loss, abs_error, squared_error
+

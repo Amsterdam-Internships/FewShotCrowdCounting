@@ -12,10 +12,9 @@ from .settings import cfg_data
 
 
 class WE_CSRNet_Meta(data.Dataset):
-    def __init__(self, data_path, mode, crop_size,
+    def __init__(self, data_path, mode,
                  main_transform=None, img_transform=None, gt_transform=None, splitter=None):
-        self.data_path = os.path.join(data_path, mode, 'frames')  # Only save img paths, replace with csvs when getitem
-        self.crop_size = crop_size
+        self.data_path = os.path.join(data_path, mode)
         self.mode = mode  # train or test
 
         self.main_transform = main_transform
@@ -23,14 +22,12 @@ class WE_CSRNet_Meta(data.Dataset):
         self.gt_transform = gt_transform
         self.splitter = splitter
 
-        self.img_extension = '.jpg'
-
         self.scenes = os.listdir(self.data_path)
         self.data_files = {}
 
         for scene in self.scenes:
-            scene_dir = os.path.join(self.data_path, scene)
-            self.data_files[scene] = [os.path.join(scene_dir, frame) for frame in os.listdir(scene_dir)]
+            scene_dir = os.path.join(self.data_path, scene, 'img')
+            self.data_files[scene] = [os.path.join(scene_dir, img_name) for img_name in os.listdir(scene_dir)]
 
         self.num_samples = len(self.scenes)
 
@@ -41,7 +38,7 @@ class WE_CSRNet_Meta(data.Dataset):
         n_datapoints = cfg_data.K_TRAIN + cfg_data.K_META  # D + D'
         _img_stack = []
         _gts_stack = []
-        flip = random.random() > 0.5  # whether or not to flip the scene
+        flip = random.random() < 0.5  # whether or not to flip the scene
 
         data_files = random.sample(self.data_files[scene], n_datapoints)
         for file in data_files:
@@ -63,7 +60,7 @@ class WE_CSRNet_Meta(data.Dataset):
                torch.cat(_gts_stack[cfg_data.K_TRAIN:n_datapoints])  # Meow Meow
 
     def read_image_and_gt(self, img_path):
-        den_path = img_path.replace('frames', 'csvs').replace(self.img_extension, '.csv')
+        den_path = img_path.replace('img', 'den').replace('.jpg', '.csv')
 
         img = Image.open(img_path)
         if img.mode == 'L':
@@ -79,24 +76,27 @@ class WE_CSRNet_Meta(data.Dataset):
         return self.num_samples
 
 
+class WE_CSRNet_Meta_eval(data.Dataset):
+    def __init__(self, data_path, mode, scene, adapt_imgs=None, n_adapt_imgs=None,
+                 main_transform=None, img_transform=None, gt_transform=None):
 
-class WE_MAML_test(data.Dataset):
-    def __init__(self, data_path, mode, crop_size, scene,
-                 main_transform=None, img_transform=None, gt_transform=None, splitter=None):
-        self.data_path = os.path.join(data_path, 'frames', scene)  # Only save img paths, replace with csvs when getitem
-        self.crop_size = crop_size
+        assert adapt_imgs or n_adapt_imgs, "One of adapt_imgs or n_adapt_imgs must be set."
+        assert not (adapt_imgs and n_adapt_imgs), "Only one of adapt_imgs and n_adapt_imgs must be set."
+
+        self.data_path = os.path.join(data_path, mode, scene, 'img')
         self.mode = mode  # train or test
 
         self.main_transform = main_transform
         self.img_transform = img_transform
         self.gt_transform = gt_transform
-        self.splitter = splitter
-
-        self.img_extension = '.jpg'
-
-        self.scenes = os.listdir(self.data_path)
 
         self.data_files = [os.path.join(self.data_path, image) for image in os.listdir(self.data_path)]
+        if adapt_imgs:
+            self.adapt_imgs = [os.path.join(self.data_path, adapt_img) for adapt_img in adapt_imgs]
+        else:
+            self.adapt_imgs = random.sample(self.data_files, n_adapt_imgs)
+
+        self.data_files = [img_path for img_path in self.data_files if img_path not in self.adapt_imgs]
 
         self.num_samples = len(self.data_files)
 
@@ -113,18 +113,15 @@ class WE_MAML_test(data.Dataset):
             img = self.img_transform(img)
         if self.gt_transform is not None:
             den = self.gt_transform(den)
-        # imgs = self.splitter(img, self.crop_size, cfg_data.OVERLAP)  # Must be provided!
-        # dens = self.splitter(den.unsqueeze(0), self.crop_size, cfg_data.OVERLAP)  # Must be provided!
-        # _img_stack.append(imgs)
-        # _gts_stack.append(dens)
 
         return img, den
 
     def read_image_and_gt(self, img_path):
-        den_path = img_path.replace('frames', 'csvs').replace(self.img_extension, '.csv')
+        den_path = img_path.replace('img', 'den').replace('.jpg', '.csv')
 
         img = Image.open(img_path)
         if img.mode == 'L':
+            print('NON RGB IMAGE DETECTED')
             img = img.convert('RGB')
 
         den = pd.read_csv(den_path, header=None).values
@@ -135,3 +132,20 @@ class WE_MAML_test(data.Dataset):
 
     def __len__(self):
         return self.num_samples
+
+    def get_adapt_batch(self):
+        _img_stack = []
+        _gt_stack = []
+
+        for img_path in self.adapt_imgs:
+            img, den = self.read_image_and_gt(img_path)
+            if self.img_transform is not None:
+                img = self.img_transform(img)
+            if self.gt_transform is not None:
+                den = self.gt_transform(den)
+            _img_stack.append(img)
+            _gt_stack.append(den)
+
+        img_stack = torch.stack(_img_stack)
+        gt_stack = torch.stack(_gt_stack)
+        return img_stack, gt_stack

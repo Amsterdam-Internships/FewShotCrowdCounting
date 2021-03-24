@@ -16,8 +16,8 @@ cfg = edict()
 
 cfg.SEED = 42
 
-cfg.MODEL = 'deit_small_distilled_patch16_224'
-cfg.DATASET = 'Multiset_DeiT'
+cfg.MODEL = 'CSRNet'
+cfg.DATASET = 'WE_CSRNet_Meta'
 
 cfg.BETA = 1e-4  # Outer/meta update. Also used as LR when normal training
 cfg.LR_GAMMA = math.sqrt(0.1)  # Scale LR by this at each step epoch
@@ -25,7 +25,7 @@ cfg.LR_STEP_EPOCHS = [100, 500, 900]
 cfg.WEIGHT_DECAY = 1e-4
 
 cfg.MAML = False
-cfg.ALPHA_START = 123
+cfg.ALPHA_START = 1
 cfg.ALPHA_INIT = 0.001  # Use also for Alpha lr in MAML
 
 cfg.N_TASKS = 1  # How many tasks to perform before performing an outer backprop
