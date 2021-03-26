@@ -1,14 +1,11 @@
 # Copyright (c) 2015-present, Facebook, Inc.
 # All rights reserved.
-import argparse
-import datetime
 import numpy as np
-import time
 import torch
 import torch.backends.cudnn as cudnn
 import os
 
-import models.DeiTModels  # Need to register the models!
+import models.DeiT.DeiTModels  # Needed to register models for 'create_model'
 from timm.models import create_model
 
 import importlib
@@ -54,7 +51,7 @@ def make_save_dirs(loaded_cfg):
 
 
 def main(cfg):
-    """ Load the settings and model, then creates a trainer with which the model is trained."""
+    """ Loads the settings and model, then creates a trainer with which the model is trained."""
 
     if cfg.RESUME:  # Not fully tested yet
         module = importlib.import_module(cfg.RESUME_DIR.replace(os.sep, '.') + 'code.config')
@@ -63,12 +60,12 @@ def main(cfg):
         make_save_dirs(cfg)
         copyfile('config.py', os.path.join(cfg.CODE_DIR, 'config.py'))
         copyfile('trainer_standard.py', os.path.join(cfg.CODE_DIR, 'trainer_standard.py'))
-        copyfile('models/DeiTModels.py', os.path.join(cfg.CODE_DIR, 'DeiTModels.py'))
-        copyfile(os.path.join('datasets', cfg.DATASET, 'settings.py'),
+        copyfile('models/DeiT/DeiTModels.py', os.path.join(cfg.CODE_DIR, 'DeiTModels.py'))
+        copyfile(os.path.join('datasets', 'standard', cfg.DATASET, 'settings.py'),
                  os.path.join(cfg.CODE_DIR, 'settings.py'))
-        copyfile(os.path.join('datasets', cfg.DATASET, 'loading_data.py'),
+        copyfile(os.path.join('datasets', 'standard', cfg.DATASET, 'loading_data.py'),
                  os.path.join(cfg.CODE_DIR, 'loading_data.py'))
-        copyfile(os.path.join('datasets', cfg.DATASET, cfg.DATASET + '.py'),
+        copyfile(os.path.join('datasets', 'standard', cfg.DATASET, cfg.DATASET + '.py'),
                  os.path.join(cfg.CODE_DIR, cfg.DATASET + '.py'))
 
     # fix the seed for reproducibility
@@ -96,8 +93,8 @@ def main(cfg):
     print('number of params:', n_parameters)
 
     # Dynamically load the dataloader and its settings as specified in the config file
-    dataloader = importlib.import_module(f'datasets.{cfg.DATASET}.loading_data').loading_data
-    cfg_data = importlib.import_module(f'datasets.{cfg.DATASET}.settings').cfg_data
+    dataloader = importlib.import_module(f'datasets.standard.{cfg.DATASET}.loading_data').loading_data
+    cfg_data = importlib.import_module(f'datasets.standard.{cfg.DATASET}.settings').cfg_data
 
     trainer = Trainer(model, dataloader, cfg, cfg_data)  # Make a trainer
     trainer.train()  # Train the model

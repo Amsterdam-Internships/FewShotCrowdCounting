@@ -7,7 +7,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from functools import partial
 
-from models.timm_functional.timm_functional import VisionTransformer_functional, _cfg
+from models.DeiT.timm_functional import VisionTransformer_functional, _cfg
 from timm.models.registry import register_model
 
 # __all__ = [

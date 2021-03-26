@@ -6,16 +6,13 @@ import torch.backends.cudnn as cudnn
 import os
 import random
 
-from models.CSRNet import CSRNet
-from models.CSRNet_functional import CSRNet_functional
-from models.meta_CSRNet import MetaCSRNet
+from models.CSRNet.CSRNet import CSRNet
+from models.CSRNet.CSRNet_functional import CSRNet_functional
+from models.CSRNet.meta_CSRNet import MetaCSRNet
 
-import models.DeiTModels
-import models.DeiTModelsFunctional
-from models.meta_DeiT import MetaDeiT
 from timm.models import create_model
 
-from models.meta_DeiT import MetaDeiT
+from models.DeiT.meta_DeiT import MetaDeiT
 
 import importlib
 
@@ -66,11 +63,11 @@ def main(cfg):
         copyfile('config.py', os.path.join(cfg.CODE_DIR, 'config.py'))
         copyfile('trainer_meta.py', os.path.join(cfg.CODE_DIR, 'trainer_meta.py'))
         # copyfile('models.py', os.path.join(cfg.CODE_DIR, 'models.py'))
-        copyfile(os.path.join('datasets', cfg.DATASET, 'settings.py'),
+        copyfile(os.path.join('datasets', 'meta', cfg.DATASET, 'settings.py'),
                  os.path.join(cfg.CODE_DIR, 'settings.py'))
-        copyfile(os.path.join('datasets', cfg.DATASET, 'loading_data.py'),
+        copyfile(os.path.join('datasets', 'meta', cfg.DATASET, 'loading_data.py'),
                  os.path.join(cfg.CODE_DIR, 'loading_data.py'))
-        copyfile(os.path.join('datasets', cfg.DATASET, cfg.DATASET + '.py'),
+        copyfile(os.path.join('datasets', 'meta', cfg.DATASET, cfg.DATASET + '.py'),
                  os.path.join(cfg.CODE_DIR, cfg.DATASET + '.py'))
 
     # fix the seed for reproducibility
@@ -117,8 +114,8 @@ def main(cfg):
     n_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print('number of params:', n_parameters)
 
-    dataloader = importlib.import_module(f'datasets.{cfg.DATASET}.loading_data').loading_data
-    cfg_data = importlib.import_module(f'datasets.{cfg.DATASET}.settings').cfg_data
+    dataloader = importlib.import_module(f'datasets.meta.{cfg.DATASET}.loading_data').loading_data
+    cfg_data = importlib.import_module(f'datasets.meta.{cfg.DATASET}.settings').cfg_data
 
     trainer = Trainer(meta_wrapper, dataloader, cfg, cfg_data)
     trainer.train()

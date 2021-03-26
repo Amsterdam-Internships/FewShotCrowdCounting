@@ -9,8 +9,8 @@ from collections import OrderedDict
 
 import matplotlib.pyplot as plt
 
-from models.CSRNet import CSRNet
-from models.CSRNet_functional import CSRNet_functional
+from models.CSRNet.CSRNet import CSRNet
+from models.CSRNet.CSRNet_functional import CSRNet_functional
 
 save_dir = 'adapt_CSRNet_1000'
 

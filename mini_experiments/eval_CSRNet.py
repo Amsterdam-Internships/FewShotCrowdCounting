@@ -1,11 +1,8 @@
 import numpy as np
-import time
 import torch
-import torch.backends.cudnn as cudnn
-import os
 
-from models.CSRNet import CSRNet
-from datasets.SHTB_CSRNet.loading_data import loading_data
+from models.CSRNet.CSRNet import CSRNet
+from datasets.standard.SHTB_CSRNet.loading_data import loading_data
 
 
 def evaluate_model(model, dataloader):

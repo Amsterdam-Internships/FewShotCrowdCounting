@@ -1,14 +1,10 @@
 import numpy as np
-import time
 import torch
-import torch.backends.cudnn as cudnn
-import os
 
-import models.DeiTModels  # Need to register the models!
 from timm.models import create_model
 
 from datasets.dataset_utils import img_equal_unsplit
-from datasets.SHTB_DeiT.loading_data import loading_data
+from datasets.standard.SHTB_DeiT.loading_data import loading_data
 
 
 def evaluate_model(model, dataloader):
