@@ -28,12 +28,10 @@ class CSRNet(nn.Module):
             self.alpha[k.replace('.', '_')] = alpha_value
 
     def forward(self, x):
-        # x = self.frontend(x)
-        for layer in self.frontend:
-            x = layer(x)
+        x = self.frontend(x)
         x = self.backend(x)
         x = self.output_layer(x)
-        # x = F.upsample(x, scale_factor=8)
+        x = F.interpolate(x, scale_factor=8)
         return x
 
     def _initialize_weights(self):

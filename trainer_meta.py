@@ -57,70 +57,84 @@ class Trainer:
     #     model_func_pred = self.model_funct.forward(img, model_weights, True)
     #     print('done')
 
-    def inner_loop(self, train_data, test_data, theta):
-        theta_values = list(theta[k] for k in theta if not k.startswith('alpha.'))
-        theta_names = list(k for k in theta if not k.startswith('alpha.'))
-        alpha_values = list(theta[k] for k in theta if k.startswith('alpha.'))
+    def meta_loop_inner(self, train_data, test_data, theta):
+        theta_values = [theta[k] for k in theta if not k.startswith('alpha.')]
+        theta_names = [k for k in theta if not k.startswith('alpha.')]
+        alpha_values = [theta[k] for k in theta if k.startswith('alpha.')]
 
+        # Before
         train_loss, train_pred, train_error = self.meta_wrapper.train_forward(train_data, theta)
         grads = torch.autograd.grad(train_loss, theta_values)
 
+        # Adapt
         theta_prime = OrderedDict((n, w - a * g) for n, w, a, g in zip(theta_names, theta_values, alpha_values, grads))
 
+        # After
         test_loss, test_pred, test_error = self.meta_wrapper.train_forward(test_data, theta_prime)
 
+        # Info for logging
         before_error = train_error / (self.cfg_data.LABEL_FACTOR * self.cfg_data.K_TRAIN)
         after_error = test_error / (self.cfg_data.LABEL_FACTOR * self.cfg_data.K_META)
-        avg_AE = before_error - after_error
+        avg_AE_improvement = before_error - after_error
 
-        return test_loss, avg_AE
+        return test_loss, avg_AE_improvement
+
+    def meta_loop_outer(self, task_batch, theta):
+        AEs = []
+        total_metaloss = torch.tensor(0).float().cuda()
+
+        self.meta_optimiser.zero_grad()  # Prob not needed since we set the gradients manually
+        for train_data, test_data in task_batch:  # For each task
+            test_loss, avg_AE_improvement = self.meta_loop_inner(train_data, test_data, theta)
+            total_metaloss += test_loss
+            AEs.append(avg_AE_improvement.item())
+
+        avg_metaloss = total_metaloss / self.n_tasks
+        mean_improvement = np.mean(AEs)
+        return avg_metaloss, mean_improvement
 
     def run_epoch(self):
         tasks_sampler = iter(self.train_loader)
-        items_left = len(self.train_loader.dataset)
+        scenes_left = len(self.train_loader.dataset)
 
         n_improvements = 0
-        n_worsenings = 0
+        n_non_imrovements = 0
         mean_improvements = []
-        while items_left > self.n_tasks:
+        while scenes_left > self.n_tasks:
+            # Make a batch of tasks
+            task_batch = []
+            for _ in range(self.n_tasks):
+                train_imgs, train_gts, test_imgs, test_gts = next(tasks_sampler)
+                task_batch.append(((train_imgs, train_gts), (test_imgs, test_gts)))
+            scenes_left -= self.n_tasks
+
+            # Get model weights (theta)
             theta = self.meta_wrapper.get_theta()
-            if self.cfg.MAML or self.epoch < self.cfg.ALPHA_START:
-                theta_weights = [v for k, v in theta.items() if not k.startswith('alpha.')]
-            else:
-                theta_weights = list(theta.values())
+            trainable_weights = [v for k, v in theta.items() if v.requires_grad]
 
-            total_metaloss = torch.tensor(0).float().cuda()
-            total_AEs = 0
+            # Outer loop
+            avg_metaloss, mean_improvement = self.meta_loop_outer(task_batch, theta)
 
-            self.meta_optimiser.zero_grad()  # Prob not needed since we set the gradients manually
-            for task_idx in range(self.n_tasks):
-                train_img, train_gt, test_img, test_gt = next(tasks_sampler)
-                items_left -= 1
-
-                train_data = (train_img, train_gt)
-                test_data = (test_img, test_gt)
-                test_loss, avg_AE = self.inner_loop(train_data, test_data, theta)
-                total_metaloss += test_loss
-                total_AEs += avg_AE
-
-            avg_metaloss = total_metaloss / self.n_tasks
-            metagrads = torch.autograd.grad(avg_metaloss, theta_weights)
-
-            for w, g in zip(theta_weights, metagrads):
+            # Update theta
+            metagrads = torch.autograd.grad(avg_metaloss, trainable_weights)
+            for w, g in zip(trainable_weights, metagrads):
                 w.grad = g
             self.meta_optimiser.step()
 
-            mean_improvement = (total_AEs / self.n_tasks).item()
+            # Logging
             mean_improvements.append(mean_improvement)
-            if mean_improvement > 0:
-                n_improvements += 1
-            else:
-                n_worsenings += 1
-        return mean_improvements, n_improvements, n_worsenings
+
+            n_improvements += 1 if mean_improvement > 0 else 0
+            n_non_imrovements += 1 if mean_improvement < 0 else 0
+
+        return mean_improvements, n_improvements, n_non_imrovements
 
     def train(self):  # Outer loop
         self.meta_wrapper.eval()
         # self.evaluate_model()
+
+        # Log alpha stats
+        self.log_alpha()
 
         self.meta_wrapper.train()
         while self.epoch < self.cfg.MAX_EPOCH:  # While not done
@@ -129,33 +143,45 @@ class Trainer:
             if self.epoch == self.cfg.ALPHA_START:
                 self.meta_wrapper.enable_alpha_updates()
 
-            # Log alpha stats
-            for alpha_name, alpha_value in self.meta_wrapper.base_model.alpha.items():
-                alpha_mean = torch.mean(alpha_value).item()
-                alpha_std = torch.std(alpha_value).item()
+            mean_improvements, n_improvements, n_non_imrovements = self.run_epoch()
 
-                self.writer.add_scalar(f'Alpha_stats_means/{alpha_name}', alpha_mean, self.epoch)
-                self.writer.add_scalar(f'Alpha_stats_stds/{alpha_name}', alpha_std, self.epoch)
+            if self.epoch % self.cfg.EVAL_EVERY == 0:
+                self.evaluate_model()
 
-            mean_improvements, n_improvements, n_worsenings = self.run_epoch()
-            percent_improved = n_improvements / (n_improvements + n_worsenings) * 100
+            # Logging
+            self.log_alpha()
+
+            percent_improved = n_improvements / (n_improvements + n_non_imrovements) * 100  # Above 50% is good
             self.writer.add_scalar('Train/mean_improvement', np.mean(mean_improvements), self.epoch)
             self.writer.add_scalar('Train/n_improvements', n_improvements, self.epoch)
-            self.writer.add_scalar('Train/n_worsenings', n_worsenings, self.epoch)
+            self.writer.add_scalar('Train/n_non_imrovements', n_non_imrovements, self.epoch)
             self.writer.add_scalar('Train/percent_improved', percent_improved, self.epoch)
 
             print(f'ep {self.epoch} mean test improvement: {np.mean(mean_improvements):.3f}. '
-                  f'{percent_improved:.1f}% improved. {n_improvements} improved, {n_worsenings} worsened.')
+                  f'{percent_improved:.1f}% improved. {n_improvements} improved, {n_non_imrovements} not improved.')
 
             if self.epoch % self.cfg.SAVE_EVERY == 0:
                 self.save_state()
         self.save_state()
 
     def evaluate_model(self):
-        MLosses = []
-        MAEs = []
-        MSEs = []
+        scene_improvements = 0
+        scene_non_improvements = 0
+        _overal_loss_improvement = []
+        _overal_MAE_improvement = []
+        _overal_MSE_improvement = []
+
         for val_loader in self.val_loaders:
+            # ========================================================================================= #
+            #                                          BEFORE                                           #
+            # ========================================================================================= #
+            self.meta_wrapper.eval()
+            MLoss_before, MAE_before, MSE_before = self.eval_on_scene(val_loader, weight_dict=None)
+
+            # ========================================================================================= #
+            #                                        ADAPTATION                                         #
+            # ========================================================================================= #
+            self.meta_wrapper.train()
             adapt_data = val_loader.dataset.get_adapt_batch()
 
             theta = self.meta_wrapper.get_theta()
@@ -167,26 +193,72 @@ class Trainer:
             grads = torch.autograd.grad(train_loss, theta_values)
 
             theta_prime = OrderedDict(
-                (n, w - a * g) for n, w, a, g in zip(theta_names, theta_values, alpha_values, grads))
+                (n, w - a * g) for n, w, a, g in zip(theta_names, theta_values, alpha_values, grads)
+            )
 
-            _MAE = []
-            _MSE = []
-            _Mloss = []
-            for eval_data in val_loader:
-                img, pred, gt, loss, AE, SE = self.meta_wrapper.test_forward(eval_data, theta_prime)
-                _Mloss.append(loss.item())
-                _MAE.append(AE.item() / self.cfg_data.LABEL_FACTOR)
-                _MSE.append(SE.item() / self.cfg_data.LABEL_FACTOR)
+            # ========================================================================================= #
+            #                                           AFTER                                           #
+            # ========================================================================================= #
+            self.meta_wrapper.eval()
+            MLoss_after, MAE_after, MSE_after = self.eval_on_scene(val_loader, theta_prime)
 
-            MLoss = np.mean(_Mloss)
-            MAE = np.mean(_MAE)
-            MSE = np.mean(_MSE)
+            # ========================================================================================= #
+            #                                          LOGGING                                          #
+            # ========================================================================================= #
+            loss_improvement = MLoss_before - MLoss_after
+            MAE_improvement = MAE_before - MAE_after
+            MSE_improvement = MSE_before - MSE_after
 
-        MLosses.append(MLoss)
-        MAEs.append(MAE)
-        MSEs.append(MSE)
+            _overal_loss_improvement.append(loss_improvement)
+            _overal_MAE_improvement.append(MAE_improvement)
+            _overal_MSE_improvement.append(MSE_improvement)
 
-        return MLosses, MAEs, MSEs
+            scene_improvements += 1 if MAE_improvement > 0 else 0
+            scene_non_improvements += 1 if MAE_improvement <= 0 else 0
+
+            scene_id = val_loader.dataset.scene_id
+            self.writer.add_scalar(f'eval/{scene_id}/loss_improvement', loss_improvement, self.epoch)
+            self.writer.add_scalar(f'eval/{scene_id}/MAE_improvement', MAE_improvement, self.epoch)
+            self.writer.add_scalar(f'eval/{scene_id}/MSE_improvement', MSE_improvement, self.epoch)
+
+        overal_loss_improvement = np.mean(_overal_loss_improvement)
+        overal_MAE_improvement = np.mean(_overal_MAE_improvement)
+        overal_MSE_improvement = np.mean(_overal_MSE_improvement)
+
+        self.writer.add_scalar(f'eval/overal_loss_improvement', overal_loss_improvement, self.epoch)
+        self.writer.add_scalar(f'eval/overal_MAE_improvement', overal_MAE_improvement, self.epoch)
+        self.writer.add_scalar(f'eval/overal_MSE_improvement', overal_MSE_improvement, self.epoch)
+
+        return
+
+    def eval_on_scene(self, scene_loader, weight_dict=None):
+        _MAE = []
+        _MSE = []
+        _Mloss = []
+
+        for eval_data in scene_loader:
+            img, pred, gt, loss, test_AE, test_SE = self.meta_wrapper.test_forward(eval_data, weight_dict)
+            _Mloss.append(loss.item())
+            _MAE.append(test_AE.item() / self.cfg_data.LABEL_FACTOR)
+            _MSE.append(test_SE.item() / self.cfg_data.LABEL_FACTOR)
+
+        MLoss = np.mean(_Mloss)
+        MAE = np.mean(_MAE)
+        MSE = np.mean(_MSE)
+
+        return MLoss, MAE, MSE
+
+    def log_alpha(self):
+        """ Each model parameter has an alpha with equal dimensions. This function logs the mean and std. dev. of each
+        such alpha.
+        Note: These are still logged when using MAML, though they will all be flat lines."""
+
+        for alpha_name, alpha_value in self.meta_wrapper.base_model.alpha.items():
+            alpha_mean = torch.mean(alpha_value).item()
+            alpha_std = torch.std(alpha_value).item()
+
+            self.writer.add_scalar(f'Alpha_stats_means/{alpha_name}', alpha_mean, self.epoch)
+            self.writer.add_scalar(f'Alpha_stats_stds/{alpha_name}', alpha_std, self.epoch)
 
     def save_state(self, name_extra=''):
         if name_extra:

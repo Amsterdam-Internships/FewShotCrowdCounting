@@ -53,6 +53,6 @@ class CSRNet_functional(nn.Module):
         # Output layer
         x = F.conv2d(x, weights['output_layer.weight'], bias=weights['output_layer.bias'])
 
-        x = F.upsample(x, scale_factor=8)
+        x = F.interpolate(x, scale_factor=8)
 
         return x

@@ -85,6 +85,7 @@ class WE_CSRNet_Meta_eval(data.Dataset):
 
         self.data_path = os.path.join(data_path, mode, scene, 'img')
         self.mode = mode  # train or test
+        self.scene_id = scene
 
         self.main_transform = main_transform
         self.img_transform = img_transform
