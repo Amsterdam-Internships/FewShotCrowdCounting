@@ -15,7 +15,12 @@ def loading_data(crop_size):
         own_transforms.RandomHorizontallyFlip()
     ])
 
-    img_transform = standard_transforms.Compose([
+    train_img_transform = standard_transforms.Compose([
+        standard_transforms.ToTensor(),
+        standard_transforms.Normalize(*cfg_data.MEAN_STD)
+    ])
+
+    val_img_transform = standard_transforms.Compose([
         standard_transforms.ToTensor(),
         standard_transforms.Normalize(*cfg_data.MEAN_STD)
     ])
@@ -35,7 +40,7 @@ def loading_data(crop_size):
 
     train_set = Multiset_DeiT(cfg_data.TRAIN_BASE_PATHS, 'train', crop_size,
                               main_transform=train_main_transform,
-                              img_transform=img_transform,
+                              img_transform=train_img_transform,
                               gt_transform=gt_transform,
                               cropper=train_cropper)
     train_loader = DataLoader(train_set,
@@ -45,7 +50,7 @@ def loading_data(crop_size):
 
     val_set = Multiset_DeiT(cfg_data.VAL_BASE_PATHS, 'val', crop_size,
                             main_transform=None,
-                            img_transform=img_transform,
+                            img_transform=val_img_transform,
                             gt_transform=gt_transform,
                             cropper=None)
     val_loader = DataLoader(val_set,
@@ -55,7 +60,7 @@ def loading_data(crop_size):
 
     test_set = Multiset_DeiT(cfg_data.TEST_BASE_PATHS, 'test', crop_size,
                              main_transform=None,
-                             img_transform=img_transform,
+                             img_transform=val_img_transform,
                              gt_transform=gt_transform,
                              cropper=None)
     test_loader = DataLoader(test_set,

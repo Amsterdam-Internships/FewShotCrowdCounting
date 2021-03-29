@@ -9,7 +9,8 @@ import random
 from models.CSRNet.CSRNet import CSRNet
 from models.CSRNet.CSRNet_functional import CSRNet_functional
 from models.CSRNet.meta_CSRNet import MetaCSRNet
-
+import models.DeiT.DeiTModels  # Needed for 'create_model'
+import models.DeiT.DeiTModelsFunctional  # Needed for 'create_model'
 from timm.models import create_model
 
 from models.DeiT.meta_DeiT import MetaDeiT
@@ -74,8 +75,10 @@ def main(cfg):
     torch.manual_seed(cfg.SEED)
     np.random.seed(cfg.SEED)
     random.seed(cfg.SEED)
-
     cudnn.benchmark = True
+
+    dataloader = importlib.import_module(f'datasets.meta.{cfg.DATASET}.loading_data').loading_data
+    cfg_data = importlib.import_module(f'datasets.meta.{cfg.DATASET}.settings').cfg_data
 
     print(f"Creating model: {cfg.MODEL}")
 
@@ -106,16 +109,13 @@ def main(cfg):
         model.make_alpha(cfg.ALPHA_INIT)
         model.cuda()
 
-        meta_wrapper = MetaDeiT(model, model_functional, criterion)
+        meta_wrapper = MetaDeiT(model, model_functional, criterion, cfg_data)
 
     model.make_alpha(cfg.ALPHA_INIT)
     model.cuda()
 
     n_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print('number of params:', n_parameters)
-
-    dataloader = importlib.import_module(f'datasets.meta.{cfg.DATASET}.loading_data').loading_data
-    cfg_data = importlib.import_module(f'datasets.meta.{cfg.DATASET}.settings').cfg_data
 
     trainer = Trainer(meta_wrapper, dataloader, cfg, cfg_data)
     trainer.train()

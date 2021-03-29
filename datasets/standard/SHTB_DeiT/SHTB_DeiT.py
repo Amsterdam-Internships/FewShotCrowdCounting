@@ -8,7 +8,7 @@ from torch.utils import data
 
 from PIL import Image
 from .settings import cfg_data
-from datasets.dataset_utils import img_equal_split, img_equal_unsplit
+from datasets.dataset_utils import img_equal_split
 
 
 class SHTB_DeiT(data.Dataset):

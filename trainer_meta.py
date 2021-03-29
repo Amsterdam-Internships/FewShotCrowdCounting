@@ -131,7 +131,7 @@ class Trainer:
 
     def train(self):  # Outer loop
         self.meta_wrapper.eval()
-        # self.evaluate_model()
+        self.evaluate_model()
 
         # Log alpha stats
         self.log_alpha()

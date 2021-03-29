@@ -7,7 +7,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from functools import partial
 
-from models.DeiT.timm_functional import VisionTransformer_functional, _cfg
+from models.DeiT.timm_functional.timm_functional import VisionTransformer_functional, _cfg
 from timm.models.registry import register_model
 
 # __all__ = [
@@ -17,7 +17,7 @@ from timm.models.registry import register_model
 #     'deit_base_distilled_patch16_384',
 # ]
 
-__all__ = ['deit_tiny_patch16_224_functional']
+__all__ = ['deit_tiny_distilled_patch16_224_functional']
 
 
 # ======================================================================================================= #

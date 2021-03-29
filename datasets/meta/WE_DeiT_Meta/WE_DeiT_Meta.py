@@ -9,9 +9,10 @@ from torch.utils import data
 
 from PIL import Image
 from .settings import cfg_data
+from datasets.dataset_utils import img_equal_split
 
 
-class WE_CSRNet_Meta(data.Dataset):
+class WE_DeiT_Meta(data.Dataset):
     def __init__(self, data_path, mode,
                  main_transform=None, img_transform=None, gt_transform=None, splitter=None):
         self.data_path = os.path.join(data_path, mode)
@@ -36,7 +37,7 @@ class WE_CSRNet_Meta(data.Dataset):
     def __getitem__(self, index):
         scene = self.scenes[index]
         n_datapoints = cfg_data.K_TRAIN + cfg_data.K_META  # D + D'
-        _img_stack = []
+        _imgs_stack = []
         _gts_stack = []
         flip = random.random() < 0.5  # whether or not to flip the scene
 
@@ -50,14 +51,15 @@ class WE_CSRNet_Meta(data.Dataset):
                 img = self.img_transform(img)
             if self.gt_transform is not None:
                 den = self.gt_transform(den)
+            img_stack = img_equal_split(img, cfg_data.CROP_SIZE, cfg_data.OVERLAP)
+            gts_stack = img_equal_split(den.unsqueeze(0), cfg_data.CROP_SIZE, cfg_data.OVERLAP)
+            _imgs_stack.append(img_stack)
+            _gts_stack.append(gts_stack)
 
-            _img_stack.append(img)
-            _gts_stack.append(den)
-
-        return torch.stack(_img_stack[0:cfg_data.K_TRAIN]), \
-               torch.stack(_gts_stack[0:cfg_data.K_TRAIN]), \
-               torch.stack(_img_stack[cfg_data.K_TRAIN:n_datapoints]), \
-               torch.stack(_gts_stack[cfg_data.K_TRAIN:n_datapoints])  # Meow Meow
+        return torch.cat(_imgs_stack[0:cfg_data.K_TRAIN]), \
+               torch.cat(_gts_stack[0:cfg_data.K_TRAIN]), \
+               torch.cat(_imgs_stack[cfg_data.K_TRAIN:n_datapoints]), \
+               torch.cat(_gts_stack[cfg_data.K_TRAIN:n_datapoints])  # Meow Meow
 
     def read_image_and_gt(self, img_path):
         den_path = img_path.replace('img', 'den').replace('.jpg', '.csv')
@@ -76,7 +78,7 @@ class WE_CSRNet_Meta(data.Dataset):
         return self.num_samples
 
 
-class WE_CSRNet_Meta_eval(data.Dataset):
+class WE_DeiT_Meta_eval(data.Dataset):
     def __init__(self, data_path, mode, scene, adapt_imgs=None, n_adapt_imgs=None,
                  main_transform=None, img_transform=None, gt_transform=None):
 
@@ -115,7 +117,10 @@ class WE_CSRNet_Meta_eval(data.Dataset):
         if self.gt_transform is not None:
             den = self.gt_transform(den)
 
-        return img, den
+        img_stack = img_equal_split(img, cfg_data.CROP_SIZE, cfg_data.OVERLAP)
+        gts_stack = img_equal_split(den.unsqueeze(0), cfg_data.CROP_SIZE, cfg_data.OVERLAP)
+
+        return img, img_stack, gts_stack
 
     def read_image_and_gt(self, img_path):
         den_path = img_path.replace('img', 'den').replace('.jpg', '.csv')
@@ -144,9 +149,11 @@ class WE_CSRNet_Meta_eval(data.Dataset):
                 img = self.img_transform(img)
             if self.gt_transform is not None:
                 den = self.gt_transform(den)
-            _imgs_stack.append(img)
-            _gts_stack.append(den)
+            img_stack = img_equal_split(img, cfg_data.CROP_SIZE, cfg_data.OVERLAP)
+            gts_stack = img_equal_split(den.unsqueeze(0), cfg_data.CROP_SIZE, cfg_data.OVERLAP)
+            _imgs_stack.append(img_stack)
+            _gts_stack.append(gts_stack)
 
-        imgs_stack = torch.stack(_imgs_stack)
-        gts_stack = torch.stack(_gts_stack)
-        return imgs_stack, gts_stack
+        img_stack = torch.stack(_imgs_stack)
+        gt_stack = torch.stack(_gts_stack)
+        return img_stack, gt_stack

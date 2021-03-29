@@ -11,11 +11,13 @@ cfg_data.VAL_BASE_PATHS = [
     'D:\\ThesisData\\Datasets\\Arena 05'
 ]
 
-cfg_data.TEST_BASE_PATHS = []
+cfg_data.TEST_BASE_PATHS = [
+    'D:\\ThesisData\\Datasets\\Arena 05'
+]
 
 cfg_data.TRAIN_BS = 10
 cfg_data.VAL_BS = 1
-cfg_data.N_WORKERS = 4
+cfg_data.N_WORKERS = 0
 
 cfg_data.MEAN_STD = ([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 cfg_data.LABEL_FACTOR = 10000
