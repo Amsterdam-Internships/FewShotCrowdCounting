@@ -34,14 +34,13 @@ class MetaDeiT:
         return self.base_model.parameters()
 
     def train_forward(self, data, weights_dict):
-        img, gt = data
-        img, gt = img.squeeze().cuda(), gt.squeeze().cuda()
+        img_stack, gt_stack = data
+        img_stack, gt_stack = img_stack.squeeze(0).cuda(), gt_stack.squeeze(0).cuda()
 
-        pred = self.functional_model.forward(img, weights_dict, training=self.training)
-        pred = pred.squeeze()
-        loss = self.criterion(pred, gt)
+        pred = self.functional_model.forward(img_stack, weights_dict, training=self.training)
+        loss = self.criterion(pred, gt_stack)
 
-        avg_abs_error = torch.mean(torch.abs(torch.sum(pred.detach() - gt, dim=(-2, -1))))
+        avg_abs_error = torch.mean(torch.abs(torch.sum(pred.detach() - gt_stack, dim=(-2, -1))))
 
         return loss, pred, avg_abs_error
 
@@ -54,7 +53,6 @@ class MetaDeiT:
             pred = self.functional_model.forward(img_stack, weights_dict, training=False)
         else:
             pred = self.base_model.forward(img_stack)
-        # pred = pred.squeeze()
         loss = self.criterion(pred, gt_stack)
 
         gt = img_equal_unsplit(gt_stack.cpu(), self.cfg_data.OVERLAP, self.cfg_data.IGNORE_BUFFER, img_h, img_w, 1)

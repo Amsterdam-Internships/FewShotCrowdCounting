@@ -33,7 +33,7 @@ class MetaCSRNet:
 
     def train_forward(self, data, weights_dict):
         img, gt = data
-        img, gt = img.squeeze(0).cuda(), gt.squeeze().cuda()
+        img, gt = img.cuda(), gt.squeeze().cuda()
 
         pred = self.functional_model.forward(img, weights_dict, training=self.training)
         pred = pred.squeeze()

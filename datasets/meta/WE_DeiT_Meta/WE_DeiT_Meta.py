@@ -154,6 +154,6 @@ class WE_DeiT_Meta_eval(data.Dataset):
             _imgs_stack.append(img_stack)
             _gts_stack.append(gts_stack)
 
-        img_stack = torch.stack(_imgs_stack)
-        gt_stack = torch.stack(_gts_stack)
+        img_stack = torch.cat(_imgs_stack)
+        gt_stack = torch.cat(_gts_stack)
         return img_stack, gt_stack

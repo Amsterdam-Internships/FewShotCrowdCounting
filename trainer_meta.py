@@ -44,19 +44,6 @@ class Trainer:
         #     self.save_eval_pics()
         #     self.writer.add_scalar('lr', self.scheduler.get_last_lr()[0], self.epoch)
 
-        # self.test_functional()
-
-    # def test_functional(self):
-    #     """ Just a small function so I can verify with Pycharm debugger if the functional model even works"""
-    #
-    #     tasks_sampler = iter(self.train_loader)
-    #     img, gt, _, _ = next(tasks_sampler)
-    #     img = img.squeeze()
-    #     model_weights = self.model.state_dict()
-    #     # model_pred = self.model.forward(img)
-    #     model_func_pred = self.model_funct.forward(img, model_weights, True)
-    #     print('done')
-
     def meta_loop_inner(self, train_data, test_data, theta):
         theta_values = [theta[k] for k in theta if not k.startswith('alpha.')]
         theta_names = [k for k in theta if not k.startswith('alpha.')]
@@ -105,6 +92,10 @@ class Trainer:
             task_batch = []
             for _ in range(self.n_tasks):
                 train_imgs, train_gts, test_imgs, test_gts = next(tasks_sampler)
+                train_imgs = train_imgs.squeeze(0)
+                train_gts = train_gts.squeeze(0)  # Technically not needed due to .squeeze later
+                test_imgs = test_imgs.squeeze(0)
+                test_gts = test_gts.squeeze(0)  # But these are the dimensions they are supposed to be
                 task_batch.append(((train_imgs, train_gts), (test_imgs, test_gts)))
             scenes_left -= self.n_tasks
 
@@ -112,7 +103,7 @@ class Trainer:
             theta = self.meta_wrapper.get_theta()
             trainable_weights = [v for k, v in theta.items() if v.requires_grad]
 
-            # Outer loop
+            # Loop over batches
             avg_metaloss, mean_improvement = self.meta_loop_outer(task_batch, theta)
 
             # Update theta
@@ -131,7 +122,7 @@ class Trainer:
 
     def train(self):  # Outer loop
         self.meta_wrapper.eval()
-        self.evaluate_model()
+        # self.evaluate_model()
 
         # Log alpha stats
         self.log_alpha()
@@ -237,7 +228,8 @@ class Trainer:
         _Mloss = []
 
         for eval_data in scene_loader:
-            img, pred, gt, loss, test_AE, test_SE = self.meta_wrapper.test_forward(eval_data, weight_dict)
+            with torch.no_grad():
+                img, pred, gt, loss, test_AE, test_SE = self.meta_wrapper.test_forward(eval_data, weight_dict)
             _Mloss.append(loss.item())
             _MAE.append(test_AE.item() / self.cfg_data.LABEL_FACTOR)
             _MSE.append(test_SE.item() / self.cfg_data.LABEL_FACTOR)
