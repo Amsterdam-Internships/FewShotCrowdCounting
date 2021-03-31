@@ -54,6 +54,7 @@ def make_save_dirs(loaded_cfg):
     else:
         print('save directory already exists!')
 
+def get_models()
 
 def main(cfg):
     if cfg.RESUME:
@@ -87,7 +88,7 @@ def main(cfg):
         model = CSRNet()
         model_functional = CSRNet_functional()
         meta_wrapper = MetaCSRNet(model, model_functional, criterion)
-    else:
+    elif cfg.MODEL == 'SineNet':
         model = create_model(
             cfg.MODEL,
             init_path=model_mapping[cfg.MODEL],

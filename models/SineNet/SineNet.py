@@ -15,8 +15,6 @@ class SineNet(nn.Module):
             ('l3', nn.Linear(40, 1))
         ]))
 
-        self.loss = None
-
         self.alpha = None
 
     def make_alpha(self, alpha_init):

@@ -9,13 +9,12 @@ class CSRNet_functional(nn.Module):
         super(CSRNet_functional, self).__init__()
 
     def forward(self, x, weights, training=True):
-
         # Frontend
         x = F.conv2d(x, weights['frontend.0.weight'], bias=weights['frontend.0.bias'], padding=1)
         x = F.relu(x, inplace=True)
         x = F.conv2d(x, weights['frontend.2.weight'], bias=weights['frontend.2.bias'], padding=1)
         x = F.relu(x, inplace=True)
-        x = F.max_pool2d(x, kernel_size=2, stride=2)  # TODO: Check with debug if correct
+        x = F.max_pool2d(x, kernel_size=2, stride=2)
         x = F.conv2d(x, weights['frontend.5.weight'], bias=weights['frontend.5.bias'], padding=1)
         x = F.relu(x, inplace=True)
         x = F.conv2d(x, weights['frontend.7.weight'], bias=weights['frontend.7.bias'], padding=1)
@@ -34,7 +33,6 @@ class CSRNet_functional(nn.Module):
         x = F.relu(x, inplace=True)
         x = F.conv2d(x, weights['frontend.21.weight'], bias=weights['frontend.21.bias'], padding=1)
         x = F.relu(x, inplace=True)
-
 
         # Backend
         x = F.conv2d(x, weights['backend.0.weight'], bias=weights['backend.0.bias'], padding=2, dilation=2)
