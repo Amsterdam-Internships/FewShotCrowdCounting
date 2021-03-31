@@ -13,6 +13,7 @@ from datasets.dataset_utils import img_equal_split
 
 
 class SineTask():
+    """ Code from https://github.com/infinitemugen/MAML-Pytorch"""
     def __init__(self, amp, phase, min_x, max_x):
         self.phase = phase
         self.max_x = max_x
@@ -32,6 +33,7 @@ class SineTask():
 
 
 class SineDistribution():
+    """ Code from https://github.com/infinitemugen/MAML-Pytorch """
     def __init__(self, min_amp, max_amp, min_phase, max_phase, min_x, max_x):
         self.min_amp = min_amp
         self.max_phase = max_phase
@@ -48,7 +50,7 @@ class SineDistribution():
 
 class SineWave_Meta(data.Dataset):
     def __init__(self):
-        self.num_samples = 100  # Whatever, we generate new tasks on the fly anyways.
+        self.num_samples = 100  # Since our code expects 'scenes', we provide some arbitrary number.
         self.task_generator = SineDistribution(0.1, 5, 0, np.pi, -5, 5)
 
     def __getitem__(self, index):
@@ -64,15 +66,15 @@ class SineWave_Meta(data.Dataset):
 
 
 class SineWave_Meta_eval(data.Dataset):
-    def __init__(self, id):
-        self.scene_id = id
+    def __init__(self, identifier):
+        self.scene_id = identifier  # We don't really have 'scenes'. Each 'scene' is a specific Sine Distribution
 
         self.task_generator = SineDistribution(0.1, 5, 0, np.pi, -5, 5)
         self.task = self.task_generator.sample_task()
         self.adapt_data = self.task.sample_data(cfg_data.K_TRAIN)
 
         self.data_points = []
-        for _ in range(25):
+        for _ in range(cfg_data.N_EVAL_POINTS):  # How many random data points to evaluate our model on
             x, y = self.task.sample_data(1)
             self.data_points.append((x, y))
 
