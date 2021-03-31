@@ -38,7 +38,7 @@ cfg.ALPHA_INIT = 0.001  # Use also for Alpha lr in MAML
 cfg.N_TASKS = 1  # How many tasks to perform before performing an outer backprop
 
 cfg.MAX_EPOCH = 10000
-cfg.EVAL_EVERY = 100
+cfg.EVAL_EVERY = 10
 cfg.SAVE_EVERY_N_EVALS = 10  # Every Nth evaluation, save model regardless of performance
 cfg.SAVE_EVERY = cfg.SAVE_EVERY_N_EVALS * cfg.EVAL_EVERY  # Don't touch this one
 
