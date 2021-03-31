@@ -5,21 +5,30 @@ import torch
 import torch.backends.cudnn as cudnn
 import os
 import random
-
-from models.CSRNet.CSRNet import CSRNet
-from models.CSRNet.CSRNet_functional import CSRNet_functional
-from models.CSRNet.meta_CSRNet import MetaCSRNet
-import models.DeiT.DeiTModels  # Needed for 'create_model'
-import models.DeiT.DeiTModelsFunctional  # Needed for 'create_model'
-from timm.models import create_model
-
-from models.DeiT.meta_DeiT import MetaDeiT
-
 import importlib
+from shutil import copyfile, copytree
 
 from trainer_meta import Trainer
 from config import cfg
-from shutil import copyfile
+
+
+# CSRNet
+from models.CSRNet.CSRNet import CSRNet
+from models.CSRNet.CSRNet_functional import CSRNet_functional
+from models.CSRNet.meta_CSRNet import MetaCSRNet
+
+# SineNet
+from models.SineNet.SineNet import SineNet
+from models.SineNet.SineNet_functional import SineNet_functional
+from models.SineNet.meta_SineNet import MetaSineNet
+
+# DeiT
+import models.DeiT.DeiTModels  # Needed for 'create_model'
+import models.DeiT.DeiTModelsFunctional  # Needed for 'create_model'
+from timm.models import create_model
+from models.DeiT.meta_DeiT import MetaDeiT
+
+
 
 # __all__ = [
 #     'deit_base_patch16_224',              'deit_small_patch16_224',               'deit_tiny_patch16_224',
@@ -50,11 +59,9 @@ def make_save_dirs(loaded_cfg):
         os.mkdir(loaded_cfg.CODE_DIR)
         with open(os.path.join(cfg.SAVE_DIR, '__init__.py'), 'w') as f:  # For dynamic loading of config file
             pass
-
     else:
         print('save directory already exists!')
 
-def get_models()
 
 def main(cfg):
     if cfg.RESUME:
@@ -64,13 +71,14 @@ def main(cfg):
         make_save_dirs(cfg)
         copyfile('config.py', os.path.join(cfg.CODE_DIR, 'config.py'))
         copyfile('trainer_meta.py', os.path.join(cfg.CODE_DIR, 'trainer_meta.py'))
-        # copyfile('models.py', os.path.join(cfg.CODE_DIR, 'models.py'))
         copyfile(os.path.join('datasets', 'meta', cfg.DATASET, 'settings.py'),
                  os.path.join(cfg.CODE_DIR, 'settings.py'))
         copyfile(os.path.join('datasets', 'meta', cfg.DATASET, 'loading_data.py'),
                  os.path.join(cfg.CODE_DIR, 'loading_data.py'))
         copyfile(os.path.join('datasets', 'meta', cfg.DATASET, cfg.DATASET + '.py'),
                  os.path.join(cfg.CODE_DIR, cfg.DATASET + '.py'))
+        copytree(os.path.join('models', cfg.MODEL),
+                 os.path.join(cfg.CODE_DIR, cfg.MODEL))
 
     # fix the seed for reproducibility
     torch.manual_seed(cfg.SEED)
@@ -82,34 +90,38 @@ def main(cfg):
     cfg_data = importlib.import_module(f'datasets.meta.{cfg.DATASET}.settings').cfg_data
 
     print(f"Creating model: {cfg.MODEL}")
-
     criterion = torch.nn.MSELoss()
+
     if cfg.MODEL == 'CSRNet':
         model = CSRNet()
         model_functional = CSRNet_functional()
         meta_wrapper = MetaCSRNet(model, model_functional, criterion)
+
     elif cfg.MODEL == 'SineNet':
+        model = SineNet()
+        model_functional = SineNet_functional()
+        meta_wrapper = MetaSineNet(model, model_functional, criterion)
+
+    else:
         model = create_model(
             cfg.MODEL,
-            init_path=model_mapping[cfg.MODEL],
+            init_path=model_mapping[cfg.DeiT_MODEL],
             num_classes=1000,  # Not yet used anyway. Must match pretrained model!
             drop_rate=0.,
-            drop_path_rate=0.1,  # TODO: What does this do?
+            drop_path_rate=0.1,
             drop_block_rate=None,
         )
 
         model_functional = create_model(
-            cfg.MODEL + '_functional',
+            cfg.DeiT_MODEL + '_functional',
             init_path=None,
             num_classes=1000,  # Not yet used anyway. Must match pretrained model!
             drop_rate=0.,
-            drop_path_rate=0.1,  # TODO: What does this do?
+            drop_path_rate=0.1,
             drop_block_rate=None,
         )
 
-        model.make_alpha(cfg.ALPHA_INIT)
         model.cuda()
-
         meta_wrapper = MetaDeiT(model, model_functional, criterion, cfg_data)
 
     model.make_alpha(cfg.ALPHA_INIT)
