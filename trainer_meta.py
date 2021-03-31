@@ -87,7 +87,7 @@ class Trainer:
         n_improvements = 0
         n_non_imrovements = 0
         mean_improvements = []
-        while scenes_left > self.n_tasks:
+        while scenes_left >= self.n_tasks:
             # Make a batch of tasks
             task_batch = []
             for _ in range(self.n_tasks):
