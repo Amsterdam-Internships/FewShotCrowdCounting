@@ -7,6 +7,7 @@ from skimage import exposure, img_as_float, img_as_ubyte
 from datasets.dataset_utils import generate_scaled_density
 import math
 
+
 class Compose(object):
     def __init__(self, transforms):
         self.transforms = transforms

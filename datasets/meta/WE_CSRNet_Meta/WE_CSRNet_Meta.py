@@ -95,7 +95,11 @@ class WE_CSRNet_Meta_eval(data.Dataset):
         if adapt_imgs:
             self.adapt_imgs = [os.path.join(self.data_path, adapt_img) for adapt_img in adapt_imgs]
         else:
-            self.adapt_imgs = random.sample(self.data_files, n_adapt_imgs)
+            if len(self.data_files) > 75:
+                self.adapt_imgs = [self.data_files[20]] + [self.data_files[40]] + [self.data_files[80]]
+            else:
+                self.adapt_imgs = random.sample(self.data_files, n_adapt_imgs)
+            # self.adapt_imgs = []
 
         self.data_files = [img_path for img_path in self.data_files if img_path not in self.adapt_imgs]
 

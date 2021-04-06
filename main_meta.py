@@ -104,7 +104,7 @@ def main(cfg):
 
     else:
         model = create_model(
-            cfg.MODEL,
+            cfg.DeiT_MODEL,
             init_path=model_mapping[cfg.DeiT_MODEL],
             num_classes=1000,  # Not yet used anyway. Must match pretrained model!
             drop_rate=0.,

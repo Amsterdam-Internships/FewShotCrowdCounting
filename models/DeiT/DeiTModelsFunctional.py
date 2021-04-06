@@ -17,7 +17,7 @@ from timm.models.registry import register_model
 #     'deit_base_distilled_patch16_384',
 # ]
 
-__all__ = ['deit_tiny_distilled_patch16_224_functional']
+__all__ = ['deit_tiny_distilled_patch16_224_functional', 'deit_small_distilled_patch16_224_functional']
 
 
 # ======================================================================================================= #
@@ -120,26 +120,12 @@ class RegressionTransformer_functional(VisionTransformer_functional):
 # ======================================================================================================= #
 #                                               TINY MODEL                                                #
 # ======================================================================================================= #
-# @register_model
-# def deit_tiny_cnn_patch16_224(init_path=None, pretrained=False, **kwargs):
-#     model = RegressionTransformerCNN(
-#         img_size=224, patch_size=16, embed_dim=192, depth=12, num_heads=3, mlp_ratio=4, qkv_bias=True,
-#         norm_layer=partial(nn.LayerNorm, eps=1e-6), **kwargs)
-#     model.default_cfg = _cfg()
-#     model.crop_size = 224
-#     model.n_patches = 14
-#
-#     if init_path:
-#         model = init_model_state(model, init_path)
-#
-#     return model
-
-
 @register_model
 def deit_tiny_distilled_patch16_224_functional(init_path=None, pretrained=False, **kwargs):
     model = RegressionTransformer_functional(
         img_size=224, patch_size=16, embed_dim=192, depth=12, num_heads=3, mlp_ratio=4, qkv_bias=True,
         norm_layer=partial(nn.LayerNorm, eps=1e-6), **kwargs)
+
     model.default_cfg = _cfg()
     model.crop_size = 224
     model.n_patches = 14
@@ -165,7 +151,16 @@ def deit_tiny_distilled_patch16_224_functional(init_path=None, pretrained=False,
 # # ======================================================================================================= #
 # #                                               SMALL MODEL                                               #
 # # ======================================================================================================= #
+
+# def deit_tiny_distilled_patch16_224_functional(init_path=None, pretrained=False, **kwargs):
+#     model = RegressionTransformer_functional(
+#         img_size=224, patch_size=16, embed_dim=192, depth=12, num_heads=3, mlp_ratio=4, qkv_bias=True,
+#         norm_layer=partial(nn.LayerNorm, eps=1e-6), **kwargs)
+#     model.default_cfg = _cfg()
+#     model.crop_size = 224
+#     model.n_patches = 14
 #
+#     return model
 # @register_model
 # def deit_small_patch16_224(init_path=None, pretrained=False, **kwargs):
 #     model = RegressionTransformer(
@@ -181,19 +176,17 @@ def deit_tiny_distilled_patch16_224_functional(init_path=None, pretrained=False,
 #     return model
 #
 #
-# @register_model
-# def deit_small_distilled_patch16_224(init_path=None, pretrained=False, **kwargs):
-#     model = DistilledRegressionTransformer(
-#         img_size=224, patch_size=16, embed_dim=384, depth=12, num_heads=6, mlp_ratio=4, qkv_bias=True,
-#         norm_layer=partial(nn.LayerNorm, eps=1e-6), **kwargs)
-#     model.default_cfg = _cfg()
-#     model.crop_size = 224
-#     model.n_patches = 14
-#
-#     if init_path:
-#         model = init_model_state(model, init_path)
-#
-#     return model
+@register_model
+def deit_small_distilled_patch16_224_functional(init_path=None, pretrained=False, **kwargs):
+    model = RegressionTransformer_functional(
+        img_size=224, patch_size=16, embed_dim=384, depth=12, num_heads=6, mlp_ratio=4, qkv_bias=True,
+        norm_layer=partial(nn.LayerNorm, eps=1e-6), **kwargs)
+
+    model.default_cfg = _cfg()
+    model.crop_size = 224
+    model.n_patches = 14
+
+    return model
 #
 #
 # # ======================================================================================================= #

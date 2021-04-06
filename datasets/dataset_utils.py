@@ -47,10 +47,17 @@ def img_equal_split(img, crop_size, overlap):
     n_rows = (h - crop_size) / (crop_size - overlap) + 1
     n_rows = math.ceil(n_rows)  # At least this many crops needed to get >= overlap pixels of overlap
 
-    overlap_w = crop_size - (w - crop_size) / (n_cols - 1)
-    overlap_w = math.floor(overlap_w)
-    overlap_h = crop_size - (h - crop_size) / (n_rows - 1)
-    overlap_h = math.floor(overlap_h)
+    if n_cols > 1:
+        overlap_w = crop_size - (w - crop_size) / (n_cols - 1)
+        overlap_w = math.floor(overlap_w)
+    else:  # edge case (SHTA)
+        overlap_w = 0
+
+    if n_rows > 1:
+        overlap_h = crop_size - (h - crop_size) / (n_rows - 1)
+        overlap_h = math.floor(overlap_h)
+    else:  # edge case (SHTA)
+        overlap_h = 0
 
     crops = torch.zeros((n_rows * n_cols, channels, crop_size, crop_size))
 
@@ -75,10 +82,17 @@ def img_equal_unsplit(crops, overlap, ignore_buffer, img_h, img_w, img_channels)
     n_rows = (h - crop_size) / (crop_size - overlap) + 1
     n_rows = math.ceil(n_rows)  # At least this many crops needed to get >= overlap pixels of overlap
 
-    overlap_w = crop_size - (w - crop_size) / (n_cols - 1)
-    overlap_w = math.floor(overlap_w)
-    overlap_h = crop_size - (h - crop_size) / (n_rows - 1)
-    overlap_h = math.floor(overlap_h)
+    if n_cols > 1:
+        overlap_w = crop_size - (w - crop_size) / (n_cols - 1)
+        overlap_w = math.floor(overlap_w)
+    else:
+        overlap_w = 0
+
+    if n_rows > 1:
+        overlap_h = crop_size - (h - crop_size) / (n_rows - 1)
+        overlap_h = math.floor(overlap_h)
+    else:
+        overlap_h = 0
 
     new_img = torch.zeros((img_channels, h, w))
     divider = torch.zeros((img_channels, h, w))

@@ -16,15 +16,19 @@ cfg = edict()
 
 cfg.SEED = 42
 
+cfg.MODEL = 'deit_small_distilled_patch16_224'
+cfg.DATASET = 'SHTA_TEMP'
+
+
 # cfg.MODEL = 'CSRNet'
 # cfg.DATASET = 'WE_CSRNet_Meta'
 
 # cfg.MODEL = 'DeiT'
-# cfg.DeiT_MODEL = 'deit_tiny_distilled_patch16_224
+# cfg.DeiT_MODEL = 'deit_small_distilled_patch16_224'
 # cfg.DATASET = 'WE_DeiT_Meta'
 
-cfg.MODEL = 'SineNet'  # SineNet, CSRNet, or DeiT
-cfg.DATASET = 'SineWave_Meta'
+# cfg.MODEL = 'SineNet'  # SineNet, CSRNet, or DeiT
+# cfg.DATASET = 'SineWave_Meta'
 
 cfg.BETA = 1e-4  # Outer/meta update. Also used as LR when normal training
 cfg.LR_GAMMA = math.sqrt(0.1)  # Scale LR by this at each step epoch
