@@ -17,7 +17,7 @@ cfg = edict()
 cfg.SEED = 42
 
 cfg.MODEL = 'deit_small_distilled_patch16_224'
-cfg.DATASET = 'SHTA_TEMP'
+cfg.DATASET = 'SHTA_DeiT'
 
 
 # cfg.MODEL = 'CSRNet'

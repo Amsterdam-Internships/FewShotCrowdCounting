@@ -14,7 +14,7 @@ from datasets.dataset_utils import img_equal_split, img_equal_unsplit
 class SHTA_DeiT(data.Dataset):
     def __init__(self, data_path, mode, crop_size,
                  main_transform=None, img_transform=None, gt_transform=None, cropper=None):
-        self.data_path = data_path
+        self.data_path = os.path.join(data_path, mode)
         self.crop_size = crop_size
         self.mode = mode  # train or test
 
@@ -25,7 +25,8 @@ class SHTA_DeiT(data.Dataset):
 
         self.img_extension = '.jpg'
 
-        self.data_files = [os.path.join(data_path, 'img', file) for file in os.listdir(os.path.join(data_path, 'img'))
+        self.data_files = [os.path.join(self.data_path, 'img', file)
+                           for file in os.listdir(os.path.join(self.data_path, 'img'))
                            if file.endswith(self.img_extension)]
 
         self.num_samples = len(self.data_files)
