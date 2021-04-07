@@ -13,7 +13,6 @@ def loading_data(crop_size):
     ])
 
     train_img_transform = standard_transforms.Compose([
-        own_transforms.RandomGrayscale(),
         standard_transforms.ToTensor(),
         standard_transforms.Normalize(*cfg_data.MEAN_STD)
     ])

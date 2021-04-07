@@ -87,6 +87,8 @@ class Trainer:
         n_improvements = 0
         n_non_imrovements = 0
         mean_improvements = []
+
+        self.meta_wrapper.train()
         while scenes_left >= self.n_tasks:
             # Make a batch of tasks
             task_batch = []
@@ -122,7 +124,7 @@ class Trainer:
 
     def train(self):  # Outer loop
         self.meta_wrapper.eval()
-        # self.evaluate_model()
+        self.evaluate_model()
 
         # Log alpha stats
         self.log_alpha()

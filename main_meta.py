@@ -108,7 +108,7 @@ def main(cfg):
             init_path=model_mapping[cfg.DeiT_MODEL],
             num_classes=1000,  # Not yet used anyway. Must match pretrained model!
             drop_rate=0.,
-            drop_path_rate=0.1,
+            drop_path_rate=0.,
             drop_block_rate=None,
         )
 
@@ -117,7 +117,7 @@ def main(cfg):
             init_path=None,
             num_classes=1000,  # Not yet used anyway. Must match pretrained model!
             drop_rate=0.,
-            drop_path_rate=0.1,
+            drop_path_rate=0.,
             drop_block_rate=None,
         )
 
