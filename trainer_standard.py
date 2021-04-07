@@ -2,6 +2,7 @@ import os
 import time
 import numpy as np
 import torch
+import csv
 from torch.utils.tensorboard import SummaryWriter
 
 from datasets.dataset_utils import img_equal_unsplit
@@ -41,7 +42,6 @@ class Trainer:
         MAE, MSE, avg_val_loss = self.evaluate_model()
         print(f'Initial MAE: {MAE:.3f}, MSE: {MSE:.3f}, avg loss: {avg_val_loss:.3f}')
 
-        self.model.train()
         while self.epoch < self.cfg.MAX_EPOCH:
             self.epoch += 1
 
@@ -92,19 +92,19 @@ class Trainer:
         out_den = None  # SILENCE WENCH!
         gt_stack = None  # silences the 'might not be defined' warning below the for loop.
 
+        self.model.train()
         for idx, (img_stack, gt_stack) in enumerate(self.train_loader):
-            img_stack = img_stack.squeeze().cuda()
-            gt_stack = gt_stack.squeeze().cuda()
+            img_stack = img_stack.cuda()
+            gt_stack = gt_stack.cuda()  # Remove channel dim
 
             self.optim.zero_grad()
             out_den = self.model(img_stack)
-            out_den = out_den.squeeze()
             loss = self.criterion(out_den, gt_stack)
             loss.backward()
             self.optim.step()
 
             losses.append(loss.cpu().item())
-            errors = torch.sum(out_den - gt_stack, dim=(1, 2)) / self.cfg_data.LABEL_FACTOR
+            errors = torch.sum(out_den - gt_stack, dim=(-2, -1)) / self.cfg_data.LABEL_FACTOR
             APEs.extend(torch.abs(errors).tolist())
             SPEs.extend(torch.square(errors).tolist())
 
@@ -126,9 +126,9 @@ class Trainer:
             abs_patch_errors = torch.zeros(self.model.crop_size, self.model.crop_size)
 
             for idx, (img, img_stack, gt_stack) in enumerate(self.val_loader):
-                img_stack = img_stack.squeeze().cuda()
-                gt_stack = gt_stack.squeeze().unsqueeze(1)  # Remove batch dim, insert channel dim
-                img = img.squeeze()  # Remove batch dimension
+                img_stack = img_stack.squeeze(0).cuda()
+                gt_stack = gt_stack.squeeze(0)  # Remove batch dim
+                img = img.squeeze(0)  # Remove batch dim
                 _, img_h, img_w = img.shape
 
                 pred_den = self.model(img_stack)
@@ -138,7 +138,7 @@ class Trainer:
 
                 gt = img_equal_unsplit(gt_stack, self.cfg_data.OVERLAP, self.cfg_data.IGNORE_BUFFER, img_h, img_w, 1)
                 den = img_equal_unsplit(pred_den, self.cfg_data.OVERLAP, self.cfg_data.IGNORE_BUFFER, img_h, img_w, 1)
-                den = den.squeeze()  # Remove channel dim
+                den = den.squeeze(0)  # Remove channel dim
 
                 pred_cnt = den.sum() / self.cfg_data.LABEL_FACTOR
                 gt_cnt = gt.sum() / self.cfg_data.LABEL_FACTOR
@@ -151,7 +151,7 @@ class Trainer:
                     plt.title(f'Predicted count: {pred_cnt:.3f} (GT: {gt_cnt:.3f})')
                     plt.savefig(save_path)
 
-                abs_patch_errors += torch.sum(torch.abs(gt_stack.squeeze() - pred_den.squeeze()), dim=0)
+                abs_patch_errors += torch.sum(torch.abs(gt_stack.squeeze(1) - pred_den.squeeze(1)), dim=0)
 
             MAE = np.mean(AEs)
             MSE = np.sqrt(np.mean(SEs))  # (root) MSE
@@ -162,13 +162,20 @@ class Trainer:
         save_path = os.path.join(self.cfg.PICS_DIR, f'errors_ep_{self.epoch}.jpg')
         plt.savefig(save_path)
 
+        # Images in val loader might not be in order. Save a mapping from image index to image path.
+        idx_to_img_path = os.path.join(os.path.join(self.cfg.PICS_DIR, 'idx_to_img_path.csv'))
+        data_files = self.val_loader.dataset.data_files
+        with open(idx_to_img_path, 'w') as f:
+            write = csv.writer(f)
+            write.writerows(list(zip(np.arange(len(data_files)), data_files)))  # each element is (idx, img_path)
+
         return MAE, MSE, avg_loss
 
     def save_eval_pics(self):
         plt.cla()
         for idx, (img, img_patches, gt_patches) in enumerate(self.val_loader):
-            gt_patches = gt_patches.squeeze().unsqueeze(1)  # Remove batch dim, insert channel dim
-            img = img.squeeze()
+            gt_patches = gt_patches.squeeze(0)  # Remove batch dim
+            img = img.squeeze(0)  # Remove batch dim
 
             _, img_h, img_w = img.shape
 

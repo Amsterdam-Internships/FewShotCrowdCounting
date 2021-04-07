@@ -73,7 +73,7 @@ def main(cfg):
     np.random.seed(cfg.SEED)
     random.seed(cfg.SEED)
 
-    cudnn.benchmark = True  # For efficiency
+    cudnn.benchmark = True  # Input to DeiT is always of size batch_size x 224 x 224
 
     print(f"Creating model: {cfg.MODEL}")
 
@@ -83,7 +83,7 @@ def main(cfg):
         init_path=model_mapping[cfg.MODEL],
         num_classes=1000,  # Not yet used anyway. But must match pretrained model!
         drop_rate=0.,
-        drop_path_rate=0.1,
+        drop_path_rate=0.0,
         drop_block_rate=None,
     )
 
