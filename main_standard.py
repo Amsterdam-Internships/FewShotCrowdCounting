@@ -1,5 +1,5 @@
-# Copyright (c) 2015-present, Facebook, Inc.
-# All rights reserved.
+# See LICENCE for copyrights
+
 import numpy as np
 import torch
 import torch.backends.cudnn as cudnn
@@ -39,7 +39,6 @@ def make_save_dirs(loaded_cfg):
         os.mkdir(loaded_cfg.CODE_DIR)
         with open(os.path.join(cfg.SAVE_DIR, '__init__.py'), 'w') as f:  # For dynamic loading of config file
             pass
-
     else:
         print('save directory already exists!')
 
@@ -62,7 +61,7 @@ def main(cfg):
         copyfile(os.path.join('datasets', 'standard', cfg.DATASET, cfg.DATASET + '.py'),
                  os.path.join(cfg.CODE_DIR, cfg.DATASET + '.py'))
 
-    # fix the seed for reproducibility
+    # Seeds for reproducibility
     torch.manual_seed(cfg.SEED)
     np.random.seed(cfg.SEED)
     random.seed(cfg.SEED)

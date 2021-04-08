@@ -1,5 +1,5 @@
-# Copyright (c) 2015-present, Facebook, Inc.
-# All rights reserved.
+# See LICENCE for copyright.
+
 import numpy as np
 import torch
 import torch.backends.cudnn as cudnn
@@ -27,15 +27,6 @@ import models.DeiT.DeiTModels  # Needed for 'create_model'
 import models.DeiT.DeiTModelsFunctional  # Needed for 'create_model'
 from timm.models import create_model
 from models.DeiT.meta_DeiT import MetaDeiT
-
-
-
-# __all__ = [
-#     'deit_base_patch16_224',              'deit_small_patch16_224',               'deit_tiny_patch16_224',
-#     'deit_base_distilled_patch16_224',    'deit_small_distilled_patch16_224',     'deit_tiny_distilled_patch16_224'
-#     'deit_base_patch16_384',
-#     'deit_base_distilled_patch16_384',
-# ]
 
 
 model_mapping = {
@@ -80,7 +71,7 @@ def main(cfg):
         copytree(os.path.join('models', cfg.MODEL),
                  os.path.join(cfg.CODE_DIR, cfg.MODEL))
 
-    # fix the seed for reproducibility
+    # Seeds for reproducibility
     torch.manual_seed(cfg.SEED)
     np.random.seed(cfg.SEED)
     random.seed(cfg.SEED)
@@ -106,7 +97,7 @@ def main(cfg):
         model = create_model(
             cfg.DeiT_MODEL,
             init_path=model_mapping[cfg.DeiT_MODEL],
-            num_classes=1000,  # Not yet used anyway. Must match pretrained model!
+            num_classes=1000,  # Must match pretrained model!
             drop_rate=0.,
             drop_path_rate=0.,
             drop_block_rate=None,
@@ -115,7 +106,7 @@ def main(cfg):
         model_functional = create_model(
             cfg.DeiT_MODEL + '_functional',
             init_path=None,
-            num_classes=1000,  # Not yet used anyway. Must match pretrained model!
+            num_classes=1000,  # Must match pretrained model!
             drop_rate=0.,
             drop_path_rate=0.,
             drop_block_rate=None,
@@ -131,7 +122,7 @@ def main(cfg):
     print('number of params:', n_parameters)
 
     trainer = Trainer(meta_wrapper, dataloader, cfg, cfg_data)
-    trainer.train()
+    trainer.train()  # Train the model
 
 
 if __name__ == '__main__':
