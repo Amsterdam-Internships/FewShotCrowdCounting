@@ -15,14 +15,8 @@ from config import cfg
 from shutil import copyfile
 import random
 
-# __all__ = [
-#     'deit_base_patch16_224',              'deit_small_patch16_224',               'deit_tiny_patch16_224',
-#     'deit_base_distilled_patch16_224',    'deit_small_distilled_patch16_224',     'deit_tiny_distilled_patch16_224'
-#     'deit_base_patch16_384',
-#     'deit_base_distilled_patch16_384',
-# ]
 
-
+# Where to find the pretrained models
 model_mapping = {
     'deit_tiny_patch16_224': 'https://dl.fbaipublicfiles.com/deit/deit_tiny_patch16_224-a1311bcf.pth',
     'deit_tiny_distilled_patch16_224': 'https://dl.fbaipublicfiles.com/deit/deit_tiny_distilled_patch16_224-b40b3cf7.pth',

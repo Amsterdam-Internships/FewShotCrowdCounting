@@ -300,7 +300,7 @@ class Trainer:
         }
 
         torch.save(save_sate, save_name)
-    
+
     # def load_state(self, state_path):
     #     """ Loads the variables to continue training. """
     #
