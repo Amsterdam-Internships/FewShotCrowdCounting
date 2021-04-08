@@ -5,6 +5,7 @@ from collections import OrderedDict
 
 
 class SineNet_functional(nn.Module):
+    """ Allows for a forward pass through SineNet, given only the weights. """
     def __init__(self):
         super(SineNet_functional, self).__init__()
 

@@ -5,9 +5,9 @@ from collections import OrderedDict
 
 
 class SineNet(nn.Module):
-    """ self.net from https://github.com/infinitemugen/MAML-Pytorch"""
     def __init__(self):
         super(SineNet, self).__init__()
+        # self.net from https://github.com/infinitemugen/MAML-Pytorch
         self.net = nn.Sequential(OrderedDict([
             ('l1', nn.Linear(1, 40)),
             ('relu1', nn.ReLU()),
