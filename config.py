@@ -16,16 +16,16 @@ cfg = edict()
 
 cfg.SEED = 42
 
-cfg.MODEL = 'deit_small_distilled_patch16_224'
-cfg.DATASET = 'SHTB_DeiT'
+# cfg.MODEL = 'deit_small_distilled_patch16_224'
+# cfg.DATASET = 'SHTB_DeiT'
 
 
 # cfg.MODEL = 'CSRNet'
 # cfg.DATASET = 'WE_CSRNet_Meta'
 
-# cfg.MODEL = 'DeiT'
-# cfg.DeiT_MODEL = 'deit_small_distilled_patch16_224'
-# cfg.DATASET = 'WE_DeiT_Meta'
+cfg.MODEL = 'DeiT'
+cfg.DeiT_MODEL = 'deit_small_distilled_patch16_224'
+cfg.DATASET = 'WE_DeiT_Meta'
 
 # cfg.MODEL = 'SineNet'  # SineNet, CSRNet, or DeiT
 # cfg.DATASET = 'SineWave_Meta'
@@ -35,11 +35,11 @@ cfg.LR_GAMMA = math.sqrt(0.1)  # Scale LR by this at each step epoch
 cfg.LR_STEP_EPOCHS = [100, 500, 900]
 cfg.WEIGHT_DECAY = 1e-4
 
-# cfg.MAML = False
-# cfg.ALPHA_START = 1     # Start updating alpha at this epoch
-# cfg.ALPHA_INIT = 0.001  # Use also for Alpha lr in MAML
-#
-# cfg.N_TASKS = 1  # How many tasks to perform before performing an outer backprop
+cfg.MAML = False
+cfg.ALPHA_START = 1     # Start updating alpha at this epoch
+cfg.ALPHA_INIT = 0.001  # Use also for Alpha lr in MAML
+
+cfg.N_TASKS = 1  # How many tasks to perform before performing an outer backprop
 
 cfg.MAX_EPOCH = 1300
 cfg.EVAL_EVERY = 10

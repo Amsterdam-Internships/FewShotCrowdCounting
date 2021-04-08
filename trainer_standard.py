@@ -12,6 +12,16 @@ from matplotlib import cm as CM
 
 class Trainer:
     def __init__(self, model, loading_data, cfg, cfg_data):
+        """
+         The Trainer is the class that facilitates the training of a model. After initialising, call 'train' to
+        train the model. Based on the trainer of the C^3 Framework: https://github.com/gjy3035/C-3-Framework
+        :param model: The model to be trained
+        :param loading_data: a function with which the train/val/test dataloaders can be retrieved, as well as the
+                             transform that transforms normalised images back to the original.
+        :param cfg: The configurations for this run.
+        :param cfg_data: The configurations specific to the dataset and dataloaders.
+        """
+
         self.model = model
         self.cfg = cfg
         self.cfg_data = cfg_data
@@ -39,6 +49,7 @@ class Trainer:
             self.writer.add_scalar('lr', self.scheduler.get_last_lr()[0], self.epoch)
 
     def train(self):
+        """ Trains the model. """
         MAE, MSE, avg_val_loss = self.evaluate_model()
         print(f'Initial MAE: {MAE:.3f}, MSE: {MSE:.3f}, avg loss: {avg_val_loss:.3f}')
 
@@ -85,6 +96,7 @@ class Trainer:
                 self.writer.add_scalar('lr', self.scheduler.get_last_lr()[0], self.epoch)
 
     def run_epoch(self):
+        """ Run one pass over the train dataloader. """
         losses = []
         APEs = []  # Absolute Patch Errors
         SPEs = []  # Squared Patch Errors
@@ -95,7 +107,7 @@ class Trainer:
         self.model.train()
         for idx, (img_stack, gt_stack) in enumerate(self.train_loader):
             img_stack = img_stack.cuda()
-            gt_stack = gt_stack.cuda()  # Remove channel dim
+            gt_stack = gt_stack.cuda()
 
             self.optim.zero_grad()
             out_den = self.model(img_stack)
@@ -104,17 +116,18 @@ class Trainer:
             self.optim.step()
 
             losses.append(loss.cpu().item())
-            errors = torch.sum(out_den - gt_stack, dim=(-2, -1)) / self.cfg_data.LABEL_FACTOR
+            errors = torch.sum(out_den - gt_stack, dim=(-2, -1)) / self.cfg_data.LABEL_FACTOR  # pred count - gt count
             APEs.extend(torch.abs(errors).tolist())
             SPEs.extend(torch.square(errors).tolist())
 
         MAPE = np.mean(APEs)  # Mean Absolute Patch Error
-        MSPE = np.sqrt(np.mean(SPEs))  # Mean (root) Squared Patch Error
+        MSPE = np.sqrt(np.mean(SPEs))  # Mean (Root) Squared Patch Error
 
         # Also return the last predicted densities and corresponding gts. This allows for informative prints
         return losses, MAPE, MSPE, out_den, gt_stack
 
     def evaluate_model(self):
+        """ Evaluate the model on the evaluation dataloader. """
 
         plt.cla()  # Clear plot for new ones
         self.model.eval()
@@ -123,7 +136,7 @@ class Trainer:
             SEs = []  # Squared Errors
             losses = []
 
-            abs_patch_errors = torch.zeros(self.model.crop_size, self.model.crop_size)
+            abs_patch_errors = torch.zeros(self.model.crop_size, self.model.crop_size)  # For pixelwise error heatmap
 
             for idx, (img, img_stack, gt_stack) in enumerate(self.val_loader):
                 img_stack = img_stack.squeeze(0).cuda()
@@ -153,25 +166,21 @@ class Trainer:
 
                 abs_patch_errors += torch.sum(torch.abs(gt_stack.squeeze(1) - pred_den.squeeze(1)), dim=0)
 
-            MAE = np.mean(AEs)
-            MSE = np.sqrt(np.mean(SEs))  # (root) MSE
+            MAE = np.mean(AEs)  # Mean Absolute Error
+            MSE = np.sqrt(np.mean(SEs))  # (root) Mean Squared Error
             avg_loss = np.mean(losses)
 
         plt.cla()
-        plt.imshow(abs_patch_errors)
+        plt.imshow(abs_patch_errors)  # The accumulated absolute error at each pixel in all crops
         save_path = os.path.join(self.cfg.PICS_DIR, f'errors_ep_{self.epoch}.jpg')
         plt.savefig(save_path)
-
-        # Images in val loader might not be in order. Save a mapping from image index to image path.
-        idx_to_img_path = os.path.join(os.path.join(self.cfg.PICS_DIR, 'idx_to_img_path.csv'))
-        data_files = self.val_loader.dataset.data_files
-        with open(idx_to_img_path, 'w') as f:
-            write = csv.writer(f)
-            write.writerows(list(zip(np.arange(len(data_files)), data_files)))  # each element is (idx, img_path)
 
         return MAE, MSE, avg_loss
 
     def save_eval_pics(self):
+        """ During evaluation, some predictions are saved for visualisation. This function saves these images and their
+        ground truth density maps.  This function is already called at class initialisation."""
+
         plt.cla()
         for idx, (img, img_patches, gt_patches) in enumerate(self.val_loader):
             gt_patches = gt_patches.squeeze(0)  # Remove batch dim
@@ -197,7 +206,16 @@ class Trainer:
                 plt.title(f'GT count: {gt_count:.3f}')
                 plt.savefig(save_path)
 
+        # Images in val loader might not be in order. Save a mapping from image index to image path.
+        idx_to_img_path = os.path.join(os.path.join(self.cfg.PICS_DIR, 'idx_to_img_path.csv'))
+        data_files = self.val_loader.dataset.data_files
+        with open(idx_to_img_path, 'w') as f:
+            write = csv.writer(f)
+            write.writerows(list(zip(np.arange(len(data_files)), data_files)))  # each element is (idx, img_path)
+
     def save_state(self, name_extra=''):
+        """ Saves the variables needed to continue training later. """
+
         if name_extra:
             save_name = f'{self.cfg.STATE_DICTS_DIR}/save_state_ep_{self.epoch}_{name_extra}.pth'
         else:
@@ -216,6 +234,8 @@ class Trainer:
         torch.save(save_sate, save_name)
 
     def load_state(self, state_path):
+        """ Loads the variables to continue training. """
+
         resume_state = torch.load(state_path)
         self.epoch = resume_state['epoch']
         self.best_epoch = resume_state['best_epoch']
@@ -227,7 +247,7 @@ class Trainer:
 
 
 def print_fancy_new_best_MAE():
-    """ For that extra bit of dopamine rush when you get a new high-score"""
+    """ For that extra bit of dopamine rush when you get a new high-score. """
 
     new_best = '#' + '=' * 20 + '<' * 3 + ' NEW BEST MAE ' + '>' * 3 + '=' * 20 + '#'
     n_chars = len(new_best)

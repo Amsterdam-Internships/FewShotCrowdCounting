@@ -12,6 +12,16 @@ from matplotlib import cm as CM
 
 class Trainer:
     def __init__(self, meta_wrapper, loading_data, cfg, cfg_data):
+        """
+        The Trainer is the class that facilitates the meta training of a model. After initialising, call 'train' to
+        train the model. Based on the trainer of the C^3 Framework: https://github.com/gjy3035/C-3-Framework
+        :param meta_wrapper: Wrapper to the base model and functional model.
+        :param loading_data: a function with which the train/val/test dataloaders can be retrieved, as well as the
+                             transform that transforms normalised images back to the original.
+        :param cfg: The configurations for this run.
+        :param cfg_data: The configurations specific to the dataset and dataloaders.
+        """
+
         self.meta_wrapper = meta_wrapper
 
         self.cfg = cfg
@@ -45,6 +55,8 @@ class Trainer:
         #     self.writer.add_scalar('lr', self.scheduler.get_last_lr()[0], self.epoch)
 
     def meta_loop_inner(self, train_data, test_data, theta):
+        """ The inner part of the meta-learning loop (each task in 'for all T_i do') . """
+
         theta_values = [theta[k] for k in theta if not k.startswith('alpha.')]
         theta_names = [k for k in theta if not k.startswith('alpha.')]
         alpha_values = [theta[k] for k in theta if k.startswith('alpha.')]
@@ -67,6 +79,8 @@ class Trainer:
         return test_loss, avg_AE_improvement
 
     def meta_loop_outer(self, task_batch, theta):
+        """ The outer part of the meta-learning loop (For all T_i). """
+
         AEs = []
         total_metaloss = torch.tensor(0).float().cuda()
 
@@ -81,12 +95,14 @@ class Trainer:
         return avg_metaloss, mean_improvement
 
     def run_epoch(self):
-        tasks_sampler = iter(self.train_loader)
-        scenes_left = len(self.train_loader.dataset)
+        """ Runs one pass over all training scenes. Note that this not necessarily contains all training images. """
 
-        n_improvements = 0
-        n_non_imrovements = 0
-        mean_improvements = []
+        tasks_sampler = iter(self.train_loader)  # So we can manually go over the dataset.
+        scenes_left = len(self.train_loader.dataset)  # Number of scenes
+
+        n_improvements = 0  # Number of scenes on which performance improved after adaptation
+        n_non_imrovements = 0  # Number of scenes on which performance did not improved after adaptation.
+        mean_improvements = []  # Mean improvement after adaptation on a scene.
 
         self.meta_wrapper.train()
         while scenes_left >= self.n_tasks:
@@ -122,8 +138,8 @@ class Trainer:
 
         return mean_improvements, n_improvements, n_non_imrovements
 
-    def train(self):  # Outer loop
-        self.meta_wrapper.eval()
+    def train(self):
+        """ Trains the model with meta training. """
         self.evaluate_model()
 
         # Log alpha stats
@@ -235,6 +251,7 @@ class Trainer:
         return
 
     def eval_on_scene(self, scene_loader, weight_dict=None):
+        """ Evaluate the model on a specific scene. """
         _MAE = []
         _MSE = []
         _Mloss = []
@@ -265,6 +282,8 @@ class Trainer:
             self.writer.add_scalar(f'Alpha_stats_stds/{alpha_name}', alpha_std, self.epoch)
 
     def save_state(self, name_extra=''):
+        """ Saves the variables needed to continue training later. """
+
         if name_extra:
             save_name = f'{self.cfg.STATE_DICTS_DIR}/save_state_ep_{self.epoch}_{name_extra}.pth'
         else:
@@ -281,8 +300,10 @@ class Trainer:
         }
 
         torch.save(save_sate, save_name)
-
+    
     # def load_state(self, state_path):
+    #     """ Loads the variables to continue training. """
+    #
     #     resume_state = torch.load(state_path)
     #     self.epoch = resume_state['epoch']
     #     self.best_epoch = resume_state['best_epoch']
