@@ -8,11 +8,11 @@ cfg_data.TRAIN_BASE_PATHS = [
 ]
 
 cfg_data.VAL_BASE_PATHS = [
-    'D:\\ThesisData\\Datasets\\Arena 05'
+    'D:\\ThesisData\\Datasets\\MT_PicNic_SunnyDaysMay'
 ]
 
 cfg_data.TEST_BASE_PATHS = [
-    'D:\\ThesisData\\Datasets\\Arena 05'
+    'D:\\ThesisData\\Datasets\\CV Arena 05'
 ]
 
 cfg_data.TRAIN_BS = 10

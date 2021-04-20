@@ -61,7 +61,7 @@ class Multiset_DeiT(data.Dataset):
     def read_image_and_gt(self, index):
         data_path, img_name = self.data_files[index]
         img_path = os.path.join(data_path, 'img', img_name)
-        den_path = os.path.join(data_path, 'den', img_name.replace('.jpg', '.csv'))
+        den_path = os.path.join(data_path, 'den', img_name.replace('img_', 'den_').replace('.jpg', '.csv'))
 
         img = Image.open(img_path)
         if img.mode == 'L':  # Black and white

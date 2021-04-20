@@ -116,6 +116,21 @@ class RandomGammaTransform(object):
         return img
 
 
+class FixedScaleFactor(object):
+    def __init__(self, factor):
+        self.factor = factor
+
+    def __call__(self, img, den, bbx=None):
+        w, h = img.size
+        if w % self.factor != 0 or h % self.factor != 0:
+            new_w = (w // self.factor) * self.factor
+            new_h = (h // self.factor) * self.factor
+            img = img.resize((new_w, new_h))
+            den = den.resize((new_w, new_h))
+
+        return img, den
+
+
 class LabelScale(object):
     def __init__(self, label_factor):
         self.label_factor = label_factor
