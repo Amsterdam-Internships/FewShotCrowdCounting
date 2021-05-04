@@ -16,16 +16,15 @@ cfg = edict()
 
 cfg.SEED = 42
 
-# cfg.MODEL = 'deit_small_distilled_patch16_224'
-# cfg.DATASET = 'SHTB_DeiT'
-
+cfg.MODEL = 'deit_small_distilled_patch16_224'
+cfg.DATASET = 'WE_DeiT'
 
 # cfg.MODEL = 'CSRNet'
 # cfg.DATASET = 'WE_CSRNet_Meta'
 
-cfg.MODEL = 'DeiT'
-cfg.DeiT_MODEL = 'deit_small_distilled_patch16_224'
-cfg.DATASET = 'WE_DeiT_Meta'
+# cfg.MODEL = 'DeiT'
+# cfg.DeiT_MODEL = 'deit_small_distilled_patch16_224'
+# cfg.DATASET = 'WE_DeiT_Meta'
 
 # cfg.MODEL = 'SineNet'  # SineNet, CSRNet, or DeiT
 # cfg.DATASET = 'SineWave_Meta'
