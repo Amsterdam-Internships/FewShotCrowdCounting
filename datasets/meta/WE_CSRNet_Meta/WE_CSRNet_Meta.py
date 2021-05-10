@@ -27,8 +27,9 @@ class WE_CSRNet_Meta(data.Dataset):
 
         for scene in os.listdir(self.data_path):
             scene_dir = os.path.join(self.data_path, scene, 'img')
-            n_scene_images = cfg_data.K_TRAIN + cfg_data.K_META
-            if len(os.listdir(scene_dir)) >= n_scene_images:
+            n_images_needed = cfg_data.K_TRAIN + cfg_data.K_META
+            n_scene_images = len(os.listdir(scene_dir))
+            if n_scene_images >= n_images_needed:
                 self.scenes.append(scene)
                 self.data_files[scene] = [os.path.join(scene_dir, img_name) for img_name in os.listdir(scene_dir)]
             else:
