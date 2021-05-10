@@ -32,7 +32,7 @@ class WE_DeiT_Meta(data.Dataset):
 
         self.num_samples = len(self.scenes)
 
-        print(f'{self.num_samples} scenes found.')
+        # print(f'{self.num_samples} scenes found.')
 
     def __getitem__(self, index):
         scene = self.scenes[index]
@@ -103,7 +103,7 @@ class WE_DeiT_Meta_eval(data.Dataset):
 
         self.num_samples = len(self.data_files)
 
-        print(f'{self.num_samples} images found.')
+        # print(f'{self.num_samples} images found.')
 
     def __getitem__(self, index):
         _img_stack = []

@@ -111,9 +111,9 @@ class Trainer:
             for _ in range(self.n_tasks):
                 train_imgs, train_gts, test_imgs, test_gts = next(tasks_sampler)
                 train_imgs = train_imgs.squeeze(0)
-                train_gts = train_gts.squeeze(0)  # Technically not needed due to .squeeze later
+                train_gts = train_gts.squeeze(0)
                 test_imgs = test_imgs.squeeze(0)
-                test_gts = test_gts.squeeze(0)  # But these are the dimensions they are supposed to be
+                test_gts = test_gts.squeeze(0)
                 task_batch.append(((train_imgs, train_gts), (test_imgs, test_gts)))
             scenes_left -= self.n_tasks
 
@@ -140,7 +140,7 @@ class Trainer:
 
     def train(self):
         """ Trains the model with meta training. """
-        self.evaluate_model()
+        # self.evaluate_model()
 
         # Log alpha stats
         self.log_alpha()
@@ -276,9 +276,11 @@ class Trainer:
 
         for alpha_name, alpha_value in self.meta_wrapper.base_model.alpha.items():
             alpha_mean = torch.mean(alpha_value).item()
+            alpha_abs_mean = torch.mean(torch.abs(alpha_value)).item()
             alpha_std = torch.std(alpha_value).item()
 
             self.writer.add_scalar(f'Alpha_stats_means/{alpha_name}', alpha_mean, self.epoch)
+            self.writer.add_scalar(f'Alpha_stats_abs_means/{alpha_name}', alpha_abs_mean, self.epoch)
             self.writer.add_scalar(f'Alpha_stats_stds/{alpha_name}', alpha_std, self.epoch)
 
     def save_state(self, name_extra=''):

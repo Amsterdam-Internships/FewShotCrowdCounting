@@ -68,8 +68,12 @@ def main(cfg):
                  os.path.join(cfg.CODE_DIR, 'loading_data.py'))
         copyfile(os.path.join('datasets', 'meta', cfg.DATASET, cfg.DATASET + '.py'),
                  os.path.join(cfg.CODE_DIR, cfg.DATASET + '.py'))
-        copytree(os.path.join('models', cfg.MODEL),
-                 os.path.join(cfg.CODE_DIR, cfg.MODEL))
+        if 'deit' in cfg.MODEL:
+            copytree(os.path.join('models', 'DeiT'),
+                     os.path.join(cfg.CODE_DIR, 'DeiT'))
+        else:
+            copytree(os.path.join('models', cfg.MODEL),
+                     os.path.join(cfg.CODE_DIR, cfg.MODEL))
 
     # Seeds for reproducibility
     torch.manual_seed(cfg.SEED)
@@ -83,6 +87,8 @@ def main(cfg):
     print(f"Creating model: {cfg.MODEL}")
     criterion = torch.nn.MSELoss()
 
+    model = None  # Silences the warnings below
+    meta_wrapper = None
     if cfg.MODEL == 'CSRNet':
         model = CSRNet()
         model_functional = CSRNet_functional()
@@ -93,10 +99,10 @@ def main(cfg):
         model_functional = SineNet_functional()
         meta_wrapper = MetaSineNet(model, model_functional, criterion)
 
-    else:
+    elif 'deit' in cfg.MODEL:
         model = create_model(
-            cfg.DeiT_MODEL,
-            init_path=model_mapping[cfg.DeiT_MODEL],
+            cfg.MODEL,
+            init_path=model_mapping[cfg.MODEL],
             num_classes=1000,  # Must match pretrained model!
             drop_rate=0.,
             drop_path_rate=0.,
@@ -104,7 +110,7 @@ def main(cfg):
         )
 
         model_functional = create_model(
-            cfg.DeiT_MODEL + '_functional',
+            cfg.MODEL + '_functional',
             init_path=None,
             num_classes=1000,  # Must match pretrained model!
             drop_rate=0.,
@@ -114,6 +120,9 @@ def main(cfg):
 
         model.cuda()
         meta_wrapper = MetaDeiT(model, model_functional, criterion, cfg_data)
+    else:
+        print(f'model "{cfg.MODEL}" not recognised.')
+        exit(1)
 
     model.make_alpha(cfg.ALPHA_INIT)
     model.cuda()

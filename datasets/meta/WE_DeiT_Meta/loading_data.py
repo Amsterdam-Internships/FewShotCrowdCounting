@@ -7,7 +7,7 @@ from .settings import cfg_data
 from .WE_DeiT_Meta import WE_DeiT_Meta, WE_DeiT_Meta_eval
 
 
-def loading_data():
+def loading_data(test_adapt_imgs=None):
     train_main_transform = own_transforms.Compose([
         own_transforms.DeterministicHorizontallyFlip()
     ])
@@ -49,15 +49,27 @@ def loading_data():
         val_loaders.append(val_loader)
 
     test_loaders = []
-    for scene in cfg_data.TEST_SCENES:
-        test_set = WE_DeiT_Meta_eval(cfg_data.DATA_PATH, 'test', scene, n_adapt_imgs=cfg_data.K_TRAIN,  # TODO
-                                     main_transform=None,
-                                     img_transform=img_transform,
-                                     gt_transform=gt_transform)
-        test_loader = DataLoader(test_set,
-                                 batch_size=cfg_data.TEST_BS,
-                                 num_workers=cfg_data.N_WORKERS,
-                                 shuffle=False, drop_last=False)
-        test_loaders.append(test_loader)
+    if test_adapt_imgs:
+        for scene, adapt_imgs in zip(cfg_data.TEST_SCENES, test_adapt_imgs):
+            test_set = WE_DeiT_Meta_eval(cfg_data.DATA_PATH, 'test', scene, adapt_imgs=adapt_imgs,
+                                         main_transform=None,
+                                         img_transform=img_transform,
+                                         gt_transform=gt_transform)
+            test_loader = DataLoader(test_set,
+                                     batch_size=cfg_data.TEST_BS,
+                                     num_workers=cfg_data.N_WORKERS,
+                                     shuffle=False, drop_last=False)
+            test_loaders.append(test_loader)
+    else:
+        for scene in cfg_data.TEST_SCENES:
+            test_set = WE_DeiT_Meta_eval(cfg_data.DATA_PATH, 'test', scene, n_adapt_imgs=cfg_data.K_TRAIN,
+                                         main_transform=None,
+                                         img_transform=img_transform,
+                                         gt_transform=gt_transform)
+            test_loader = DataLoader(test_set,
+                                     batch_size=cfg_data.TEST_BS,
+                                     num_workers=cfg_data.N_WORKERS,
+                                     shuffle=False, drop_last=False)
+            test_loaders.append(test_loader)
 
     return train_loader, val_loaders, test_loaders, restore_transform
