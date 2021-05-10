@@ -29,7 +29,6 @@ class Trainer:
 
         self.train_loader, self.val_loaders, self.test_loaders, self.restore_transform = loading_data()
         self.train_samples = len(self.train_loader.dataset)
-        # self.eval_save_example_every = self.test_samples // self.cfg.SAVE_NUM_EVAL_EXAMPLES
 
         self.beta = self.cfg.BETA
         self.meta_optimiser = torch.optim.Adam(self.meta_wrapper.get_params(),
@@ -47,12 +46,13 @@ class Trainer:
         if self.cfg.MAML or self.epoch < self.cfg.ALPHA_START:
             self.meta_wrapper.disable_alpha_updates()
 
-        # if cfg.RESUME:
-        #     self.load_state(cfg.RESUME_PATH)
-        #     print(f'Resuming from epoch {self.epoch}')
-        # else:
-        #     self.save_eval_pics()
-        #     self.writer.add_scalar('lr', self.scheduler.get_last_lr()[0], self.epoch)
+        if cfg.RESUME:
+            # self.load_state(cfg.RESUME_PATH)
+            print(f'Resuming from epoch {self.epoch}')
+            print('not yet supported')
+            return
+        else:
+            self.writer.add_scalar('lr', self.scheduler.get_last_lr()[0], self.epoch)
 
     def meta_loop_inner(self, train_data, test_data, theta):
         """ The inner part of the meta-learning loop (each task in 'for all T_i do') . """
@@ -87,7 +87,7 @@ class Trainer:
         self.meta_optimiser.zero_grad()  # Prob not needed since we set the gradients manually
         for train_data, test_data in task_batch:  # For each task
             test_loss, avg_AE_improvement = self.meta_loop_inner(train_data, test_data, theta)
-            total_metaloss += test_loss
+            total_metaloss = total_metaloss + test_loss
             AEs.append(avg_AE_improvement.item())
 
         avg_metaloss = total_metaloss / self.n_tasks
@@ -140,7 +140,7 @@ class Trainer:
 
     def train(self):
         """ Trains the model with meta training. """
-        # self.evaluate_model()
+        self.evaluate_model()
 
         # Log alpha stats
         self.log_alpha()
@@ -171,6 +171,12 @@ class Trainer:
 
             if self.epoch % self.cfg.SAVE_EVERY == 0:
                 self.save_state()
+
+            if self.epoch in self.cfg.LR_STEP_EPOCHS:
+                self.scheduler.step()
+                print(f'Learning rate adjusted to {self.scheduler.get_last_lr()[0]} at epoch {self.epoch}.')
+                self.writer.add_scalar('lr', self.scheduler.get_last_lr()[0], self.epoch)
+
         self.save_state()
 
     def evaluate_model(self):
@@ -256,12 +262,12 @@ class Trainer:
         _MSE = []
         _Mloss = []
 
-        for eval_data in scene_loader:
-            with torch.no_grad():
+        with torch.no_grad():
+            for eval_data in scene_loader:
                 img, pred, gt, loss, test_AE, test_SE = self.meta_wrapper.test_forward(eval_data, weight_dict)
-            _Mloss.append(loss.item())
-            _MAE.append(test_AE.item() / self.cfg_data.LABEL_FACTOR)
-            _MSE.append(test_SE.item() / self.cfg_data.LABEL_FACTOR)
+                _Mloss.append(loss.item())
+                _MAE.append(test_AE.item() / self.cfg_data.LABEL_FACTOR)
+                _MSE.append(test_SE.item() / self.cfg_data.LABEL_FACTOR)
 
         MLoss = np.mean(_Mloss)
         MAE = np.mean(_MAE)

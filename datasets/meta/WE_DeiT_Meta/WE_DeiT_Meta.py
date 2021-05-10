@@ -23,16 +23,21 @@ class WE_DeiT_Meta(data.Dataset):
         self.gt_transform = gt_transform
         self.splitter = splitter
 
-        self.scenes = os.listdir(self.data_path)
+        self.scenes = []
         self.data_files = {}
 
-        for scene in self.scenes:
+        for scene in os.listdir(self.data_path):
             scene_dir = os.path.join(self.data_path, scene, 'img')
-            self.data_files[scene] = [os.path.join(scene_dir, img_name) for img_name in os.listdir(scene_dir)]
+            n_scene_images = cfg_data.K_TRAIN + cfg_data.K_META
+            if len(os.listdir(scene_dir)) >= n_scene_images:
+                self.scenes.append(scene)
+                self.data_files[scene] = [os.path.join(scene_dir, img_name) for img_name in os.listdir(scene_dir)]
+            else:
+                print(f'Skipped a scene with only {n_scene_images} examples.')
 
         self.num_samples = len(self.scenes)
 
-        # print(f'{self.num_samples} scenes found.')
+        print(f'{self.num_samples} {self.mode} scenes found.')
 
     def __getitem__(self, index):
         scene = self.scenes[index]
