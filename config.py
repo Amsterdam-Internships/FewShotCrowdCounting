@@ -29,22 +29,22 @@ cfg.DATASET = 'WE_CSRNet_Meta'
 # cfg.DATASET = 'SineWave_Meta'
 
 cfg.BETA = 1e-5  # Outer/meta update. Also used as LR when normal training
-cfg.LR_GAMMA = math.sqrt(0.1)  # Scale LR by this at each step epoch
-cfg.LR_STEP_EPOCHS = [2000, 6000, 10000]
-cfg.WEIGHT_DECAY = 1e-5
+cfg.LR_GAMMA = 1.  # Scale LR by this at each step epoch
+cfg.LR_STEP_EPOCHS = []
+cfg.WEIGHT_DECAY = 1e-4
 
 cfg.MAML = False
-cfg.ALPHA_START = 1000     # Start updating alpha at this epoch
-cfg.ALPHA_INIT = 0.001  # Use also for Alpha lr in MAML
+cfg.ALPHA_START = 100     # Start updating alpha at this epoch
+cfg.ALPHA_INIT = 1e-3     # Use also for Alpha lr in MAML
 
 cfg.N_TASKS = 1  # How many tasks to perform before performing an outer backprop
 
-cfg.MAX_EPOCH = 13000
+cfg.MAX_EPOCH = 10000
 cfg.EVAL_EVERY = 25
-cfg.SAVE_EVERY_N_EVALS = 40  # Every Nth evaluation, save model regardless of performance
+cfg.SAVE_EVERY_N_EVALS = 4  # Every Nth evaluation, save model regardless of performance
 cfg.SAVE_EVERY = cfg.SAVE_EVERY_N_EVALS * cfg.EVAL_EVERY  # Don't touch this one
 
-cfg.SAVE_NUM_EVAL_EXAMPLES = 10  # How many examples from the test/evaluation set to save
+cfg.SAVE_NUM_EVAL_EXAMPLES = 10  # How many examples from the test/evaluation set to save. Not used in meta learning.
 
 # ===================================================================================== #
 #                                 SAVE DIRECTORIES                                      #

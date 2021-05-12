@@ -38,7 +38,7 @@ class Trainer:
         self.n_tasks = cfg.N_TASKS
 
         self.epoch = 0
-        self.best_mae = 10 ** 10  # just something high
+        self.best_MAE_after = 10 ** 10  # just something high
         self.best_epoch = -1
 
         self.writer = SummaryWriter(cfg.SAVE_DIR)
@@ -140,7 +140,8 @@ class Trainer:
 
     def train(self):
         """ Trains the model with meta training. """
-        self.evaluate_model()
+        MAE_before, MAE_after, MAE_improvement = self.evaluate_model()
+        print(f'Initial MAE before: {MAE_before:.3f}, after: {MAE_after:.3f}, improvement: {MAE_improvement:.3f}')
 
         # Log alpha stats
         self.log_alpha()
@@ -152,10 +153,9 @@ class Trainer:
             if self.epoch == self.cfg.ALPHA_START:
                 self.meta_wrapper.enable_alpha_updates()
 
+            epoch_start_time = time.time()
             mean_improvements, n_improvements, n_non_imrovements = self.run_epoch()
-
-            if self.epoch % self.cfg.EVAL_EVERY == 0:
-                self.evaluate_model()
+            epoch_time = time.time() - epoch_start_time
 
             # Logging
             self.log_alpha()
@@ -167,10 +167,26 @@ class Trainer:
             self.writer.add_scalar('Train/percent_improved', percent_improved, self.epoch)
 
             print(f'ep {self.epoch} mean test improvement: {np.mean(mean_improvements):.3f}. '
-                  f'{percent_improved:.1f}% improved. {n_improvements} improved, {n_non_imrovements} not improved.')
+                  f'{percent_improved:.1f}% improved. {n_improvements} improved, {n_non_imrovements} not improved. '
+                  f'Train time: {epoch_time:.3f}')
 
-            if self.epoch % self.cfg.SAVE_EVERY == 0:
-                self.save_state()
+            if self.epoch % self.cfg.EVAL_EVERY == 0:
+                eval_start_time = time.time()
+                MAE_before, MAE_after, MAE_improvement = self.evaluate_model()
+                eval_time = time.time() - eval_start_time
+
+                if MAE_after < self.best_MAE_after:
+                    print_fancy_new_best_MAE()
+                    self.best_MAE_after = MAE_after
+                    self.best_epoch = self.epoch
+                    self.save_state(f'new_best_MAE_{MAE_after:.3f}')
+                elif self.epoch % self.cfg.SAVE_EVERY == 0:
+                    self.save_state(f'MAE_{MAE_after:.3f}')
+
+                print(f'MAE before: {MAE_before:.3f}, '
+                      f'MAE after: {MAE_after:.3f}, '
+                      f'MAE improvement: {MAE_improvement:.3f}. '
+                      f'Eval time: {eval_time:.3f}')
 
             if self.epoch in self.cfg.LR_STEP_EPOCHS:
                 self.scheduler.step()
@@ -254,7 +270,7 @@ class Trainer:
         self.writer.add_scalar(f'eval/overal_MAE_improvement', overal_MAE_improvement, self.epoch)
         self.writer.add_scalar(f'eval/overal_MSE_improvement', overal_MSE_improvement, self.epoch)
 
-        return
+        return overal_MAE_before, overal_MAE_after, overal_MAE_improvement
 
     def eval_on_scene(self, scene_loader, weight_dict=None):
         """ Evaluate the model on a specific scene. """
