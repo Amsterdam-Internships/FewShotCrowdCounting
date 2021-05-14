@@ -128,6 +128,11 @@ class Trainer:
             metagrads = torch.autograd.grad(avg_metaloss, trainable_weights)
             for w, g in zip(trainable_weights, metagrads):
                 w.grad = g
+
+            # Learning can become unstable with large alpha. Clip grads to prevent explosion.
+            if self.cfg.GRAD_CLIP_NORM:
+                torch.nn.utils.clip_grad_norm_(trainable_weights, self.cfg.GRAD_CLIP_NORM)
+
             self.meta_optimiser.step()
 
             # Logging
@@ -142,6 +147,7 @@ class Trainer:
         """ Trains the model with meta training. """
         MAE_before, MAE_after, MAE_improvement = self.evaluate_model()
         print(f'Initial MAE before: {MAE_before:.3f}, after: {MAE_after:.3f}, improvement: {MAE_improvement:.3f}')
+        self.save_state(name_extra='initial')
 
         # Log alpha stats
         self.log_alpha()

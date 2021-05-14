@@ -32,6 +32,7 @@ cfg.BETA = 1e-5  # Outer/meta update. Also used as LR when normal training
 cfg.LR_GAMMA = 1.  # Scale LR by this at each step epoch
 cfg.LR_STEP_EPOCHS = []
 cfg.WEIGHT_DECAY = 1e-4
+cfg.GRAD_CLIP_NORM = 1.  # Set to None for no clipping
 
 cfg.MAML = False
 cfg.ALPHA_START = 100     # Start updating alpha at this epoch
