@@ -157,6 +157,7 @@ class Trainer:
             self.epoch += 1
 
             if self.epoch == self.cfg.ALPHA_START:
+                print('Alpha updates now enabled.')
                 self.meta_wrapper.enable_alpha_updates()
 
             epoch_start_time = time.time()
@@ -322,7 +323,7 @@ class Trainer:
         save_sate = {
             'epoch': self.epoch,
             'best_epoch': self.best_epoch,
-            'best_mae': self.best_mae,
+            'best_mae': self.best_MAE_after,
             'net': self.meta_wrapper.base_model.state_dict(),
             'optim': self.meta_optimiser.state_dict(),
             'scheduler': self.scheduler.state_dict(),

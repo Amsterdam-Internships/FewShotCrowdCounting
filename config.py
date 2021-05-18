@@ -31,12 +31,12 @@ cfg.DATASET = 'WE_CSRNet_Meta'
 cfg.BETA = 1e-5  # Outer/meta update. Also used as LR when normal training
 cfg.LR_GAMMA = 1.  # Scale LR by this at each step epoch
 cfg.LR_STEP_EPOCHS = []
-cfg.WEIGHT_DECAY = 1e-4
+cfg.WEIGHT_DECAY = 1e-5
 cfg.GRAD_CLIP_NORM = 1.  # Set to None for no clipping
 
 cfg.MAML = False
-cfg.ALPHA_START = 100     # Start updating alpha at this epoch
-cfg.ALPHA_INIT = 1e-3     # Use also for Alpha lr in MAML
+cfg.ALPHA_START = 500     # Start updating alpha at this epoch
+cfg.ALPHA_INIT = 1e-5     # Use also for Alpha lr in MAML
 
 cfg.N_TASKS = 1  # How many tasks to perform before performing an outer backprop
 

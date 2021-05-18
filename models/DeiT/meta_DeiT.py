@@ -57,8 +57,9 @@ class MetaDeiT:
 
         gt = img_equal_unsplit(gt_stack.cpu(), self.cfg_data.OVERLAP, self.cfg_data.IGNORE_BUFFER, img_h, img_w, 1)
         pred_den = img_equal_unsplit(pred.cpu(), self.cfg_data.OVERLAP, self.cfg_data.IGNORE_BUFFER, img_h, img_w, 1)
+        pred_den = pred_den.detach()
 
-        abs_error = torch.abs(torch.sum(pred_den.detach() - gt, dim=(-2, -1)))
+        abs_error = torch.abs(torch.sum(pred_den - gt, dim=(-2, -1)))
         squared_error = torch.square(abs_error)
 
-        return img, pred, gt, loss, abs_error, squared_error
+        return img, pred_den, gt, loss, abs_error, squared_error
