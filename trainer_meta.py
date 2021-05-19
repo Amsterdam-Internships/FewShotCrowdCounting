@@ -205,6 +205,8 @@ class Trainer:
     def evaluate_model(self):
         scene_improvements = 0
         scene_non_improvements = 0
+        _overal_loss_before = []
+        _overal_loss_after = []
         _overal_loss_improvement = []
         _overal_MAE_before = []
         _overal_MAE_after = []
@@ -249,9 +251,11 @@ class Trainer:
             MAE_improvement = MAE_before - MAE_after
             MSE_improvement = MSE_before - MSE_after
 
+            _overal_loss_before.append(MLoss_before)
+            _overal_loss_after.append(MLoss_after)
+            _overal_loss_improvement.append(loss_improvement)
             _overal_MAE_before.append(MAE_before)
             _overal_MAE_after.append(MAE_after)
-            _overal_loss_improvement.append(loss_improvement)
             _overal_MAE_improvement.append(MAE_improvement)
             _overal_MSE_improvement.append(MSE_improvement)
 
@@ -259,18 +263,24 @@ class Trainer:
             scene_non_improvements += 1 if MAE_improvement <= 0 else 0
 
             scene_id = val_loader.dataset.scene_id
+            self.writer.add_scalar(f'eval/{scene_id}/loss_before', MLoss_before, self.epoch)
+            self.writer.add_scalar(f'eval/{scene_id}/loss_after', MLoss_after, self.epoch)
             self.writer.add_scalar(f'eval/{scene_id}/loss_improvement', loss_improvement, self.epoch)
             self.writer.add_scalar(f'eval/{scene_id}/MAE_before', MAE_before, self.epoch)
             self.writer.add_scalar(f'eval/{scene_id}/MAE_after', MAE_after, self.epoch)
             self.writer.add_scalar(f'eval/{scene_id}/MAE_improvement', MAE_improvement, self.epoch)
             self.writer.add_scalar(f'eval/{scene_id}/MSE_improvement', MSE_improvement, self.epoch)
 
+        overal_loss_before = np.mean(_overal_loss_before)
+        overal_loss_after = np.mean(_overal_loss_after)
+        overal_loss_improvement = np.mean(_overal_loss_improvement)
         overal_MAE_before = np.mean(_overal_MAE_before)
         overal_MAE_after = np.mean(_overal_MAE_after)
-        overal_loss_improvement = np.mean(_overal_loss_improvement)
         overal_MAE_improvement = np.mean(_overal_MAE_improvement)
         overal_MSE_improvement = np.mean(_overal_MSE_improvement)
 
+        self.writer.add_scalar(f'eval/overal_loss_before', overal_loss_before, self.epoch)
+        self.writer.add_scalar(f'eval/overal_loss_after', overal_loss_after, self.epoch)
         self.writer.add_scalar(f'eval/overal_loss_improvement', overal_loss_improvement, self.epoch)
         self.writer.add_scalar(f'eval/overal_MAE_before', overal_MAE_before, self.epoch)
         self.writer.add_scalar(f'eval/overal_MAE_after', overal_MAE_after, self.epoch)
