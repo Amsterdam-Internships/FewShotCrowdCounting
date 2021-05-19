@@ -38,7 +38,7 @@ cfg.MAML = False
 cfg.ALPHA_START = 500     # Start updating alpha at this epoch
 cfg.ALPHA_INIT = 1e-5     # Use also for Alpha lr in MAML
 
-cfg.N_TASKS = 1  # How many tasks to perform before performing an outer backprop
+cfg.N_TASKS = 4  # How many tasks to perform before performing an outer backprop
 
 cfg.MAX_EPOCH = 10000
 cfg.EVAL_EVERY = 25
