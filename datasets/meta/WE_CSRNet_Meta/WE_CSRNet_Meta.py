@@ -13,14 +13,13 @@ from .settings import cfg_data
 
 class WE_CSRNet_Meta(data.Dataset):
     def __init__(self, data_path, mode,
-                 main_transform=None, img_transform=None, gt_transform=None, splitter=None):
+                 main_transform=None, img_transform=None, gt_transform=None):
         self.data_path = os.path.join(data_path, mode)
         self.mode = mode  # train or test
 
         self.main_transform = main_transform
         self.img_transform = img_transform
         self.gt_transform = gt_transform
-        self.splitter = splitter
 
         self.scenes = []
         self.data_files = {}
@@ -33,7 +32,7 @@ class WE_CSRNet_Meta(data.Dataset):
                 self.scenes.append(scene)
                 self.data_files[scene] = [os.path.join(scene_dir, img_name) for img_name in os.listdir(scene_dir)]
             else:
-                print(f'Skipped a scene with only {n_scene_images} examples.')
+                print(f'Skipped a scene with only {n_scene_images} images.')
 
         self.num_samples = len(self.scenes)
 
@@ -63,7 +62,7 @@ class WE_CSRNet_Meta(data.Dataset):
         return torch.stack(_img_stack[0:cfg_data.K_TRAIN]), \
                torch.stack(_gts_stack[0:cfg_data.K_TRAIN]), \
                torch.stack(_img_stack[cfg_data.K_TRAIN:n_datapoints]), \
-               torch.stack(_gts_stack[cfg_data.K_TRAIN:n_datapoints])  # Meow Meow
+               torch.stack(_gts_stack[cfg_data.K_TRAIN:n_datapoints])
 
     def read_image_and_gt(self, img_path):
         den_path = img_path.replace('img', 'den').replace('.jpg', '.csv')
@@ -101,7 +100,8 @@ class WE_CSRNet_Meta_eval(data.Dataset):
         if adapt_imgs:
             self.adapt_imgs = [os.path.join(self.data_path, adapt_img) for adapt_img in adapt_imgs]
         else:
-            if len(self.data_files) > 75:
+            if len(self.data_files) > 75:  # Manual testing purposes. > 75 as only test scenes have that much.
+                print(f'Selecting manual images for {self.mode} scene')
                 self.adapt_imgs = [self.data_files[20]] + [self.data_files[40]] + [self.data_files[80]]
             else:
                 self.adapt_imgs = random.sample(self.data_files, n_adapt_imgs)
@@ -114,8 +114,6 @@ class WE_CSRNet_Meta_eval(data.Dataset):
         # print(f'{self.num_samples} images found.')
 
     def __getitem__(self, index):
-        _img_stack = []
-        _gts_stack = []
 
         img, den = self.read_image_and_gt(self.data_files[index])
         if self.main_transform is not None:

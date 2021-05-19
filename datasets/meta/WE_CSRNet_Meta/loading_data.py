@@ -1,7 +1,6 @@
 import torchvision.transforms as standard_transforms
 from torch.utils.data import DataLoader
 import datasets.transforms as own_transforms
-from datasets.dataset_utils import img_equal_split
 
 from .settings import cfg_data
 from .WE_CSRNet_Meta import WE_CSRNet_Meta, WE_CSRNet_Meta_eval
@@ -29,8 +28,7 @@ def loading_data(test_adapt_imgs=None):
     train_set = WE_CSRNet_Meta(cfg_data.DATA_PATH, 'train',
                                main_transform=train_main_transform,
                                img_transform=img_transform,
-                               gt_transform=gt_transform,
-                               splitter=img_equal_split)
+                               gt_transform=gt_transform)
     train_loader = DataLoader(train_set,
                               batch_size=cfg_data.TRAIN_BS,
                               num_workers=cfg_data.N_WORKERS,

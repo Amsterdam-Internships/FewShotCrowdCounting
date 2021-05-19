@@ -28,7 +28,7 @@ class Trainer:
         self.cfg_data = cfg_data
 
         self.train_loader, self.val_loaders, self.test_loaders, self.restore_transform = loading_data()
-        self.train_samples = len(self.train_loader.dataset)
+        # self.train_samples = len(self.train_loader.dataset)
 
         self.beta = self.cfg.BETA
         self.meta_optimiser = torch.optim.Adam(self.meta_wrapper.get_params(),
@@ -72,8 +72,8 @@ class Trainer:
         test_loss, test_pred, test_error = self.meta_wrapper.train_forward(test_data, theta_prime)
 
         # Info for logging
-        before_error = train_error / (self.cfg_data.LABEL_FACTOR * self.cfg_data.K_TRAIN)
-        after_error = test_error / (self.cfg_data.LABEL_FACTOR * self.cfg_data.K_META)
+        before_error = train_error / self.cfg_data.LABEL_FACTOR
+        after_error = test_error / self.cfg_data.LABEL_FACTOR
         avg_AE_improvement = before_error - after_error
 
         return test_loss, avg_AE_improvement
@@ -81,7 +81,7 @@ class Trainer:
     def meta_loop_outer(self, task_batch, theta):
         """ The outer part of the meta-learning loop (For all T_i). """
 
-        AEs = []
+        AEs = []  # Absolute error improvements
         total_metaloss = torch.tensor(0).float().cuda()
 
         self.meta_optimiser.zero_grad()  # Prob not needed since we set the gradients manually
@@ -101,7 +101,7 @@ class Trainer:
         scenes_left = len(self.train_loader.dataset)  # Number of scenes
 
         n_improvements = 0  # Number of scenes on which performance improved after adaptation
-        n_non_imrovements = 0  # Number of scenes on which performance did not improved after adaptation.
+        n_non_improvements = 0  # Number of scenes on which performance did not improved after adaptation.
         mean_improvements = []  # Mean improvement after adaptation on a scene.
 
         self.meta_wrapper.train()
@@ -129,7 +129,7 @@ class Trainer:
             for w, g in zip(trainable_weights, metagrads):
                 w.grad = g
 
-            # Learning can become unstable with large alpha. Clip grads to prevent explosion.
+            # Learning can become unstable with large alphas. Clip grads to prevent explosion.
             if self.cfg.GRAD_CLIP_NORM:
                 torch.nn.utils.clip_grad_norm_(trainable_weights, self.cfg.GRAD_CLIP_NORM)
 
@@ -139,9 +139,9 @@ class Trainer:
             mean_improvements.append(mean_improvement)
 
             n_improvements += 1 if mean_improvement > 0 else 0
-            n_non_imrovements += 1 if mean_improvement < 0 else 0
+            n_non_improvements += 1 if mean_improvement <= 0 else 0
 
-        return mean_improvements, n_improvements, n_non_imrovements
+        return mean_improvements, n_improvements, n_non_improvements
 
     def train(self):
         """ Trains the model with meta training. """
@@ -157,24 +157,24 @@ class Trainer:
             self.epoch += 1
 
             if self.epoch == self.cfg.ALPHA_START:
-                print('Alpha updates now enabled.')
                 self.meta_wrapper.enable_alpha_updates()
+                print('Alpha updates now enabled.')
 
             epoch_start_time = time.time()
-            mean_improvements, n_improvements, n_non_imrovements = self.run_epoch()
+            mean_improvements, n_improvements, n_non_improvements = self.run_epoch()
             epoch_time = time.time() - epoch_start_time
 
             # Logging
             self.log_alpha()
 
-            percent_improved = n_improvements / (n_improvements + n_non_imrovements) * 100  # Above 50% is good
+            percent_improved = n_improvements / (n_improvements + n_non_improvements) * 100  # Above 50% is good
             self.writer.add_scalar('Train/mean_improvement', np.mean(mean_improvements), self.epoch)
             self.writer.add_scalar('Train/n_improvements', n_improvements, self.epoch)
-            self.writer.add_scalar('Train/n_non_imrovements', n_non_imrovements, self.epoch)
+            self.writer.add_scalar('Train/n_non_imrovements', n_non_improvements, self.epoch)
             self.writer.add_scalar('Train/percent_improved', percent_improved, self.epoch)
 
             print(f'ep {self.epoch} mean test improvement: {np.mean(mean_improvements):.3f}. '
-                  f'{percent_improved:.1f}% improved. {n_improvements} improved, {n_non_imrovements} not improved. '
+                  f'{percent_improved:.1f}% improved. {n_improvements} improved, {n_non_improvements} not improved. '
                   f'Train time: {epoch_time:.3f}')
 
             if self.epoch % self.cfg.EVAL_EVERY == 0:
@@ -200,7 +200,7 @@ class Trainer:
                 print(f'Learning rate adjusted to {self.scheduler.get_last_lr()[0]} at epoch {self.epoch}.')
                 self.writer.add_scalar('lr', self.scheduler.get_last_lr()[0], self.epoch)
 
-        self.save_state()
+        self.save_state(name_extra='final_model')
 
     def evaluate_model(self):
         scene_improvements = 0
