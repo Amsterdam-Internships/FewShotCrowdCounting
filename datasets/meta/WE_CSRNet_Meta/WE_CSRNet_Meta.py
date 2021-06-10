@@ -85,8 +85,8 @@ class WE_CSRNet_Meta_eval(data.Dataset):
     def __init__(self, data_path, mode, scene, adapt_imgs=None, n_adapt_imgs=None,
                  main_transform=None, img_transform=None, gt_transform=None):
 
-        assert adapt_imgs or n_adapt_imgs, "One of adapt_imgs or n_adapt_imgs must be set."
-        assert not (adapt_imgs and n_adapt_imgs), "Only one of adapt_imgs and n_adapt_imgs must be set."
+        # assert adapt_imgs or n_adapt_imgs, "One of adapt_imgs or n_adapt_imgs must be set."
+        # assert not (adapt_imgs and n_adapt_imgs), "Only one of adapt_imgs and n_adapt_imgs must be set."
 
         self.data_path = os.path.join(data_path, mode, scene, 'img')
         self.mode = mode  # train or test
@@ -100,18 +100,15 @@ class WE_CSRNet_Meta_eval(data.Dataset):
         if adapt_imgs:
             self.adapt_imgs = [os.path.join(self.data_path, adapt_img) for adapt_img in adapt_imgs]
         else:
-            if len(self.data_files) > 75:  # Manual testing purposes. > 75 as only test scenes have that much.
-                print(f'Selecting manual images for {self.mode} scene')
-                self.adapt_imgs = [self.data_files[20]] + [self.data_files[40]] + [self.data_files[80]]
-            else:
-                self.adapt_imgs = random.sample(self.data_files, n_adapt_imgs)
+            self.adapt_imgs = random.sample(self.data_files, n_adapt_imgs)
             # self.adapt_imgs = []
 
         self.data_files = [img_path for img_path in self.data_files if img_path not in self.adapt_imgs]
 
         self.num_samples = len(self.data_files)
 
-        # print(f'{self.num_samples} images found.')
+        if self.mode == 'test':
+            print(f'{self.num_samples} test images found.')
 
     def __getitem__(self, index):
 

@@ -87,9 +87,9 @@ class WE_DeiT_Meta(data.Dataset):
 class WE_DeiT_Meta_eval(data.Dataset):
     def __init__(self, data_path, mode, scene, adapt_imgs=None, n_adapt_imgs=None,
                  main_transform=None, img_transform=None, gt_transform=None):
-
-        assert adapt_imgs or n_adapt_imgs, "One of adapt_imgs or n_adapt_imgs must be set."
-        assert not (adapt_imgs and n_adapt_imgs), "Only one of adapt_imgs and n_adapt_imgs must be set."
+        # print(n_adapt_imgs)
+        # assert adapt_imgs or n_adapt_imgs, "One of adapt_imgs or n_adapt_imgs must be set."
+        # assert not (adapt_imgs and n_adapt_imgs), "Only one of adapt_imgs and n_adapt_imgs must be set."
 
         self.data_path = os.path.join(data_path, mode, scene, 'img')
         self.mode = mode  # train or test
@@ -100,6 +100,7 @@ class WE_DeiT_Meta_eval(data.Dataset):
         self.gt_transform = gt_transform
 
         self.data_files = [os.path.join(self.data_path, image) for image in os.listdir(self.data_path)]
+
         if adapt_imgs:
             self.adapt_imgs = [os.path.join(self.data_path, adapt_img) for adapt_img in adapt_imgs]
         else:
@@ -109,7 +110,7 @@ class WE_DeiT_Meta_eval(data.Dataset):
 
         self.num_samples = len(self.data_files)
 
-        # print(f'{self.num_samples} images found.')
+        print(f'{self.num_samples} images found.')
 
     def __getitem__(self, index):
         _img_stack = []

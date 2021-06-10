@@ -16,11 +16,11 @@ cfg = edict()
 
 cfg.SEED = 42
 
-# cfg.MODEL = 'deit_small_distilled_patch16_224'
-# cfg.DATASET = 'SHTB_DeiT'
+cfg.MODEL = 'deit_small_distilled_patch16_224'
+cfg.DATASET = 'SHTB_DeiT'
 
-cfg.MODEL = 'CSRNet'
-cfg.DATASET = 'WE_CSRNet_Meta'
+# cfg.MODEL = 'CSRNet'
+# cfg.DATASET = 'WE_CSRNet_Meta'
 
 # cfg.MODEL = 'deit_tiny_distilled_patch16_224'
 # cfg.DATASET = 'WE_DeiT_Meta'
@@ -28,10 +28,10 @@ cfg.DATASET = 'WE_CSRNet_Meta'
 # cfg.MODEL = 'SineNet'  # SineNet, CSRNet, or DeiT
 # cfg.DATASET = 'SineWave_Meta'
 
-cfg.BETA = 1e-5  # Outer/meta update. Also used as LR when normal training
-cfg.LR_GAMMA = 1.  # Scale LR by this at each step epoch
-cfg.LR_STEP_EPOCHS = []
-cfg.WEIGHT_DECAY = 1e-5
+cfg.BETA = 1e-4  # Outer/meta update. Also used as LR when normal training
+cfg.LR_GAMMA = math.sqrt(0.1)  # Scale LR by this at each step epoch
+cfg.LR_STEP_EPOCHS = [100, 500, 900]
+cfg.WEIGHT_DECAY = 1e-4
 cfg.GRAD_CLIP_NORM = 1.  # Set to None for no clipping
 
 cfg.MAML = False
@@ -40,9 +40,9 @@ cfg.ALPHA_INIT = 1e-5     # Use also for Alpha lr in MAML
 
 cfg.N_TASKS = 4  # How many tasks to perform before performing an outer backprop
 
-cfg.MAX_EPOCH = 10000
-cfg.EVAL_EVERY = 25
-cfg.SAVE_EVERY_N_EVALS = 4  # Every Nth evaluation, save model regardless of performance
+cfg.MAX_EPOCH = 1300
+cfg.EVAL_EVERY = 10
+cfg.SAVE_EVERY_N_EVALS = 10  # Every Nth evaluation, save model regardless of performance
 cfg.SAVE_EVERY = cfg.SAVE_EVERY_N_EVALS * cfg.EVAL_EVERY  # Don't touch this one
 
 cfg.SAVE_NUM_EVAL_EXAMPLES = 10  # How many examples from the test/evaluation set to save. Not used in meta learning.
