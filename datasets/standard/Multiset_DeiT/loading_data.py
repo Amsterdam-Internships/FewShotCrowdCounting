@@ -11,29 +11,29 @@ def loading_data(crop_size):
     crop_size = 224
 
     train_main_transform = own_transforms.Compose([
-        own_transforms.RandomCrop([crop_size, crop_size]),
-        own_transforms.RandomHorizontallyFlip()
+        own_transforms.RandomCrop([crop_size, crop_size]),  # For training, crop a random part of an image (and GT)
+        own_transforms.RandomHorizontallyFlip()  # Randomly flips both image and GT
     ])
 
-    train_img_transform = standard_transforms.Compose([
+    train_img_transform = standard_transforms.Compose([  # Transforms to apply. Can also add augmentations here
         standard_transforms.ToTensor(),
         standard_transforms.Normalize(*cfg_data.MEAN_STD)
     ])
 
-    val_img_transform = standard_transforms.Compose([
+    val_img_transform = standard_transforms.Compose([  # Don't apply augmentations to eval data. Thus new transform.
         standard_transforms.ToTensor(),
         standard_transforms.Normalize(*cfg_data.MEAN_STD)
     ])
 
-    gt_transform = standard_transforms.Compose([
+    gt_transform = standard_transforms.Compose([  # To scale the GT density map by a given amount
         own_transforms.LabelScale(cfg_data.LABEL_FACTOR)
     ])
 
-    train_cropper = own_transforms.Compose([
+    train_cropper = own_transforms.Compose([  # Redundant perhaps? Unless global augmentation is applied
         own_transforms.RandomTensorCrop([crop_size, crop_size])
     ])
 
-    restore_transform = standard_transforms.Compose([
+    restore_transform = standard_transforms.Compose([  # To get back the original image
         own_transforms.DeNormalize(*cfg_data.MEAN_STD),
         standard_transforms.ToPILImage()
     ])

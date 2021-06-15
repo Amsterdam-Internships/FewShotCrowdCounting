@@ -17,7 +17,7 @@ class Trainer:
         train the model. Based on the trainer of the C^3 Framework: https://github.com/gjy3035/C-3-Framework
         :param model: The model to be trained
         :param loading_data: a function with which the train/val/test dataloaders can be retrieved, as well as the
-                             transform that transforms normalised images back to the original.
+                             transform that transforms normalised images back to its original.
         :param cfg: The configurations for this run.
         :param cfg_data: The configurations specific to the dataset and dataloaders.
         """
@@ -27,7 +27,7 @@ class Trainer:
         self.cfg_data = cfg_data
 
         self.train_loader, self.val_loader, self.test_loader, self.restore_transform = loading_data(self.model.crop_size)
-        self.train_samples = len(self.train_loader.dataset)
+        # self.train_samples = len(self.train_loader.dataset)
         self.val_samples = len(self.val_loader.dataset)
         self.eval_save_example_every = self.val_samples // self.cfg.SAVE_NUM_EVAL_EXAMPLES
 
@@ -45,7 +45,7 @@ class Trainer:
             self.load_state(cfg.RESUME_PATH)
             print(f'Resuming from epoch {self.epoch}')
         else:
-            self.save_eval_pics()
+            self.save_eval_pics()  # Saves the images of which the predictions are saved during evaluation
             self.writer.add_scalar('lr', self.scheduler.get_last_lr()[0], self.epoch)
 
     def train(self):
@@ -56,13 +56,13 @@ class Trainer:
         while self.epoch < self.cfg.MAX_EPOCH:
             self.epoch += 1
 
-            epoch_start_time = time.time()
+            epoch_start_time = time.time()  # Time how long an epoch takes
             losses, MAPE, MSPE, last_out_den, last_gts = self.run_epoch()
             epoch_time = time.time() - epoch_start_time
 
             avg_train_loss = np.mean(losses)
-            pred_cnt = last_out_den[0].detach().cpu().sum() / self.cfg_data.LABEL_FACTOR
-            gt_cnt = last_gts[0].cpu().sum() / self.cfg_data.LABEL_FACTOR
+            pred_cnt = last_out_den[0].detach().cpu().sum() / self.cfg_data.LABEL_FACTOR  # Just an example from
+            gt_cnt = last_gts[0].cpu().sum() / self.cfg_data.LABEL_FACTOR  # the last crop of training.
             print(f'ep {self.epoch}: Average loss={avg_train_loss:.3f}, Patch MAE={MAPE:.3f}, Patch MSE={MSPE:.3f}.'
                   f'  Example: pred={pred_cnt:.3f}, gt={gt_cnt:.3f}. Train time: {epoch_time:.3f}')
 
@@ -70,17 +70,17 @@ class Trainer:
             self.writer.add_scalar('MAE/train', MAPE, self.epoch)
             self.writer.add_scalar('MSE/train', MSPE, self.epoch)
 
-            if self.epoch % self.cfg.EVAL_EVERY == 0:
-                eval_start_time = time.time()
+            if self.epoch % self.cfg.EVAL_EVERY == 0:  # Eval every 'EVAL_EVERY' epochs.
+                eval_start_time = time.time()  # Time how long evaluation takes
                 MAE, MSE, avg_val_loss = self.evaluate_model()
                 eval_time = time.time() - eval_start_time
 
-                if MAE < self.best_mae:
+                if MAE < self.best_mae:  # New best Mean Absolute Error
                     self.best_mae = MAE
                     self.best_epoch = self.epoch
-                    print_fancy_new_best_MAE()
-                    self.save_state(f'new_best_MAE_{MAE:.3f}')
-                elif self.epoch % self.cfg.SAVE_EVERY == 0:
+                    print_fancy_new_best_MAE()  # Super important
+                    self.save_state(f'new_best_MAE_{MAE:.3f}')  # Save all states needed to train the model
+                elif self.epoch % self.cfg.SAVE_EVERY == 0:  # save the state every 'SAVE_EVERY' regardless of the MAE
                     self.save_state(f'MAE_{MAE:.3f}')
 
                 print(f'MAE: {MAE:.3f}, MSE: {MSE:.3f}. best MAE: {self.best_mae:.3f} at ep({self.best_epoch}).'
@@ -90,7 +90,7 @@ class Trainer:
                 self.writer.add_scalar('MAE/eval', MAE, self.epoch)
                 self.writer.add_scalar('MSE/eval', MSE, self.epoch)
 
-            if self.epoch in self.cfg.LR_STEP_EPOCHS:
+            if self.epoch in self.cfg.LR_STEP_EPOCHS:  # Updates the learning rate
                 self.scheduler.step()
                 print(f'Learning rate adjusted to {self.scheduler.get_last_lr()[0]} at epoch {self.epoch}.')
                 self.writer.add_scalar('lr', self.scheduler.get_last_lr()[0], self.epoch)
@@ -98,7 +98,7 @@ class Trainer:
     def run_epoch(self):
         """ Run one pass over the train dataloader. """
         losses = []
-        APEs = []  # Absolute Patch Errors
+        APEs = []  # Absolute Patch Errors (Regards the image 'crops')
         SPEs = []  # Squared Patch Errors
 
         out_den = None  # SILENCE WENCH!
@@ -123,7 +123,7 @@ class Trainer:
         MAPE = np.mean(APEs)  # Mean Absolute Patch Error
         MSPE = np.sqrt(np.mean(SPEs))  # Mean (Root) Squared Patch Error
 
-        # Also return the last predicted densities and corresponding gts. This allows for informative prints
+        # Also return the last predicted densities and corresponding gts. This allows for informative prints.
         return losses, MAPE, MSPE, out_den, gt_stack
 
     def evaluate_model(self):
@@ -158,7 +158,7 @@ class Trainer:
                 AEs.append(torch.abs(pred_cnt - gt_cnt).item())
                 SEs.append(torch.square(pred_cnt - gt_cnt).item())
 
-                if idx % self.eval_save_example_every == 0:
+                if idx % self.eval_save_example_every == 0:  # We only save a few examples
                     plt.imshow(den, cmap=CM.jet)
                     save_path = os.path.join(self.cfg.PICS_DIR, f'pred_{idx}_ep_{self.epoch}.jpg')
                     plt.title(f'Predicted count: {pred_cnt:.3f} (GT: {gt_cnt:.3f})')
@@ -206,7 +206,7 @@ class Trainer:
                 plt.title(f'GT count: {gt_count:.3f}')
                 plt.savefig(save_path)
 
-        # Images in val loader might not be in order. Save a mapping from image index to image path.
+        # Images in val loader might not be in order. Save a mapping from image index to actual image path.
         idx_to_img_path = os.path.join(os.path.join(self.cfg.PICS_DIR, 'idx_to_img_path.csv'))
         data_files = self.val_loader.dataset.data_files
         with open(idx_to_img_path, 'w') as f:
@@ -216,19 +216,19 @@ class Trainer:
     def save_state(self, name_extra=''):
         """ Saves the variables needed to continue training later. """
 
-        if name_extra:
+        if name_extra:  # Sometimes, we want to manually add some extra info. E.g. when new best MAE
             save_name = f'{self.cfg.STATE_DICTS_DIR}/save_state_ep_{self.epoch}_{name_extra}.pth'
         else:
             save_name = f'{self.cfg.STATE_DICTS_DIR}/save_state_ep_{self.epoch}.pth'
 
         save_sate = {
-            'epoch': self.epoch,
-            'best_epoch': self.best_epoch,
-            'best_mae': self.best_mae,
-            'net': self.model.state_dict(),
-            'optim': self.optim.state_dict(),
-            'scheduler': self.scheduler.state_dict(),
-            'save_dir_path': self.cfg.SAVE_DIR,
+            'epoch': self.epoch,  # Current epoch
+            'best_epoch': self.best_epoch,  # Epoch where we got the best MAE
+            'best_mae': self.best_mae,  # Best MAE so far
+            'net': self.model.state_dict(),  # The entire network
+            'optim': self.optim.state_dict(),  # The optimiser used to train the model. Is needed for Adam momentum etc.
+            'scheduler': self.scheduler.state_dict(),  # Learning rate scheduler
+            'save_dir_path': self.cfg.SAVE_DIR,  # Where to save evaluation predictions, save state, etc.
         }
 
         torch.save(save_sate, save_name)

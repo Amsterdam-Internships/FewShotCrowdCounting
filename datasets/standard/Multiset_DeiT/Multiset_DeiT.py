@@ -15,8 +15,8 @@ class Multiset_DeiT(data.Dataset):
     def __init__(self, data_paths, mode, crop_size,
                  main_transform=None, img_transform=None, gt_transform=None, cropper=None):
 
-        self.crop_size = crop_size
-        self.mode = mode  # train or test
+        self.crop_size = crop_size  # 224
+        self.mode = mode  # train, test or eval
 
         self.main_transform = main_transform
         self.img_transform = img_transform
@@ -25,9 +25,9 @@ class Multiset_DeiT(data.Dataset):
 
         self.data_files = []
 
-        for data_path in data_paths:
-            data_path = os.path.join(data_path, mode)
-            imgs_path = os.path.join(data_path, 'img')
+        for data_path in data_paths:  # For each dataset
+            data_path = os.path.join(data_path, mode)  # dataset/train, dataset/val, or dataset/test
+            imgs_path = os.path.join(data_path, 'img')  # folder that has all the images
             self.data_files += [(data_path, img_name) for img_name in os.listdir(imgs_path) if
                                 img_name.endswith('.jpg')]
 
@@ -41,6 +41,7 @@ class Multiset_DeiT(data.Dataset):
             print(f'{len(self.data_files)} {self.mode} images found in {len(data_paths)} datasets.')
 
     def __getitem__(self, index):
+        """ Get img and gt stored at index 'index' in data files. """
         img, den = self.read_image_and_gt(index)
 
         if self.main_transform is not None:
@@ -59,6 +60,12 @@ class Multiset_DeiT(data.Dataset):
             return img, img_stack, gts_stack
 
     def read_image_and_gt(self, index):
+        """
+        Retrieves the image and density map from the disk.
+        :param index: Index of data_files.
+        :return: image and gt density map as PIL Images
+        """
+
         data_path, img_name = self.data_files[index]
         img_path = os.path.join(data_path, 'img', img_name)
         den_path = os.path.join(data_path, 'den', img_name.replace('img_', 'den_').replace('.jpg', '.csv'))
@@ -70,7 +77,9 @@ class Multiset_DeiT(data.Dataset):
         den = pd.read_csv(den_path, header=None).values
         den = den.astype(np.float32, copy=False)
         den = Image.fromarray(den)
+
         return img, den
 
     def __len__(self):
+        """ The number of paths stored in data files. """
         return self.num_samples
