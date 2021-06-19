@@ -18,17 +18,21 @@ class Trainer:
         :param model: The model to be trained
         :param loading_data: a function with which the train/val/test dataloaders can be retrieved, as well as the
                              transform that transforms normalised images back to its original.
-        :param cfg: The configurations for this run.
-        :param cfg_data: The configurations specific to the dataset and dataloaders.
+        :param cfg: The configurations for this run, specified in config.py
+        :param cfg_data: The configurations specific to the dataset and dataloaders, specified in settings.py
         """
 
         self.model = model
         self.cfg = cfg
         self.cfg_data = cfg_data
 
+        # Loading data makes the dataloaders for the training set, validation set, and testing set.
+        # Also returns the restore transform with which the the un-normalised image can be obtained.
         self.train_loader, self.val_loader, self.test_loader, self.restore_transform = loading_data(self.model.crop_size)
-        # self.train_samples = len(self.train_loader.dataset)
-        self.val_samples = len(self.val_loader.dataset)
+        self.train_samples = len(self.train_loader.dataset)  # How many training samples we got
+        self.val_samples = len(self.val_loader.dataset)  # How many validation samples we got
+
+        # Saves one example predictions every this much evaluation samples.
         self.eval_save_example_every = self.val_samples // self.cfg.SAVE_NUM_EVAL_EXAMPLES
 
         self.criterion = torch.nn.MSELoss()
@@ -37,19 +41,21 @@ class Trainer:
 
         self.epoch = 0
         self.best_mae = 10 ** 10  # just something high
-        self.best_epoch = -1
+        self.best_epoch = -1  # We don't have a best epoch yet.
 
-        self.writer = SummaryWriter(cfg.SAVE_DIR)
+        self.writer = SummaryWriter(cfg.SAVE_DIR)  # For logging
 
-        if cfg.RESUME:
-            self.load_state(cfg.RESUME_PATH)
+        if cfg.RESUME:  # Should we resume training?
+            self.load_state(cfg.RESUME_PATH)  # This loads and overwrites some important variables to continue training.
             print(f'Resuming from epoch {self.epoch}')
         else:
-            self.save_eval_pics()  # Saves the images of which the predictions are saved during evaluation
-            self.writer.add_scalar('lr', self.scheduler.get_last_lr()[0], self.epoch)
+            # During evaluation we can save example predictions. This function save the corresponding images and GTs.
+            self.save_eval_pics()
+            self.writer.add_scalar('lr', self.scheduler.get_last_lr()[0], self.epoch)  # Log the current LR.
 
     def train(self):
-        """ Trains the model. """
+        """ Trains the model.
+        Also evaluates the model every 'EVAL_EVERY' epochs, and logs some metrics."""
         MAE, MSE, avg_val_loss = self.evaluate_model()
         print(f'Initial MAE: {MAE:.3f}, MSE: {MSE:.3f}, avg loss: {avg_val_loss:.3f}')
 
@@ -57,19 +63,24 @@ class Trainer:
             self.epoch += 1
 
             epoch_start_time = time.time()  # Time how long an epoch takes
-            losses, MAPE, MSPE, last_out_den, last_gts = self.run_epoch()
+            # MACE = Mean Absolute Crop Error.
+            # MSCE = Mean Squared Crop Rrror.
+            losses, MACE, MSCE, last_out_den, last_gts = self.run_epoch()
             epoch_time = time.time() - epoch_start_time
 
             avg_train_loss = np.mean(losses)
-            pred_cnt = last_out_den[0].detach().cpu().sum() / self.cfg_data.LABEL_FACTOR  # Just an example from
-            gt_cnt = last_gts[0].cpu().sum() / self.cfg_data.LABEL_FACTOR  # the last crop of training.
-            print(f'ep {self.epoch}: Average loss={avg_train_loss:.3f}, Patch MAE={MAPE:.3f}, Patch MSE={MSPE:.3f}.'
+            # The predicted count and GT counts for one random crop. Used for informative prints only!
+            pred_cnt = last_out_den[0].detach().cpu().sum() / self.cfg_data.LABEL_FACTOR
+            gt_cnt = last_gts[0].cpu().sum() / self.cfg_data.LABEL_FACTOR
+            print(f'ep {self.epoch}: Average loss={avg_train_loss:.3f}, Patch MAE={MACE:.3f}, Patch MSE={MSCE:.3f}.'
                   f'  Example: pred={pred_cnt:.3f}, gt={gt_cnt:.3f}. Train time: {epoch_time:.3f}')
 
+            # Logging training metrics in the summarywriter
             self.writer.add_scalar('AvgLoss/train', avg_train_loss, self.epoch)
-            self.writer.add_scalar('MAE/train', MAPE, self.epoch)
-            self.writer.add_scalar('MSE/train', MSPE, self.epoch)
+            self.writer.add_scalar('MAE/train', MACE, self.epoch)
+            self.writer.add_scalar('MSE/train', MSCE, self.epoch)
 
+            # Evaluation
             if self.epoch % self.cfg.EVAL_EVERY == 0:  # Eval every 'EVAL_EVERY' epochs.
                 eval_start_time = time.time()  # Time how long evaluation takes
                 MAE, MSE, avg_val_loss = self.evaluate_model()
@@ -78,35 +89,37 @@ class Trainer:
                 if MAE < self.best_mae:  # New best Mean Absolute Error
                     self.best_mae = MAE
                     self.best_epoch = self.epoch
-                    print_fancy_new_best_MAE()  # Super important
-                    self.save_state(f'new_best_MAE_{MAE:.3f}')  # Save all states needed to train the model
+                    print_fancy_new_best_MAE()  # Super important. Gotta get that dopamine!
+                    self.save_state(f'new_best_MAE_{MAE:.3f}')  # Save all states needed to continue training the model
                 elif self.epoch % self.cfg.SAVE_EVERY == 0:  # save the state every 'SAVE_EVERY' regardless of the MAE
                     self.save_state(f'MAE_{MAE:.3f}')
 
+                # Informative print
                 print(f'MAE: {MAE:.3f}, MSE: {MSE:.3f}. best MAE: {self.best_mae:.3f} at ep({self.best_epoch}).'
                       f' eval time: {eval_time:.3f}')
 
+                # Logging evaluation metrics in summarywriter
                 self.writer.add_scalar('AvgLoss/eval', avg_val_loss, self.epoch)
                 self.writer.add_scalar('MAE/eval', MAE, self.epoch)
                 self.writer.add_scalar('MSE/eval', MSE, self.epoch)
 
             if self.epoch in self.cfg.LR_STEP_EPOCHS:  # Updates the learning rate
-                self.scheduler.step()
+                self.scheduler.step()  # Make one update
                 print(f'Learning rate adjusted to {self.scheduler.get_last_lr()[0]} at epoch {self.epoch}.')
                 self.writer.add_scalar('lr', self.scheduler.get_last_lr()[0], self.epoch)
 
     def run_epoch(self):
         """ Run one pass over the train dataloader. """
         losses = []
-        APEs = []  # Absolute Patch Errors (Regards the image 'crops')
-        SPEs = []  # Squared Patch Errors
+        ACEs = []  # Absolute Crop Errors
+        SCEs = []  # Squared Crop Errors
 
         out_den = None  # SILENCE WENCH!
-        gt_stack = None  # silences the 'might not be defined' warning below the for loop.
+        gt_stack = None  # Silences the 'might not be defined' warning below the for loop.
 
-        self.model.train()
+        self.model.train()  # Put model in training mode
         for idx, (img_stack, gt_stack) in enumerate(self.train_loader):
-            img_stack = img_stack.cuda()
+            img_stack = img_stack.cuda()  # A batch of training crops
             gt_stack = gt_stack.cuda()
 
             self.optim.zero_grad()
@@ -117,14 +130,14 @@ class Trainer:
 
             losses.append(loss.cpu().item())
             errors = torch.sum(out_den - gt_stack, dim=(-2, -1)) / self.cfg_data.LABEL_FACTOR  # pred count - gt count
-            APEs.extend(torch.abs(errors).tolist())
-            SPEs.extend(torch.square(errors).tolist())
+            ACEs.extend(torch.abs(errors).tolist())  # Absolute Crop Errors
+            SCEs.extend(torch.square(errors).tolist())  # Squared Crop Errors
 
-        MAPE = np.mean(APEs)  # Mean Absolute Patch Error
-        MSPE = np.sqrt(np.mean(SPEs))  # Mean (Root) Squared Patch Error
+        MACE = np.mean(ACEs)  # Mean Absolute Crop Error
+        MSCE = np.sqrt(np.mean(SCEs))  # Mean (Root) Squared Crop Error
 
         # Also return the last predicted densities and corresponding gts. This allows for informative prints.
-        return losses, MAPE, MSPE, out_den, gt_stack
+        return losses, MACE, MSCE, out_den, gt_stack
 
     def evaluate_model(self):
         """ Evaluate the model on the evaluation dataloader. """
