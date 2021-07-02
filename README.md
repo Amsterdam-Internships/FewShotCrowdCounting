@@ -49,12 +49,17 @@ Dataset specific parameters are set in 'settings.py' in the folder of the corres
 
 # Acknowledgements
 
-The code in this repository is heavily inspired by, and uses parts of, the Crowd Counting Code Framework ([`C^3-Framework`](https://github.com/gjy3035/C-3-Framework)). The code for the ViCCT models are an extention of the DeiT models from [`this`](https://github.com/facebookresearch/deit) repository.
+The code in this repository is heavily inspired by, and uses parts of, the Crowd Counting Code Framework ([`C^3-Framework`](https://github.com/gjy3035/C-3-Framework)). I also use and extend the code from the DeiT [`repository`](https://github.com/facebookresearch/deit) repository for the ViCCT models.
+
+Code from [`this`](https://github.com/infinitemugen/MAML-Pytorch) repository about MAML in PyTorch is used for 1) our Meta-SGD implementation and 2) the SineNet implementation.
+
+
 
 Important papers for this repository:
  - C^3-Framework [`paper`](https://arxiv.org/abs/1907.02724)
  - DeiT [`paper`](https://arxiv.org/abs/2012.12877)
  - CSRNet [`paper`](https://arxiv.org/abs/1802.10062)
+ - Meta-SGD [`paper`](https://arxiv.org/abs/1707.09835)
 
 
 
