@@ -55,7 +55,7 @@ class Trainer:
 
     def train(self):
         """ Trains the model.
-        Also evaluates the model every 'EVAL_EVERY' epochs, and logs some metrics."""
+        Also evaluates the model every 'EVAL_EVERY' epochs, and logs some informative metrics."""
         MAE, MSE, avg_val_loss = self.evaluate_model()
         print(f'Initial MAE: {MAE:.3f}, MSE: {MSE:.3f}, avg loss: {avg_val_loss:.3f}')
 

@@ -9,6 +9,7 @@ import importlib
 from shutil import copyfile, copytree
 
 from trainer_meta import Trainer
+from trainer_standard_CSRNet import Trainer as CSRNetTrainer
 from config import cfg
 
 
@@ -130,7 +131,11 @@ def main(cfg):
     n_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print('number of params:', n_parameters)
 
-    trainer = Trainer(meta_wrapper, dataloader, cfg, cfg_data)
+    # Because CSRNet uses whole images, it's training scheme is slightly different from ViCCT
+    if cfg.MODEL == 'CSRNet':
+        trainer = CSRNetTrainer(meta_wrapper, dataloader, cfg, cfg_data)
+    else:
+        trainer = Trainer(meta_wrapper, dataloader, cfg, cfg_data)
     trainer.train()  # Train the model
 
 
