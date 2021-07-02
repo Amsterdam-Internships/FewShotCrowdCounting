@@ -23,7 +23,7 @@ Few-shot learning means that the model must learn something with only a few trai
 The standard approach to obtain a model for a novel scene is to manually annotate many images of this scene, usually in the hundreds of images. This is extremely tedious and labour intensive. Should we succeed in obtaining a model that can adapt to new scenes with just a few images, we greatly reduce the required annotation time whenever we place a new camera.
 
 
-# Content of this repository
+<!-- # Content of this repository
 This repository contains the code to train a regression DeiT model, both for normal learning and for meta-learning (basically two projects in one). For standard training, images are provided to the network with their GT values and the model is updates accordingly based on its error. For meta training, we feed images specific to a scene to a model and update it to obtain model-prime. This model-prime is evaluated on new images from the same scene. The loss of model-prime on these new images is backpropagated all the way to the original model. Hence, literally 'learning to learn'.
 
 ## Folder structure:
@@ -31,7 +31,7 @@ This repository contains the code to train a regression DeiT model, both for nor
 2) [`mini_experiments`](./mini_experiments): Just some quick hardcoded prototyping experiments. Will be replaced with formal notebooks later
 3) [`mist`](./mist): Some utility functions and stuff for the GitHub page
 4) [`models`](./models): Contains the model architectures, as well as wrappers for meta-learning models
-5) [`notebooks`](./notebooks): Notebooks for quick prototyping, but also easy to read notebooks for functionalities such as testing pretrained models on the test set of a dataset.
+5) [`notebooks`](./notebooks): Notebooks for quick prototyping, but also easy to read notebooks for functionalities such as testing pretrained models on the test set of a dataset. -->
 
 
 ## Using this repository:
