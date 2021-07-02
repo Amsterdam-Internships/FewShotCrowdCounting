@@ -34,10 +34,16 @@ This repository contains the code to train a regression DeiT model, both for nor
 5) [`notebooks`](./notebooks): Notebooks for quick prototyping, but also easy to read notebooks for functionalities such as testing pretrained models on the test set of a dataset. -->
 
 
-## Using this repository:
-[`environment.yml`](./environment.yml) contains the conda environment of this project. One can install this environment with 'conda env create -f environment.yml'.
+# Using this repository:
+First of all, the environment used with this project is provided in [`environment.yml`](./environment.yml). One can install this environment with 'conda env create -f environment.yml'.
 
-Global parameters for a run are specified in [`config.py`](./config.py). Set these parameters accordingly when training a new model. For each dataset, specific settings for that dataset are specified in 'settings' in a [`datasets`](./datasets) sub-folder. Most importantly is 'cfg_data.DATA_PATH' that specifies where the dataset is located. Training a standard model is performed by running [`train_standard`](./train_standard). Training a model with meta-learning is performed by running [`train_meta`](./train_meta).
+For standard training and meta learning, global run parameters are set in [`config.py`](./config.py).
+Dataset specific parameters are set in 'settings.py' in the folder of the corresponding dataset.
+
+## Standard training
+
+
+## Meta learning
 
 
 
