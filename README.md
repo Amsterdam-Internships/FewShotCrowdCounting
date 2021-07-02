@@ -2,7 +2,7 @@
 This repository contains the code from the thesis project about crowd counting with fully transformer-based architectures. The following functions are provided:
 
 
-* Standard training of ViCCT and CSRNet with 'main_standard.py'
+* Standard training of ViCCT and CSRNet
 * Meta learning with Meta-SGD for:
   *  CSRNet
   *  ViCCT
