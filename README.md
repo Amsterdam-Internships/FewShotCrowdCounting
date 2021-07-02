@@ -49,11 +49,13 @@ Dataset specific parameters are set in 'settings.py' in the folder of the corres
 
 # Acknowledgements
 
-The content of this repository is heavily inspired by the Crowd Counting Code Framework ([`C^3-Framework`](https://github.com/gjy3035/C-3-Framework)) with their corresponding [`paper`](https://arxiv.org/abs/1907.02724). In fact, this repository uses parts of their codebase!
+The code in this repository is heavily inspired by, and uses parts of, the Crowd Counting Code Framework ([`C^3-Framework`](https://github.com/gjy3035/C-3-Framework)). The code for the ViCCT models are an extention of the DeiT models from [`this`](https://github.com/facebookresearch/deit) repository.
 
-I use [`CSRNet`](https://arxiv.org/abs/1802.10062) as a CNN-based model. I took code from [`this`](https://github.com/leeyeehoo/CSRNet-pytorch) repository to implement the model. 
+Important papers for this repository:
+ - C^3-Framework [`paper`](https://arxiv.org/abs/1907.02724)
+ - DeiT [`paper`](https://arxiv.org/abs/2012.12877)
+ - CSRNet [`paper`](https://arxiv.org/abs/1802.10062)
 
-The DeiT framework is from [`this`](https://arxiv.org/abs/2012.12877) paper. I use code from [` their repository`](https://github.com/facebookresearch/deit) to implement the models.
 
 
 
