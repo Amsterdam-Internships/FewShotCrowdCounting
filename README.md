@@ -29,9 +29,7 @@ First of all, the environment used with this project is provided in [`environmen
 
 To train any model, specify the parameters for the run in [`config.py`](./config.py), such as the model to train and the dataset to use. Note that the name for the dataset must match the folder name in [`datasets/standard`](./datasets/standard) for standard training and [`datasets/meta`](./datasets/meta) for meta learning. Dataset specific parameters are set in 'settings.py' in the folder of the corresponding dataset.
 
-To train a model normally, run [`main_standard.py`](./main_standard.py).
-To meta-train a model, run [`main_meta.py`](./main_meta.py).
-
+Training a model can be done with [`main_standard.py`](./main_standard.py) for standard training and [`main_meta.py`](./main_meta.py) for meta-learning.
 
 
 # Acknowledgements
