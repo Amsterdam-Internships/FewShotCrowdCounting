@@ -10,11 +10,15 @@ from timm.models.vision_transformer import VisionTransformer, _cfg
 from timm.models.registry import register_model
 from timm.models.layers import trunc_normal_
 
+# __all__ = [
+#     'deit_tiny_patch16_224', 'deit_small_patch16_224', 'deit_base_patch16_224',
+#     'deit_tiny_distilled_patch16_224', 'deit_small_distilled_patch16_224',
+#     'deit_base_distilled_patch16_224', 'deit_base_patch16_384',
+#     'deit_base_distilled_patch16_384',
+# ]
+
 __all__ = [
-    'deit_tiny_patch16_224', 'deit_small_patch16_224', 'deit_base_patch16_224',
-    'deit_tiny_distilled_patch16_224', 'deit_small_distilled_patch16_224',
-    'deit_base_distilled_patch16_224', 'deit_base_patch16_384',
-    'deit_base_distilled_patch16_384',
+    'ViCCT_tiny', 'ViCCT_small', 'ViCCT_base'
 ]
 
 
@@ -22,7 +26,7 @@ __all__ = [
 #                                        MODULES TO DO REGRESSION                                         #
 # ======================================================================================================= #
 
-class DeiTRegressionHead(nn.Module):
+class ViCCTRegressionHead(nn.Module):
     def __init__(self, crop_size, embed_dim, init_weights=None):
         super().__init__()
 
@@ -51,7 +55,7 @@ class RegressionTransformer(VisionTransformer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.regression_head = DeiTRegressionHead(kwargs['img_size'], kwargs['embed_dim'], self._init_weights)
+        self.regression_head = ViCCTRegressionHead(kwargs['img_size'], kwargs['embed_dim'], self._init_weights)
 
         self.alpha = None
 
@@ -99,7 +103,7 @@ class DistilledRegressionTransformer(VisionTransformer):
         trunc_normal_(self.dist_token, std=.02)
         trunc_normal_(self.pos_embed, std=.02)
 
-        self.regression_head = DeiTRegressionHead(kwargs['img_size'], kwargs['embed_dim'], self._init_weights)
+        self.regression_head = ViCCTRegressionHead(kwargs['img_size'], kwargs['embed_dim'], self._init_weights)
 
         self.head_dist.apply(self._init_weights)
         self.alpha = None
@@ -143,25 +147,25 @@ class DistilledRegressionTransformer(VisionTransformer):
 # ======================================================================================================= #
 #                                               TINY MODEL                                                #
 # ======================================================================================================= #
+# @register_model
+# def deit_tiny_patch16_224(init_path=None, pretrained=False, **kwargs):
+#     model = RegressionTransformer(
+#         img_size=224, patch_size=16, embed_dim=192, depth=12, num_heads=3, mlp_ratio=4, qkv_bias=True,
+#         norm_layer=partial(nn.LayerNorm, eps=1e-6), **kwargs)
+#     model.default_cfg = _cfg()
+#     model.crop_size = 224
+#     model.n_patches = 14
+#
+#     if init_path:
+#         model = init_model_state(model, init_path)
+#
+#     model.remove_unused()
+#
+#     return model
+
+
 @register_model
-def deit_tiny_patch16_224(init_path=None, pretrained=False, **kwargs):
-    model = RegressionTransformer(
-        img_size=224, patch_size=16, embed_dim=192, depth=12, num_heads=3, mlp_ratio=4, qkv_bias=True,
-        norm_layer=partial(nn.LayerNorm, eps=1e-6), **kwargs)
-    model.default_cfg = _cfg()
-    model.crop_size = 224
-    model.n_patches = 14
-
-    if init_path:
-        model = init_model_state(model, init_path)
-
-    model.remove_unused()
-
-    return model
-
-
-@register_model
-def deit_tiny_distilled_patch16_224(init_path=None, pretrained=False, **kwargs):
+def ViCCT_tiny(init_path=None, pretrained=False, **kwargs):
     model = DistilledRegressionTransformer(
         img_size=224, patch_size=16, embed_dim=192, depth=12, num_heads=3, mlp_ratio=4, qkv_bias=True,
         norm_layer=partial(nn.LayerNorm, eps=1e-6), **kwargs)
@@ -181,25 +185,25 @@ def deit_tiny_distilled_patch16_224(init_path=None, pretrained=False, **kwargs):
 #                                               SMALL MODEL                                               #
 # ======================================================================================================= #
 
+# @register_model
+# def deit_small_patch16_224(init_path=None, pretrained=False, **kwargs):
+#     model = RegressionTransformer(
+#         img_size=224, patch_size=16, embed_dim=384, depth=12, num_heads=6, mlp_ratio=4, qkv_bias=True,
+#         norm_layer=partial(nn.LayerNorm, eps=1e-6), **kwargs)
+#     model.default_cfg = _cfg()
+#     model.crop_size = 224
+#     model.n_patches = 14
+#
+#     if init_path:
+#         model = init_model_state(model, init_path)
+#
+#     model.remove_unused()
+#
+#     return model
+
+
 @register_model
-def deit_small_patch16_224(init_path=None, pretrained=False, **kwargs):
-    model = RegressionTransformer(
-        img_size=224, patch_size=16, embed_dim=384, depth=12, num_heads=6, mlp_ratio=4, qkv_bias=True,
-        norm_layer=partial(nn.LayerNorm, eps=1e-6), **kwargs)
-    model.default_cfg = _cfg()
-    model.crop_size = 224
-    model.n_patches = 14
-
-    if init_path:
-        model = init_model_state(model, init_path)
-
-    model.remove_unused()
-
-    return model
-
-
-@register_model
-def deit_small_distilled_patch16_224(init_path=None, pretrained=False, **kwargs):
+def ViCCT_small(init_path=None, pretrained=False, **kwargs):
     model = DistilledRegressionTransformer(
         img_size=224, patch_size=16, embed_dim=384, depth=12, num_heads=6, mlp_ratio=4, qkv_bias=True,
         norm_layer=partial(nn.LayerNorm, eps=1e-6), **kwargs)
@@ -219,25 +223,25 @@ def deit_small_distilled_patch16_224(init_path=None, pretrained=False, **kwargs)
 #                                               BASE MODEL                                                #
 # ======================================================================================================= #
 
+# @register_model
+# def deit_base_patch16_224(init_path=None, pretrained=False, **kwargs):
+#     model = RegressionTransformer(
+#         img_size=224, patch_size=16, embed_dim=768, depth=12, num_heads=12, mlp_ratio=4, qkv_bias=True,
+#         norm_layer=partial(nn.LayerNorm, eps=1e-6), **kwargs)
+#     model.default_cfg = _cfg()
+#     model.crop_size = 224
+#     model.n_patches = 14
+#
+#     if init_path:
+#         model = init_model_state(model, init_path)
+#
+#     model.remove_unused()
+#
+#     return model
+
+
 @register_model
-def deit_base_patch16_224(init_path=None, pretrained=False, **kwargs):
-    model = RegressionTransformer(
-        img_size=224, patch_size=16, embed_dim=768, depth=12, num_heads=12, mlp_ratio=4, qkv_bias=True,
-        norm_layer=partial(nn.LayerNorm, eps=1e-6), **kwargs)
-    model.default_cfg = _cfg()
-    model.crop_size = 224
-    model.n_patches = 14
-
-    if init_path:
-        model = init_model_state(model, init_path)
-
-    model.remove_unused()
-
-    return model
-
-
-@register_model
-def deit_base_distilled_patch16_224(init_path=None, pretrained=False, **kwargs):
+def ViCCT_base(init_path=None, pretrained=False, **kwargs):
     model = DistilledRegressionTransformer(
         img_size=224, patch_size=16, embed_dim=768, depth=12, num_heads=12, mlp_ratio=4, qkv_bias=True,
         norm_layer=partial(nn.LayerNorm, eps=1e-6), **kwargs)
@@ -252,38 +256,38 @@ def deit_base_distilled_patch16_224(init_path=None, pretrained=False, **kwargs):
 
     return model
 
-@register_model
-def deit_base_patch16_384(init_path=None, pretrained=False, **kwargs):
-    model = RegressionTransformer(
-        img_size=384, patch_size=16, embed_dim=768, depth=12, num_heads=12, mlp_ratio=4, qkv_bias=True,
-        norm_layer=partial(nn.LayerNorm, eps=1e-6), **kwargs)
-    model.default_cfg = _cfg()
-    model.crop_size = 384
-    model.n_patches = 24
-
-    if init_path:
-        model = init_model_state(model, init_path)
-
-    model.remove_unused()
-
-    return model
-
-
-@register_model
-def deit_base_distilled_patch16_384(init_path=None, pretrained=False, **kwargs):
-    model = DistilledRegressionTransformer(
-        img_size=384, patch_size=16, embed_dim=768, depth=12, num_heads=12, mlp_ratio=4, qkv_bias=True,
-        norm_layer=partial(nn.LayerNorm, eps=1e-6), **kwargs)
-    model.default_cfg = _cfg()
-    model.crop_size = 384
-    model.n_patches = 24
-
-    if init_path:
-        model = init_model_state(model, init_path)
-
-    model.remove_unused()
-
-    return model
+# @register_model
+# def deit_base_patch16_384(init_path=None, pretrained=False, **kwargs):
+#     model = RegressionTransformer(
+#         img_size=384, patch_size=16, embed_dim=768, depth=12, num_heads=12, mlp_ratio=4, qkv_bias=True,
+#         norm_layer=partial(nn.LayerNorm, eps=1e-6), **kwargs)
+#     model.default_cfg = _cfg()
+#     model.crop_size = 384
+#     model.n_patches = 24
+#
+#     if init_path:
+#         model = init_model_state(model, init_path)
+#
+#     model.remove_unused()
+#
+#     return model
+#
+#
+# @register_model
+# def deit_base_distilled_patch16_384(init_path=None, pretrained=False, **kwargs):
+#     model = DistilledRegressionTransformer(
+#         img_size=384, patch_size=16, embed_dim=768, depth=12, num_heads=12, mlp_ratio=4, qkv_bias=True,
+#         norm_layer=partial(nn.LayerNorm, eps=1e-6), **kwargs)
+#     model.default_cfg = _cfg()
+#     model.crop_size = 384
+#     model.n_patches = 24
+#
+#     if init_path:
+#         model = init_model_state(model, init_path)
+#
+#     model.remove_unused()
+#
+#     return model
 
 
 # ======================================================================================================= #

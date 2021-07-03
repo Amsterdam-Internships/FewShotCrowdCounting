@@ -8,10 +8,10 @@ from torch.utils import data
 
 from PIL import Image
 from .settings import cfg_data
-from datasets.dataset_utils import img_equal_split, img_equal_unsplit
+from datasets.dataset_utils import img_equal_split
 
 
-class SHTA_DeiT(data.Dataset):
+class WE_ViCCT(data.Dataset):
     def __init__(self, data_path, mode, crop_size,
                  main_transform=None, img_transform=None, gt_transform=None, cropper=None):
         self.data_path = os.path.join(data_path, mode)
@@ -25,12 +25,15 @@ class SHTA_DeiT(data.Dataset):
 
         self.img_extension = '.jpg'
 
-        self.data_files = [os.path.join(self.data_path, 'img', file)
-                           for file in os.listdir(os.path.join(self.data_path, 'img'))
-                           if file.endswith(self.img_extension)]
+        self.data_files = []
+        for scene in os.listdir(self.data_path):
+            scene_path = os.path.join(self.data_path, scene)
+            scene_imgs = [os.path.join(scene_path, 'img', img_name)
+                           for img_name in os.listdir(os.path.join(scene_path, 'img'))
+                           if img_name.endswith(self.img_extension)]
+            self.data_files += scene_imgs  # Concatenate lists
 
         self.num_samples = len(self.data_files)
-
         print(f'{len(self.data_files)} {self.mode} images found.')
 
     def __getitem__(self, index):

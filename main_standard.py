@@ -16,14 +16,14 @@ from shutil import copyfile
 import random
 
 
-# Where to find the pretrained models.
+# We initialise the DeiT encoder part with pretrained weights. The ViCCT extension is randomly initialised.
 model_mapping = {
-    'deit_tiny_patch16_224': 'https://dl.fbaipublicfiles.com/deit/deit_tiny_patch16_224-a1311bcf.pth',
-    'deit_tiny_distilled_patch16_224': 'https://dl.fbaipublicfiles.com/deit/deit_tiny_distilled_patch16_224-b40b3cf7.pth',
-    'deit_small_patch16_224': 'https://dl.fbaipublicfiles.com/deit/deit_small_patch16_224-cd65a155.pth',
-    'deit_small_distilled_patch16_224': 'https://dl.fbaipublicfiles.com/deit/deit_small_distilled_patch16_224-649709d9.pth',
-    'deit_base_patch16_224': 'https://dl.fbaipublicfiles.com/deit/deit_base_patch16_224-b5f2ef4d.pth',
-    'deit_base_distilled_patch16_224': 'https://dl.fbaipublicfiles.com/deit/deit_base_distilled_patch16_224-df68dfff.pth',
+    # 'deit_tiny_patch16_224': 'https://dl.fbaipublicfiles.com/deit/deit_tiny_patch16_224-a1311bcf.pth',
+    'ViCCT_tiny': 'https://dl.fbaipublicfiles.com/deit/deit_tiny_distilled_patch16_224-b40b3cf7.pth',
+    # 'deit_small_patch16_224': 'https://dl.fbaipublicfiles.com/deit/deit_small_patch16_224-cd65a155.pth',
+    'ViCCT_small': 'https://dl.fbaipublicfiles.com/deit/deit_small_distilled_patch16_224-649709d9.pth',
+    # 'deit_base_patch16_224': 'https://dl.fbaipublicfiles.com/deit/deit_base_patch16_224-b5f2ef4d.pth',
+    'ViCCT_base': 'https://dl.fbaipublicfiles.com/deit/deit_base_distilled_patch16_224-df68dfff.pth',
 }
 
 
@@ -72,13 +72,13 @@ def main(cfg):
     np.random.seed(cfg.SEED)
     random.seed(cfg.SEED)
 
-    cudnn.benchmark = True  # Input to DeiT is always of size batch_size x 224 x 224
+    cudnn.benchmark = True  # Input to ViCCT is always of size batch_size x 224 x 224
 
     print(f"Creating model: {cfg.MODEL}")
 
     # Default settings from the original DeiT framework
     model = create_model(  # From the timm library. This function created the model specific architecture.
-        cfg.MODEL,  # Which model to use (e.g. DeiT tiny, DeiT small, DeiT base).
+        cfg.MODEL,  # Which model to use (e.g. ViCCT tiny, ViCCT small, ViCCT base).
         init_path=model_mapping[cfg.MODEL],  # Where the pretrained weights of ImageNet are saved
         num_classes=1000,  # Not used. But must match pretrained model!
         drop_rate=0.,  # Dropout

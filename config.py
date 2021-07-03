@@ -6,8 +6,7 @@ import math
 cfg = edict()
 
 # Valid_model_names = [
-#     'deit_base_patch16_224',              'deit_small_patch16_224',               'deit_tiny_patch16_224',
-#     'deit_base_distilled_patch16_224',    'deit_small_distilled_patch16_224',     'deit_tiny_distilled_patch16_224',
+#     ViCCT_tiny, ViCCT_small, ViCCT_base
 # ]
 
 
@@ -16,8 +15,8 @@ cfg.SEED = 42  # Seed for reproducibility.
 # Select the model variant to use and which dataset to train it on.
 # The model must be selected from above (Valid_model_names) AND the dataset name MUST match the name in the dataset
 # folder. E.g. SHTB_DeiT to load SHTB for DeiT. Just SHTB does not work!
-cfg.MODEL = 'deit_small_distilled_patch16_224'
-cfg.DATASET = 'SHTB_DeiT'
+cfg.MODEL = 'ViCCT_small'
+cfg.DATASET = 'SHTB_ViCCT'
 
 # cfg.MODEL = 'CSRNet'
 # cfg.DATASET = 'WE_CSRNet_Meta'
