@@ -41,7 +41,9 @@ For standard training and meta learning, global run parameters are set in [`conf
 Dataset specific parameters are set in 'settings.py' in the folder of the corresponding dataset.
 
 ## Standard training
+Specify the parameters for the run in [`config.py`](./config.py), such as the model to train and the dataset to use. Note that the name for the dataset must match the folder name in [`datasets`](./datasets). This is because the dataset is loaded dynamically when the program starts.
 
+Train the model by executing [`main_standard.py`](./main_standard.py)
 
 ## Meta learning
 
