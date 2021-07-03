@@ -1,4 +1,15 @@
-# Few-shot crowd counting
+# Vision Crowd Counting Transformers (ViCCT) for Cross-Scene Crowd Counting
+This repository contains the code from the thesis project about crowd counting with fully transformer-based architectures. The following functions are provided:
+
+
+* Standard training of ViCCT and CSRNet
+* Meta learning with Meta-SGD for:
+  *  CSRNet
+  *  ViCCT
+  *  SineNet (the toy example discussed in the [MAML](https://arxiv.org/abs/1703.03400) paper and the [Meta-SGD](https://arxiv.org/abs/1707.09835) paper)
+
+
+
 ## What is Crowd Counting?
 As the name suggest, crowd counting involves estimating the number of people in a location. Most modern computer vision methods achieve this with density map regression. That is, given an image of a scene (for example, surveillance footage), predict a density map where each pixel indicated the accumalative density of all people at that point. The ground-truth density is often a Gaussian distribution around each person's head. If multiple persons are close to each other, the distributions overlap and the values are summed. We obtain the total count in a scene by integrating over the whole density map. The following shows an example of a scene, its ground-truth density map, and a model's prediction of this map, given only the image. Note that some of the density mass is outside the image frame due to the Gaussian distribution close to the edge of the image.
 
@@ -12,7 +23,7 @@ Few-shot learning means that the model must learn something with only a few trai
 The standard approach to obtain a model for a novel scene is to manually annotate many images of this scene, usually in the hundreds of images. This is extremely tedious and labour intensive. Should we succeed in obtaining a model that can adapt to new scenes with just a few images, we greatly reduce the required annotation time whenever we place a new camera.
 
 
-# Content of this repository
+<!-- # Content of this repository
 This repository contains the code to train a regression DeiT model, both for normal learning and for meta-learning (basically two projects in one). For standard training, images are provided to the network with their GT values and the model is updates accordingly based on its error. For meta training, we feed images specific to a scene to a model and update it to obtain model-prime. This model-prime is evaluated on new images from the same scene. The loss of model-prime on these new images is backpropagated all the way to the original model. Hence, literally 'learning to learn'.
 
 ## Folder structure:
@@ -20,23 +31,36 @@ This repository contains the code to train a regression DeiT model, both for nor
 2) [`mini_experiments`](./mini_experiments): Just some quick hardcoded prototyping experiments. Will be replaced with formal notebooks later
 3) [`mist`](./mist): Some utility functions and stuff for the GitHub page
 4) [`models`](./models): Contains the model architectures, as well as wrappers for meta-learning models
-5) [`notebooks`](./notebooks): Notebooks for quick prototyping, but also easy to read notebooks for functionalities such as testing pretrained models on the test set of a dataset.
+5) [`notebooks`](./notebooks): Notebooks for quick prototyping, but also easy to read notebooks for functionalities such as testing pretrained models on the test set of a dataset. -->
 
 
-## Using this repository:
-[`environment.yml`](./environment.yml) contains the conda environment of this project. One can install this environment with 'conda env create -f environment.yml'.
+# Using this repository:
+First of all, the environment used with this project is provided in [`environment.yml`](./environment.yml). One can install this environment with 'conda env create -f environment.yml'.
 
-Global parameters for a run are specified in [`config.py`](./config.py). Set these parameters accordingly when training a new model. For each dataset, specific settings for that dataset are specified in 'settings' in a [`datasets`](./datasets) sub-folder. Most importantly is 'cfg_data.DATA_PATH' that specifies where the dataset is located. Training a standard model is performed by running [`train_standard`](./train_standard). Training a model with meta-learning is performed by running [`train_meta`](./train_meta).
+For standard training and meta learning, global run parameters are set in [`config.py`](./config.py).
+Dataset specific parameters are set in 'settings.py' in the folder of the corresponding dataset.
+
+## Standard training
+
+
+## Meta learning
 
 
 
 # Acknowledgements
 
-The content of this repository is heavily inspired by the Crowd Counting Code Framework ([`C^3-Framework`](https://github.com/gjy3035/C-3-Framework)) with their corresponding [`paper`](https://arxiv.org/abs/1907.02724). In fact, this repository uses parts of their codebase!
+The code in this repository is heavily inspired by, and uses parts of, the Crowd Counting Code Framework ([`C^3-Framework`](https://github.com/gjy3035/C-3-Framework)). I also use and extend the code from the DeiT [`repository`](https://github.com/facebookresearch/deit) repository for the ViCCT models.
 
-I use [`CSRNet`](https://arxiv.org/abs/1802.10062) as a CNN-based model. I took code from [`this`](https://github.com/leeyeehoo/CSRNet-pytorch) repository to implement the model. 
+Code from [`this`](https://github.com/infinitemugen/MAML-Pytorch) repository about MAML in PyTorch is used for 1) our Meta-SGD implementation and 2) the SineNet implementation.
 
-The DeiT framework is from [`this`](https://arxiv.org/abs/2012.12877) paper. I use code from [` their repository`](https://github.com/facebookresearch/deit) to implement the models.
+
+
+Important papers for this repository:
+ - C^3-Framework [`paper`](https://arxiv.org/abs/1907.02724)
+ - DeiT [`paper`](https://arxiv.org/abs/2012.12877)
+ - CSRNet [`paper`](https://arxiv.org/abs/1802.10062)
+ - Meta-SGD [`paper`](https://arxiv.org/abs/1707.09835)
+
 
 
 
