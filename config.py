@@ -15,14 +15,14 @@ cfg.SEED = 42  # Seed for reproducibility.
 # Select the model variant to use and which dataset to train it on.
 # The model must be selected from above (Valid_model_names) AND the dataset name MUST match the name in the dataset
 # folder. E.g. SHTB_DeiT to load SHTB for DeiT. Just SHTB does not work!
-cfg.MODEL = 'ViCCT_small'
-cfg.DATASET = 'SHTB_ViCCT'
+# cfg.MODEL = 'ViCCT_small'
+# cfg.DATASET = 'SHTB_ViCCT'
 
 # cfg.MODEL = 'CSRNet'
 # cfg.DATASET = 'WE_CSRNet_Meta'
 
-# cfg.MODEL = 'deit_tiny_distilled_patch16_224'
-# cfg.DATASET = 'WE_DeiT_Meta'
+cfg.MODEL = 'ViCCT_tiny'
+cfg.DATASET = 'WE_ViCCT_Meta'
 
 # cfg.MODEL = 'SineNet'  # SineNet, CSRNet, or DeiT
 # cfg.DATASET = 'SineWave_Meta'

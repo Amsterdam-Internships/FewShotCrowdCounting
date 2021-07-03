@@ -4,7 +4,7 @@ import datasets.transforms as own_transforms
 from datasets.dataset_utils import img_equal_split
 
 from .settings import cfg_data
-from .WE_DeiT_Meta import WE_DeiT_Meta, WE_DeiT_Meta_eval
+from .WE_ViCCT_Meta import WE_ViCCT_Meta, WE_ViCCT_Meta_eval
 
 
 def loading_data(test_adapt_imgs=None):
@@ -26,7 +26,7 @@ def loading_data(test_adapt_imgs=None):
         standard_transforms.ToPILImage()
     ])
 
-    train_set = WE_DeiT_Meta(cfg_data.DATA_PATH, 'train',
+    train_set = WE_ViCCT_Meta(cfg_data.DATA_PATH, 'train',
                              main_transform=train_main_transform,
                              img_transform=img_transform,
                              gt_transform=gt_transform,
@@ -38,7 +38,7 @@ def loading_data(test_adapt_imgs=None):
 
     val_loaders = []
     for scene in cfg_data.VAL_SCENES:
-        val_set = WE_DeiT_Meta_eval(cfg_data.DATA_PATH, 'val', scene, n_adapt_imgs=cfg_data.K_TRAIN,
+        val_set = WE_ViCCT_Meta_eval(cfg_data.DATA_PATH, 'val', scene, n_adapt_imgs=cfg_data.K_TRAIN,
                                     main_transform=None,
                                     img_transform=img_transform,
                                     gt_transform=gt_transform)
@@ -51,7 +51,7 @@ def loading_data(test_adapt_imgs=None):
     test_loaders = []
     if test_adapt_imgs:
         for scene, adapt_imgs in zip(cfg_data.TEST_SCENES, test_adapt_imgs):
-            test_set = WE_DeiT_Meta_eval(cfg_data.DATA_PATH, 'test', scene, adapt_imgs=adapt_imgs,
+            test_set = WE_ViCCT_Meta_eval(cfg_data.DATA_PATH, 'test', scene, adapt_imgs=adapt_imgs,
                                          main_transform=None,
                                          img_transform=img_transform,
                                          gt_transform=gt_transform)
@@ -62,7 +62,7 @@ def loading_data(test_adapt_imgs=None):
             test_loaders.append(test_loader)
     else:
         for scene in cfg_data.TEST_SCENES:
-            test_set = WE_DeiT_Meta_eval(cfg_data.DATA_PATH, 'test', scene, n_adapt_imgs=cfg_data.K_TRAIN,
+            test_set = WE_ViCCT_Meta_eval(cfg_data.DATA_PATH, 'test', scene, n_adapt_imgs=cfg_data.K_TRAIN,
                                          main_transform=None,
                                          img_transform=img_transform,
                                          gt_transform=gt_transform)

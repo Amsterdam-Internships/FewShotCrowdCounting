@@ -4,7 +4,7 @@ from collections import OrderedDict
 from datasets.dataset_utils import img_equal_unsplit
 
 
-class MetaDeiT:
+class MetaViCCT:
     def __init__(self, base_model, functional_model, criterion, cfg_data):
         self.base_model = base_model
         self.functional_model = functional_model

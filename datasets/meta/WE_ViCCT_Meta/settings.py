@@ -12,7 +12,7 @@ cfg_data.TRAIN_BS = 1  # must be 1
 cfg_data.TEST_BS = 1  # must be 1
 cfg_data.N_WORKERS = 4
 
-cfg_data.K_TRAIN = 0  # D
+cfg_data.K_TRAIN = 1  # D
 cfg_data.K_META = 2   # D'
 
 cfg_data.MEAN_STD = ([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])

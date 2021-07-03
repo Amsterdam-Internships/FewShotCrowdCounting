@@ -12,7 +12,7 @@ from .settings import cfg_data
 from datasets.dataset_utils import img_equal_split
 
 
-class WE_DeiT_Meta(data.Dataset):
+class WE_ViCCT_Meta(data.Dataset):
     def __init__(self, data_path, mode,
                  main_transform=None, img_transform=None, gt_transform=None, splitter=None):
         self.data_path = os.path.join(data_path, mode)
@@ -84,7 +84,7 @@ class WE_DeiT_Meta(data.Dataset):
         return self.num_samples
 
 
-class WE_DeiT_Meta_eval(data.Dataset):
+class WE_ViCCT_Meta_eval(data.Dataset):
     def __init__(self, data_path, mode, scene, adapt_imgs=None, n_adapt_imgs=None,
                  main_transform=None, img_transform=None, gt_transform=None):
         # print(n_adapt_imgs)

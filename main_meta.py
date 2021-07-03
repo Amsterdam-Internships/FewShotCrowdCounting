@@ -23,23 +23,20 @@ from models.SineNet.SineNet import SineNet
 from models.SineNet.SineNet_functional import SineNet_functional
 from models.SineNet.meta_SineNet import MetaSineNet
 
-# DeiT
-import models.DeiT.DeiTModels  # Needed for 'create_model'
-import models.DeiT.DeiTModelsFunctional  # Needed for 'create_model'
+# ViCCT
+import models.ViCCT.ViCCTModels  # Needed for 'create_model'
+import models.ViCCT.ViCCTModelsFunctional  # Needed for 'create_model'
 from timm.models import create_model
-from models.DeiT.meta_DeiT import MetaDeiT
+from models.ViCCT.meta_ViCCT import MetaViCCT
 
 
 model_mapping = {
-    'deit_tiny_cnn_patch16_224': 'https://dl.fbaipublicfiles.com/deit/deit_tiny_patch16_224-a1311bcf.pth',
-    'deit_tiny_patch16_224': 'https://dl.fbaipublicfiles.com/deit/deit_tiny_patch16_224-a1311bcf.pth',
-    'deit_tiny_distilled_patch16_224': 'https://dl.fbaipublicfiles.com/deit/deit_tiny_distilled_patch16_224-b40b3cf7.pth',
-    'deit_small_patch16_224': 'https://dl.fbaipublicfiles.com/deit/deit_small_patch16_224-cd65a155.pth',
-    'deit_small_distilled_patch16_224': 'https://dl.fbaipublicfiles.com/deit/deit_small_distilled_patch16_224-649709d9.pth',
-    'deit_base_patch16_224': 'https://dl.fbaipublicfiles.com/deit/deit_base_patch16_224-b5f2ef4d.pth',
-    'deit_base_distilled_patch16_224': 'https://dl.fbaipublicfiles.com/deit/deit_base_distilled_patch16_224-df68dfff.pth',
-    'deit_base_patch16_384': 'https://dl.fbaipublicfiles.com/deit/deit_base_patch16_384-8de9b5d1.pth',
-    'deit_base_distilled_patch16_384': 'https://dl.fbaipublicfiles.com/deit/deit_base_distilled_patch16_384-d0272ac0.pth'
+    # 'deit_tiny_patch16_224': 'https://dl.fbaipublicfiles.com/deit/deit_tiny_patch16_224-a1311bcf.pth',
+    'ViCCT_tiny': 'https://dl.fbaipublicfiles.com/deit/deit_tiny_distilled_patch16_224-b40b3cf7.pth',
+    # 'deit_small_patch16_224': 'https://dl.fbaipublicfiles.com/deit/deit_small_patch16_224-cd65a155.pth',
+    'ViCCT_small': 'https://dl.fbaipublicfiles.com/deit/deit_small_distilled_patch16_224-649709d9.pth',
+    # 'deit_base_patch16_224': 'https://dl.fbaipublicfiles.com/deit/deit_base_patch16_224-b5f2ef4d.pth',
+    'ViCCT_base': 'https://dl.fbaipublicfiles.com/deit/deit_base_distilled_patch16_224-df68dfff.pth',
 }
 
 
@@ -69,9 +66,9 @@ def main(cfg):
                  os.path.join(cfg.CODE_DIR, 'loading_data.py'))
         copyfile(os.path.join('datasets', 'meta', cfg.DATASET, cfg.DATASET + '.py'),
                  os.path.join(cfg.CODE_DIR, cfg.DATASET + '.py'))
-        if 'deit' in cfg.MODEL:
-            copytree(os.path.join('models', 'DeiT'),
-                     os.path.join(cfg.CODE_DIR, 'DeiT'))
+        if 'ViCCT' in cfg.MODEL:
+            copytree(os.path.join('models', 'ViCCT'),
+                     os.path.join(cfg.CODE_DIR, 'ViCCT'))
         else:
             copytree(os.path.join('models', cfg.MODEL),
                      os.path.join(cfg.CODE_DIR, cfg.MODEL))
@@ -100,7 +97,7 @@ def main(cfg):
         model_functional = SineNet_functional()
         meta_wrapper = MetaSineNet(model, model_functional, criterion)
 
-    elif 'deit' in cfg.MODEL:
+    elif 'ViCCT' in cfg.MODEL:
         model = create_model(
             cfg.MODEL,
             init_path=model_mapping[cfg.MODEL],
@@ -120,7 +117,7 @@ def main(cfg):
         )
 
         model.cuda()
-        meta_wrapper = MetaDeiT(model, model_functional, criterion, cfg_data)
+        meta_wrapper = MetaViCCT(model, model_functional, criterion, cfg_data)
     else:
         print(f'model "{cfg.MODEL}" not recognised.')
         exit(1)
