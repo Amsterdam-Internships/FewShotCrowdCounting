@@ -1,4 +1,7 @@
 # Vision Crowd Counting Transformers (ViCCT) for Cross-Scene Crowd Counting
+
+![Example of density map regression](./misc/example_images/ViCCT_architecture.jpg?raw=true "ViCCT architecture")
+
 This repository contains the code from the thesis project about crowd counting with fully transformer-based architectures. The following functions are provided:
 
 
@@ -9,7 +12,6 @@ This repository contains the code from the thesis project about crowd counting w
   *  SineNet (the toy example discussed in the [MAML](https://arxiv.org/abs/1703.03400) paper and the [Meta-SGD](https://arxiv.org/abs/1707.09835) paper)
 
 
-![Example of density map regression](./misc/example_images/ViCCT_architecture.jpg?raw=true "ViCCT architecture")
 
 
 ## What is Crowd Counting?
