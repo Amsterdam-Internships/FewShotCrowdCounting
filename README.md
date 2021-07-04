@@ -9,6 +9,8 @@ This repository contains the code from the thesis project about crowd counting w
   *  SineNet (the toy example discussed in the [MAML](https://arxiv.org/abs/1703.03400) paper and the [Meta-SGD](https://arxiv.org/abs/1707.09835) paper)
 
 
+![Example of density map regression](./misc/example_images/ViCCT_architecture.jpg?raw=true "ViCCT architecture")
+
 
 ## What is Crowd Counting?
 As the name suggest, crowd counting involves estimating the number of people in a location. Most modern computer vision methods achieve this with density map regression. That is, given an image of a scene (for example, surveillance footage), predict a density map where each pixel indicated the accumalative density of all people at that point. The ground-truth density is often a Gaussian distribution around each person's head. If multiple persons are close to each other, the distributions overlap and the values are summed. We obtain the total count in a scene by integrating over the whole density map. The following shows an example of a scene, its ground-truth density map, and a model's prediction of this map, given only the image. Note that some of the density mass is outside the image frame due to the Gaussian distribution close to the edge of the image.
