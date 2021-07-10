@@ -2,7 +2,7 @@ from easydict import EasyDict as edict
 
 cfg_data = edict()
 
-cfg_data.DATA_PATH = 'D:\\OneDrive\\OneDrive - UvA\\ThesisData\\Datasets\\Shanghaitech\\SHTB_datasets\\SHTB_DOUBLE_RES'
+cfg_data.DATA_PATH = 'D:\\OneDrive\\OneDrive - UvA\\ThesisData\\Datasets\\Shanghaitech\\SHTB_datasets\\SHTB_STD'
 
 cfg_data.TRAIN_BS = 10
 cfg_data.VAL_BS = 1

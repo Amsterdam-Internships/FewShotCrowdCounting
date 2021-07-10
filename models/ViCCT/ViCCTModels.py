@@ -18,7 +18,7 @@ from timm.models.layers import trunc_normal_
 # ]
 
 __all__ = [
-    'ViCCT_tiny', 'ViCCT_small', 'ViCCT_base'
+    'ViCCT_tiny', 'ViCCT_small', 'ViCCT_base', 'ViCCT_large'
 ]
 
 
@@ -289,6 +289,26 @@ def ViCCT_base(init_path=None, pretrained=False, **kwargs):
 #
 #     return model
 
+# ======================================================================================================= #
+#                                              LARGE MODEL                                                #
+# ======================================================================================================= #
+@register_model
+def ViCCT_large(init_path=None, pretrained=False, **kwargs):
+    model = RegressionTransformer(
+        img_size=224, patch_size=16, embed_dim=1024, depth=24, num_heads=16, mlp_ratio=4, qkv_bias=True,
+        norm_layer=partial(nn.LayerNorm, eps=1e-6), **kwargs)
+    model.default_cfg = _cfg()
+    model.crop_size = 224
+    model.n_patches = 14
+
+    if init_path:
+        model = init_model_state(model, init_path)
+
+    model.remove_unused()
+
+    return model
+
+
 
 # ======================================================================================================= #
 #                                             UTIL FUNCTIONS                                              #
@@ -300,7 +320,10 @@ def init_model_state(model, init_path):
             init_path, map_location='cpu', check_hash=True)
     else:
         checkpoint = torch.load(init_path, map_location='cpu')
-    pretrained_state = checkpoint['model']
+    if 'model' in checkpoint:
+        pretrained_state = checkpoint['model']
+    else:
+        pretrained_state = checkpoint
     modified_model_state = model.state_dict()
     # With this, we are able to load the pretrained modules while ignoring the new regression modules.
     for key in pretrained_state.keys():
