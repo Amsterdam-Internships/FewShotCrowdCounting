@@ -37,13 +37,14 @@ class Trainer:
 
         self.criterion = torch.nn.MSELoss()
         self.optim = torch.optim.Adam(model.parameters(), lr=cfg.BETA, weight_decay=cfg.WEIGHT_DECAY)  # BETA = LR
+        # We take a step only at predefined epochs. Hence, step_size = 1.
         self.scheduler = torch.optim.lr_scheduler.StepLR(self.optim, step_size=1, gamma=cfg.LR_GAMMA)
 
         self.epoch = 0
         self.best_mae = 10 ** 10  # just something high
         self.best_epoch = -1  # We don't have a best epoch yet.
 
-        self.writer = SummaryWriter(cfg.SAVE_DIR)  # For logging
+        self.writer = SummaryWriter(cfg.SAVE_DIR)  # For logging. We store vars like training/validation MAE and MSE.
 
         if cfg.RESUME:  # Should we resume training?
             self.load_state(cfg.RESUME_PATH)  # This loads and overwrites some important variables to continue training.
@@ -56,15 +57,16 @@ class Trainer:
     def train(self):
         """ Trains the model.
         Also evaluates the model every 'EVAL_EVERY' epochs, and logs some informative metrics."""
+
         MAE, MSE, avg_val_loss = self.evaluate_model()
         print(f'Initial MAE: {MAE:.3f}, MSE: {MSE:.3f}, avg loss: {avg_val_loss:.3f}')
 
-        while self.epoch < self.cfg.MAX_EPOCH:
+        while self.epoch < self.cfg.MAX_EPOCH:  # Train for MAX_EPOCH epochs
             self.epoch += 1
 
             epoch_start_time = time.time()  # Time how long an epoch takes
             # MACE = Mean Absolute Crop Error.
-            # MSCE = Mean Squared Crop Rrror.
+            # MSCE = Mean Squared Crop Error.
             losses, MACE, MSCE, last_out_den, last_gts = self.run_epoch()
             epoch_time = time.time() - epoch_start_time
 
@@ -110,7 +112,8 @@ class Trainer:
 
     def run_epoch(self):
         """ Run one pass over the train dataloader. """
-        losses = []
+
+        losses = []  # To compute the average loss over all predictions
         ACEs = []  # Absolute Crop Errors
         SCEs = []  # Squared Crop Errors
 
@@ -123,12 +126,12 @@ class Trainer:
             gt_stack = gt_stack.cuda()
 
             self.optim.zero_grad()
-            out_den = self.model(img_stack)
+            out_den = self.model(img_stack)  # Make a prediction for the training crops
             loss = self.criterion(out_den, gt_stack)
             loss.backward()
             self.optim.step()
 
-            losses.append(loss.cpu().item())
+            losses.append(loss.cpu().item())  # The loss of this training batch
             errors = torch.sum(out_den - gt_stack, dim=(-2, -1)) / self.cfg_data.LABEL_FACTOR  # pred count - gt count
             ACEs.extend(torch.abs(errors).tolist())  # Absolute Crop Errors
             SCEs.extend(torch.square(errors).tolist())  # Squared Crop Errors
@@ -147,7 +150,7 @@ class Trainer:
         with torch.no_grad():
             AEs = []  # Absolute Errors
             SEs = []  # Squared Errors
-            losses = []
+            losses = []  # To compute the average loss of all evaluation predictions
 
             abs_patch_errors = torch.zeros(self.model.crop_size, self.model.crop_size)  # For pixelwise error heatmap
 
@@ -158,32 +161,35 @@ class Trainer:
                 _, img_h, img_w = img.shape
 
                 pred_den = self.model(img_stack)
-                loss = self.criterion(pred_den, gt_stack.cuda())
+                loss = self.criterion(pred_den, gt_stack.cuda())  # Just for logging. No gradients are computed here
                 losses.append(loss.cpu().item())
                 pred_den = pred_den.cpu()
 
+                # The predictions are from image crops. Here, we reconstruct the density maps of the entire image.
                 gt = img_equal_unsplit(gt_stack, self.cfg_data.OVERLAP, self.cfg_data.IGNORE_BUFFER, img_h, img_w, 1)
                 den = img_equal_unsplit(pred_den, self.cfg_data.OVERLAP, self.cfg_data.IGNORE_BUFFER, img_h, img_w, 1)
                 den = den.squeeze(0)  # Remove channel dim
 
+                # The density maps are scaled by a LABEL FACTOR. To get the actual counts, reverse this scaling.
                 pred_cnt = den.sum() / self.cfg_data.LABEL_FACTOR
                 gt_cnt = gt.sum() / self.cfg_data.LABEL_FACTOR
-                AEs.append(torch.abs(pred_cnt - gt_cnt).item())
-                SEs.append(torch.square(pred_cnt - gt_cnt).item())
+                AEs.append(torch.abs(pred_cnt - gt_cnt).item())  # Store absolute error
+                SEs.append(torch.square(pred_cnt - gt_cnt).item())  # Store squared error
 
                 if idx % self.eval_save_example_every == 0:  # We only save a few examples
-                    plt.imshow(den, cmap=CM.jet)
+                    plt.imshow(den, cmap=CM.jet)  # Not actually displayed on the screen. Just to save the prediction
                     save_path = os.path.join(self.cfg.PICS_DIR, f'pred_{idx}_ep_{self.epoch}.jpg')
                     plt.title(f'Predicted count: {pred_cnt:.3f} (GT: {gt_cnt:.3f})')
-                    plt.savefig(save_path)
+                    plt.savefig(save_path)  # Save the prediction
 
+                # Summed absolute error of each pixel of all crops. Gives insight in where most errors are made.
                 abs_patch_errors += torch.sum(torch.abs(gt_stack.squeeze(1) - pred_den.squeeze(1)), dim=0)
 
             MAE = np.mean(AEs)  # Mean Absolute Error
             MSE = np.sqrt(np.mean(SEs))  # (root) Mean Squared Error
             avg_loss = np.mean(losses)
 
-        plt.cla()
+        plt.cla()  # Clear all plots (otherwise, things like titles will stay for new plots)
         plt.imshow(abs_patch_errors)  # The accumulated absolute error at each pixel in all crops
         save_path = os.path.join(self.cfg.PICS_DIR, f'errors_ep_{self.epoch}.jpg')
         plt.savefig(save_path)
@@ -192,24 +198,25 @@ class Trainer:
 
     def save_eval_pics(self):
         """ During evaluation, some predictions are saved for visualisation. This function saves these images and their
-        ground truth density maps.  This function is already called at class initialisation."""
+        ground truth density maps.  This function is called at class initialisation."""
 
-        plt.cla()
+        plt.cla()  # Clear all plots
         for idx, (img, img_patches, gt_patches) in enumerate(self.val_loader):
             gt_patches = gt_patches.squeeze(0)  # Remove batch dim
             img = img.squeeze(0)  # Remove batch dim
 
             _, img_h, img_w = img.shape
 
+            # The dataloader splits the ground truth into crops. Here, we restore the original GT density map.
             gt = img_equal_unsplit(gt_patches, self.cfg_data.OVERLAP, self.cfg_data.IGNORE_BUFFER, img_h, img_w, 1)
             gt = gt.squeeze()  # Remove channel dim
 
             if idx % self.eval_save_example_every == 0:
-                img = self.restore_transform(img)
-                gt_count = gt.sum() / self.cfg_data.LABEL_FACTOR
-                gt_count = torch.round(gt_count)
+                img = self.restore_transform(img)  # Un-normalise normalised image
+                gt_count = gt.sum() / self.cfg_data.LABEL_FACTOR  # Divide to get actual non-scaled count
+                # gt_count = torch.round(gt_count)  # People's density can be outside image, thus not being an integer.
 
-                plt.imshow(img)
+                plt.imshow(img)  # No displayed on screen. Just to save the image in corresponding folder.
                 save_path = os.path.join(self.cfg.PICS_DIR, f'img_{idx}.jpg')
                 plt.title(f'GT count: {gt_count:.3f}')
                 plt.savefig(save_path)
