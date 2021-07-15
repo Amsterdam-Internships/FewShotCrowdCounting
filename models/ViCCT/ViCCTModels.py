@@ -18,7 +18,7 @@ from timm.models.layers import trunc_normal_
 # ]
 
 __all__ = [
-    'ViCCT_tiny', 'ViCCT_small', 'ViCCT_base', 'ViCCT_large'
+    'ViCCT_tiny', 'ViCCT_small', 'ViCCT_base', 'ViCCT_base_384', 'ViCCT_large'
 ]
 
 
@@ -289,13 +289,30 @@ def ViCCT_base(init_path=None, pretrained=False, **kwargs):
 #
 #     return model
 
+@register_model
+def ViCCT_base_384(init_path=None, pretrained=False, **kwargs):
+    model = DistilledRegressionTransformer(
+        img_size=384, patch_size=16, embed_dim=768, depth=12, num_heads=12, mlp_ratio=4, qkv_bias=True,
+        norm_layer=partial(nn.LayerNorm, eps=1e-6), **kwargs)
+    model.default_cfg = _cfg()
+    model.crop_size = 384
+    model.n_patches = 24
+
+    if init_path:
+        model = init_model_state(model, init_path)
+
+    model.remove_unused()
+
+    return model
+
 # ======================================================================================================= #
 #                                              LARGE MODEL                                                #
 # ======================================================================================================= #
 @register_model
 def ViCCT_large(init_path=None, pretrained=False, **kwargs):
+    """ NOTE: THIS IS NOT THE FULL large MODEL!!!!"""
     model = RegressionTransformer(
-        img_size=224, patch_size=16, embed_dim=1024, depth=24, num_heads=16, mlp_ratio=4, qkv_bias=True,
+        img_size=224, patch_size=16, embed_dim=1024, depth=12, num_heads=16, mlp_ratio=4, qkv_bias=True,
         norm_layer=partial(nn.LayerNorm, eps=1e-6), **kwargs)
     model.default_cfg = _cfg()
     model.crop_size = 224
@@ -327,7 +344,10 @@ def init_model_state(model, init_path):
     modified_model_state = model.state_dict()
     # With this, we are able to load the pretrained modules while ignoring the new regression modules.
     for key in pretrained_state.keys():
-        modified_model_state[key] = pretrained_state[key]
+        if key in modified_model_state.keys():
+            modified_model_state[key] = pretrained_state[key]
+        else:
+            print(f'key {key} not in model!')
     model.load_state_dict(modified_model_state)
 
     return model
