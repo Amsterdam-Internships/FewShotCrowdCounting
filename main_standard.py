@@ -24,6 +24,7 @@ model_mapping = {
     'ViCCT_small': 'https://dl.fbaipublicfiles.com/deit/deit_small_distilled_patch16_224-649709d9.pth',
     # 'deit_base_patch16_224': 'https://dl.fbaipublicfiles.com/deit/deit_base_patch16_224-b5f2ef4d.pth',
     'ViCCT_base': 'https://dl.fbaipublicfiles.com/deit/deit_base_distilled_patch16_224-df68dfff.pth',
+    'ViCCT_base_384': 'https://dl.fbaipublicfiles.com/deit/deit_base_distilled_patch16_384-d0272ac0.pth',
     'ViCCT_large': 'https://github.com/rwightman/pytorch-image-models/releases/download/v0.1-vitjx/jx_vit_large_p16_224-4ee7a4dc.pth'
 }
 
@@ -57,7 +58,7 @@ def main(cfg):
         module = importlib.import_module(cfg.RESUME_DIR.replace(os.sep, '.') + 'code.config')
         cfg = module.cfg
     else:  # Make a backup of some important files for archiving purposes.
-        make_save_dirs(cfg)
+        make_save_dirs(cfg)  # The folders to categorize the files
         copyfile('config.py', os.path.join(cfg.CODE_DIR, 'config.py'))
         copyfile('trainer_standard.py', os.path.join(cfg.CODE_DIR, 'trainer_standard.py'))
         copyfile('models/ViCCT/ViCCTModels.py', os.path.join(cfg.CODE_DIR, 'ViCCTModels.py'))

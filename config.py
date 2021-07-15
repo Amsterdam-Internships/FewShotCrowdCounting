@@ -15,14 +15,14 @@ cfg.SEED = 42  # Seed for reproducibility.
 # Select the model variant to use and which dataset to train it on.
 # The model must be selected from above (Valid_model_names) AND the dataset name MUST match the name in the dataset
 # folder. E.g. SHTB_DeiT to load SHTB for DeiT. Just SHTB does not work!
-# cfg.MODEL = 'ViCCT_small'
-# cfg.DATASET = 'SHTB_ViCCT'
+cfg.MODEL = 'ViCCT_large'
+cfg.DATASET = 'SHTB_ViCCT'
 
 # cfg.MODEL = 'CSRNet'
 # cfg.DATASET = 'WE_CSRNet_Meta'
 
-cfg.MODEL = 'ViCCT_tiny'
-cfg.DATASET = 'WE_ViCCT_Meta'
+# cfg.MODEL = 'ViCCT_tiny'
+# cfg.DATASET = 'WE_ViCCT_Meta'
 
 # cfg.MODEL = 'SineNet'  # SineNet, CSRNet, or DeiT
 # cfg.DATASET = 'SineWave_Meta'
@@ -31,7 +31,7 @@ cfg.DATASET = 'WE_ViCCT_Meta'
 cfg.BETA = 1e-4  # LR for meta learning in meta learning. Standard LR for standard learning
 cfg.LR_GAMMA = math.sqrt(0.1)  # Scale LR by this at each step in LR_STEP_EPCH
 cfg.LR_STEP_EPOCHS = [100, 500, 900]  # Make one step with the learning rate scheduler at these epochs
-cfg.WEIGHT_DECAY = 1e-4
+cfg.WEIGHT_DECAY = 1e-5
 cfg.GRAD_CLIP_NORM = 1.  # Attempt to make meta-learning more stable. Set to None for no clipping
 
 cfg.MAML = False  # For meta learning only. Whether to train as MAML or as Meta-SGD
